@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -207,7 +206,8 @@ const ServiceDetailDrawer = ({
 };
 
 export function BookingPageInner() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -235,7 +235,6 @@ export function BookingPageInner() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapType, setMapType] = useState<'hybrid' | 'streets'>('hybrid');
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   // Car Suggestions API State
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
@@ -370,6 +369,13 @@ export function BookingPageInner() {
 
   const handleNext = () => {
     if (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) return;
+    
+    // Enforce sign-in after phase 1
+    if (currentStep === 1 && !user) {
+      router.push('/sign-up?returnTo=/bookings');
+      return;
+    }
+
     if (currentStep === 2 && selectedServices.length === 0) return;
     if (currentStep === 4 && (!selectedDate || !selectedTime)) return;
     setCurrentStep(prev => prev + 1);
@@ -382,8 +388,8 @@ export function BookingPageInner() {
   };
 
   const handleSubmit = async () => {
-    if (!auth.currentUser) {
-      router.push("/sign-in?returnTo=/bookings");
+    if (!user) {
+      router.push('/sign-up?returnTo=/bookings');
       return;
     }
     setIsSubmitting(true);
