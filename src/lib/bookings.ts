@@ -21,6 +21,7 @@ export interface Booking {
   location: string;
   amount: string;
   status: "Pending" | "Completed" | "Cancelled";
+  carDetails: string;
   createdAt?: any;
 }
 
