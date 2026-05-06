@@ -965,7 +965,7 @@ export function BookingPageInner() {
                       {selectedServices.map(sel => {
                       const s = services.find(x => x.id === sel.id);
                       if (!s) return null;
-                      const IconComp = ICON_MAP[s.icon as any] || Car;
+                      const IconComp = (s.icon && ICON_MAP[s.icon]) || CarIcon;
                       return (
                         <div key={sel.id} className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
