@@ -555,7 +555,7 @@ export default function ServicesPage() {
                     <motion.div key="p2" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-6">
                       <div className="flex items-center gap-4 p-4 bg-[#111] rounded-2xl border border-white/5">
                         <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center text-[#F59E0B]">
-                          {(()=>{const IC=ICON_MAP[formData.icon]||Package;return<IC size={22}/>;})()}
+                          {(()=>{const IC=(formData.icon && ICON_MAP[formData.icon])||Package;return<IC size={22}/>;})()}
                         </div>
                         <div>
                           <p className="text-sm font-black italic uppercase tracking-tight text-white">{formData.name||'Service Name'}</p>
