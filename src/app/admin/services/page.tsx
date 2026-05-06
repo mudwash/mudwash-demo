@@ -372,7 +372,7 @@ export default function ServicesPage() {
                   ) : (
                     <div className="space-y-3">
                       {catServices.map((service, idx) => {
-                        const IC = ICON_MAP[service.icon] || Package;
+                        const IC = (service.icon && ICON_MAP[service.icon]) || Package;
                         const facilities = service.includedItems || [];
                         const isExpanded = expandedServiceId === service.id;
                         return (

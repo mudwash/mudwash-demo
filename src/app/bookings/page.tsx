@@ -636,7 +636,7 @@ export function BookingPageInner() {
               ) : (
                 <div className="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
                   {filteredServices.map((service, index) => {
-                    const IconComp = ICON_MAP[service.icon] || Zap;
+                    const IconComp = (service.icon && ICON_MAP[service.icon]) || Zap;
                     const isSelected = selectedServices.some(s => s.id === service.id);
                     const facilities = service.includedItems || [];
                     return (
