@@ -263,7 +263,7 @@ export default function Navbar() {
             if (isLoggedIn) {
               router.push('/bookings');
             } else {
-              router.push('/sign-in?redirect=/bookings');
+              router.push('/sign-up?redirect=/bookings');
             }
           }}
           mouseX={mouseX}

@@ -219,7 +219,7 @@ export function BookingPageInner() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/sign-in?redirect=/bookings");
+      router.replace("/sign-up?redirect=/bookings");
     }
   }, [user, authLoading, router]);
 

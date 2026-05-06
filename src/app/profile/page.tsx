@@ -123,7 +123,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-[#050505] text-white">
 
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 lg:py-40">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-24 md:pt-20 lg:pt-24">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
             
             {/* Sidebar */}
