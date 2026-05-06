@@ -998,7 +998,7 @@ export function BookingPageInner() {
                       <div className="flex items-center justify-between gap-3 pt-2">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/30 shrink-0">
-                            <Car size={16}/>
+                            <CarIcon size={16}/>
                           </div>
                           <div className="min-w-0">
                             <p className="text-[10px] font-black uppercase text-white/20 leading-none">Vehicle</p>
