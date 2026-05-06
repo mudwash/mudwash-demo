@@ -200,13 +200,20 @@ export default function Navbar() {
 
   if (pathname.startsWith('/admin') || pathname === '/bookings' || pathname === '/services') return null;
 
-  const navItems = [
+  interface NavItem {
+    label: string;
+    href?: string;
+    icon: React.ReactNode;
+    onClick?: () => void;
+  }
+
+  const navItems: NavItem[] = [
     { label: 'Home', href: '/', icon: <Home /> },
     { label: 'Services', href: '/services', icon: <Wrench /> },
     { label: 'Shop', href: '/spare-parts', icon: <ShoppingBag /> },
   ];
 
-  const rightItems = [
+  const rightItems: NavItem[] = [
     {
       label: isLoggedIn ? 'My Profile' : 'Sign In',
       href: isLoggedIn ? '/profile' : '/sign-up',
@@ -239,7 +246,7 @@ export default function Navbar() {
             key={item.label}
             icon={item.icon}
             label={item.label}
-            onClick={() => router.push(item.href)}
+            onClick={item.onClick ?? (() => item.href && router.push(item.href))}
             mouseX={mouseX}
             spring={spring}
             distance={distance}
