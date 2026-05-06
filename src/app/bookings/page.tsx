@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -213,8 +213,28 @@ const ServiceDetailDrawer = ({
 };
 
 export function BookingPageInner() {
-  const { profile } = useAuth();
+  const { user, loading: authLoading, profile } = useAuth();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/sign-in?redirect=/bookings");
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-12 h-12 border-4 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
+          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
