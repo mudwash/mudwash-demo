@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -234,6 +235,7 @@ export function BookingPageInner() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapType, setMapType] = useState<'hybrid' | 'streets'>('hybrid');
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Car Suggestions API State
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
@@ -380,6 +382,10 @@ export function BookingPageInner() {
   };
 
   const handleSubmit = async () => {
+    if (!auth.currentUser) {
+      router.push("/sign-in?returnTo=/bookings");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const serviceSummary = selectedServices.map(sel => {
