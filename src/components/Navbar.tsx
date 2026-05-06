@@ -209,7 +209,6 @@ export default function Navbar() {
 
   const navItems: NavItem[] = [
     { label: 'Home', href: '/', icon: <Home /> },
-    { label: 'Services', href: '/services', icon: <Wrench /> },
     { label: 'Shop', href: '/spare-parts', icon: <ShoppingBag /> },
   ];
 
