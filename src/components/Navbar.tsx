@@ -259,7 +259,13 @@ export default function Navbar() {
         <DockItem
           icon={<CalendarPlus />}
           label="Book Now"
-          onClick={() => router.push('/bookings')}
+          onClick={() => {
+            if (isLoggedIn) {
+              router.push('/bookings');
+            } else {
+              router.push('/sign-in?redirect=/bookings');
+            }
+          }}
           mouseX={mouseX}
           spring={spring}
           distance={distance}
