@@ -100,10 +100,10 @@ const ICON_MAP: any = {
 };
 
 const VEHICLE_IMAGES: Record<string, string> = {
-  "Sedan": "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=800",
-  "SUV": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800",
-  "Van": "https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&q=80&w=800",
-  "Adventure": "https://images.unsplash.com/photo-1533590901646-4a6011172f59?auto=format&fit=crop&q=80&w=800"
+  "Sedan": "https://images.unsplash.com/photo-1550355291-bbee04a92027?auto=format&fit=crop&q=80&w=800",
+  "SUV": "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&q=80&w=800",
+  "Van": "https://images.unsplash.com/photo-1565193998248-d5a9b71ccdb2?auto=format&fit=crop&q=80&w=800",
+  "Adventure": "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800"
 };
 
 
@@ -223,18 +223,6 @@ export function BookingPageInner() {
     }
   }, [user, authLoading, router]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-12 h-12 border-4 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
-          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Authenticating...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -453,6 +441,19 @@ export function BookingPageInner() {
     return { full: d.toISOString().split('T')[0], day: d.toLocaleDateString('en-US', { weekday: 'short' }), date: d.getDate(), month: d.toLocaleDateString('en-US', { month: 'short' }) };
   });
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-12 h-12 border-4 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
+          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center p-6">
@@ -566,24 +567,43 @@ export function BookingPageInner() {
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {vehicleTypes.map(v => {
-                    const Icon = (v.icon && ICON_MAP[v.icon]) || CarIcon;
                     const isVSelected = carDetails.type === v.name;
                     const overrides = (v as any).locationOverrides || {};
                     const price = selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : v.surcharge;
+                    const imgSrc = v.image || VEHICLE_IMAGES[v.name] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
 
                     return (
                       <button 
                         key={v.id}
                         onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
-                        className={`p-6 sm:p-8 rounded-[2.5rem] border transition-all duration-500 group flex flex-col items-center gap-4 relative overflow-hidden ${isVSelected ? 'bg-brand-orange border-brand-orange text-black shadow-[0_20px_50px_rgba(246,150,33,0.2)]' : 'bg-[#0F0F0F] border-white/5 text-white/30 hover:border-white/10 hover:text-white'}`}
+                        className={`h-48 sm:h-56 rounded-[2.5rem] border transition-all duration-500 group relative overflow-hidden ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
                       >
-                        <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg text-[7px] font-black uppercase tracking-widest ${isVSelected ? 'bg-black/20 text-black' : 'bg-white/5 text-white/20'}`}>
-                          ₹ {price >= 0 ? `+${price}` : price}
+                        <img 
+                          src={imgSrc} 
+                          alt={v.name}
+                          className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isVSelected ? 'scale-110 opacity-100' : 'opacity-30 grayscale group-hover:grayscale-0 group-hover:opacity-60'}`} 
+                        />
+                        <div className={`absolute inset-0 bg-gradient-to-t ${isVSelected ? 'from-brand-orange via-brand-orange/20' : 'from-black via-black/60'} to-transparent transition-colors duration-500`} />
+                        
+                        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
+                          <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-1 transition-colors ${isVSelected ? 'text-black' : 'text-white/60'}`}>Category</p>
+                          <h4 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tighter transition-colors ${isVSelected ? 'text-black' : 'text-white'}`}>{v.name}</h4>
+                          <div className={`mt-3 inline-flex px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${isVSelected ? 'bg-black/20 text-black' : 'bg-white/5 text-white/40'}`}>
+                            ₹ {price >= 0 ? `+${price}` : price}
+                          </div>
                         </div>
-                        <Icon size={32} strokeWidth={isVSelected ? 3 : 2} className="transition-transform group-hover:scale-110" />
-                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">{v.name}</span>
+                        
+                        {isVSelected && (
+                          <motion.div 
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="absolute top-6 right-6 w-10 h-10 bg-black text-brand-orange rounded-2xl flex items-center justify-center shadow-xl border border-white/10"
+                          >
+                            <Check size={20} strokeWidth={4} />
+                          </motion.div>
+                        )}
                       </button>
                     );
                   })}
@@ -599,11 +619,17 @@ export function BookingPageInner() {
                       exit={{ opacity: 0, y: -20 }}
                       className="relative h-64 md:h-80 rounded-[3rem] overflow-hidden group shadow-2xl border border-white/5"
                     >
-                      <img 
-                        src={VEHICLE_IMAGES[carDetails.type] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800"} 
-                        alt={carDetails.type}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
+                      {(() => {
+                        const v = vehicleTypes.find(x => x.name === carDetails.type);
+                        const imgSrc = v?.image || VEHICLE_IMAGES[carDetails.type] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
+                        return (
+                          <img 
+                            src={imgSrc} 
+                            alt={carDetails.type}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                        );
+                      })()}
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                       <div className="absolute bottom-10 left-10">
                         <motion.div 
