@@ -17,7 +17,7 @@ export default function NearbyGarages() {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const timeoutId = setTimeout(() => {
       if (isMounted && loading) {
         console.warn("NearbyGarages: Fetching timed out, using fallback.");
@@ -47,8 +47,8 @@ export default function NearbyGarages() {
       }
     };
     fetchGarages();
-    return () => { 
-      isMounted = false; 
+    return () => {
+      isMounted = false;
       clearTimeout(timeoutId);
     };
   }, []);

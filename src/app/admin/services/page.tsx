@@ -38,7 +38,6 @@ import {
   Timer,
   Fuel,
   Gauge,
-  MapPin as MapPinIcon,
   Navigation,
   Smartphone,
   Trophy,
@@ -47,104 +46,196 @@ import {
   Palette,
   Droplet,
   GlassWater,
-  CloudRain
+  CloudRain,
+  List,
+  Check,
+  ChevronRight,
+  LayoutGrid,
+  CreditCard,
+  History,
+  Paintbrush,
+  PlusCircle,
+  Settings2
 } from "lucide-react";
 import { getServices, addService, updateService, deleteService, Service } from "@/lib/services";
+import { getCategories, addCategory, updateCategory, Category } from "@/lib/categories";
 
-const ICON_OPTIONS = [
-  { id: "Wrench", icon: Wrench },
-  { id: "Droplets", icon: Droplets },
-  { id: "Zap", icon: Zap },
-  { id: "Snowflake", icon: Snowflake },
-  { id: "Waves", icon: Waves },
-  { id: "Settings", icon: Settings },
-  { id: "Disc", icon: Disc },
-  { id: "Car", icon: Car },
-  { id: "ShieldCheck", icon: ShieldCheck },
-  { id: "Clock", icon: Clock },
-  { id: "Sparkles", icon: Sparkles },
-  { id: "Package", icon: Package },
-  { id: "SprayCan", icon: SprayCan },
-  { id: "Brush", icon: Brush },
-  { id: "Wind", icon: Wind },
-  { id: "Sun", icon: Sun },
-  { id: "Shield", icon: Shield },
-  { id: "Crown", icon: Crown },
-  { id: "Diamond", icon: Diamond },
-  { id: "Star", icon: Star },
-  { id: "Flame", icon: Flame },
-  { id: "Award", icon: Award },
-  { id: "BadgeCheck", icon: BadgeCheck },
-  { id: "CheckCircle", icon: CheckCircle },
-  { id: "Clock3", icon: Clock3 },
-  { id: "Timer", icon: Timer },
-  { id: "Fuel", icon: Fuel },
-  { id: "Gauge", icon: Gauge },
-  { id: "Navigation", icon: Navigation },
-  { id: "Smartphone", icon: Smartphone },
-  { id: "Trophy", icon: Trophy },
-  { id: "Activity", icon: Activity },
-  { id: "Heart", icon: Heart },
-  { id: "Palette", icon: Palette },
-  { id: "Droplet", icon: Droplet },
-  { id: "GlassWater", icon: GlassWater },
-  { id: "CloudRain", icon: CloudRain },
-];
+const ICON_MAP: any = { Waves, Sparkles, Car, ShieldCheck, Paintbrush, Wrench, Droplets, Zap, Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, Heart, Palette, Droplet, GlassWater, CloudRain };
+
+const ICON_OPTIONS = Object.keys(ICON_MAP).map(key => ({
+  id: key,
+  icon: ICON_MAP[key],
+  label: key
+}));
+
+function InlineFacilityInput({ serviceId, currentItems, onSave }: { serviceId: string; currentItems: string[]; onSave: () => void }) {
+  const [val, setVal] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const add = async () => {
+    if (!val.trim()) return;
+    setSaving(true);
+    await updateService(serviceId, { includedItems: [...currentItems, val.trim()] });
+    setVal('');
+    setSaving(false);
+    onSave();
+  };
+  return (
+    <div className="flex gap-2 mt-1">
+      <input
+        type="text" placeholder="Add facility..." value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), add())}
+        className="flex-grow bg-black border border-white/8 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:border-[#F59E0B] text-white placeholder:text-white/20"
+      />
+      <button onClick={add} disabled={saving||!val.trim()} className="px-4 py-2.5 bg-[#F59E0B] text-black rounded-xl font-black uppercase text-[9px] tracking-widest flex items-center gap-1.5 disabled:opacity-40 hover:scale-105 active:scale-95 transition-all">
+        {saving ? <Loader2 size={12} className="animate-spin"/> : <><Plus size={12} strokeWidth={3}/> Add</>}
+      </button>
+    </div>
+  );
+}
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [currentFormStep, setCurrentFormStep] = useState(1);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<Service>({
     name: "",
     price: "",
     duration: "",
-    category: "Full Service",
+    category: "Exterior Wash",
     description: "",
     image: "",
-    icon: "Wrench",
-    active: true
+    icon: "Waves",
+    active: true,
+    includedItems: []
   });
+
+  const [newCatData, setNewCatData] = useState({ name: "", icon: "Waves" });
+  const [newItem, setNewItem] = useState("");
+  const [selectedAdminCategory, setSelectedAdminCategory] = useState<string>('');
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
 
   const isMountedRef = useRef(true);
 
   useEffect(() => {
     isMountedRef.current = true;
-    fetchServices();
+    initData();
     return () => { isMountedRef.current = false; };
   }, []);
 
-  const fetchServices = async () => {
+  // Set first category as default when categories load
+  React.useEffect(() => {
+    if (categories.length > 0 && !selectedAdminCategory) {
+      setSelectedAdminCategory(categories[0].name);
+    }
+  }, [categories]);
+
+  const initData = async () => {
     try {
-      const data = await getServices();
-      if (isMountedRef.current) setServices(data);
+      const [srvData, catData] = await Promise.all([getServices(), getCategories()]);
+      if (isMountedRef.current) {
+        setServices(srvData);
+        setCategories(catData);
+      }
     } catch (error) {
-      console.error("Error fetching services:", error);
+      console.error("Error fetching data:", error);
     } finally {
       if (isMountedRef.current) setLoading(false);
     }
   };
 
+  const handleSyncData = async () => {
+    if (!confirm("This will synchronize all existing services with the current category engine. Proceed?")) return;
+    setIsSubmitting(true);
+    try {
+      const allServices = await getServices();
+      for (const s of allServices) {
+        let newCat = s.category;
+        const currentCat = (s.category || "").toLowerCase();
+        
+        if (currentCat.includes("wash") || currentCat.includes("exterior")) newCat = "Exterior Wash";
+        else if (currentCat.includes("interior") || currentCat.includes("cleaning")) newCat = "Interior Cleaning";
+        else if (currentCat.includes("detailing") || currentCat.includes("full")) newCat = "Full Detailing";
+        else if (currentCat.includes("ceramic") || currentCat.includes("coating")) newCat = "Ceramic Coating";
+        else if (currentCat.includes("paint") || currentCat.includes("protection")) newCat = "Paint Protection";
+        else if (currentCat.includes("enhancement") || currentCat.includes("add")) newCat = "Enhancements";
+        
+        if (newCat !== s.category) {
+          await updateService(s.id!, { category: newCat });
+        }
+      }
+      initData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleAddNew = () => {
     setEditingId(null);
+    setCurrentFormStep(1);
     setFormData({
-      name: "", price: "", duration: "", category: "Full Service", description: "", image: "", icon: "Wrench", active: true
+      name: "", price: "", duration: "", category: selectedAdminCategory || categories[0]?.name || "Exterior Wash", description: "", image: "", icon: "Waves", active: true, includedItems: []
     });
-    setIsModalOpen(true);
+    setIsPanelOpen(true);
   };
 
   const handleEdit = (service: Service) => {
     setEditingId(service.id!);
-    setFormData(service);
-    setIsModalOpen(true);
+    setCurrentFormStep(1);
+    setFormData({
+      ...service,
+      category: service.category || categories[0]?.name || "Exterior Wash",
+      includedItems: service.includedItems || []
+    });
+    setIsPanelOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditCategory = (cat: Category) => {
+    setEditingCategoryId(cat.id || null);
+    setNewCatData({ name: cat.name, icon: cat.icon });
+    setIsAddingCategory(true);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!newCatData.name) return;
+    setIsSubmitting(true);
+    try {
+      if (editingCategoryId) {
+        await updateCategory(editingCategoryId, {
+          name: newCatData.name,
+          icon: newCatData.icon
+        });
+      } else {
+        await addCategory({
+          name: newCatData.name,
+          icon: newCatData.icon,
+          order: categories.length + 1
+        });
+      }
+      const updatedCats = await getCategories();
+      setCategories(updatedCats);
+      setFormData({ ...formData, category: newCatData.name });
+      setIsAddingCategory(false);
+      setEditingCategoryId(null);
+      setNewCatData({ name: "", icon: "Waves" });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       if (editingId) {
@@ -152,8 +243,8 @@ export default function ServicesPage() {
       } else {
         await addService(formData);
       }
-      setIsModalOpen(false);
-      fetchServices();
+      setIsPanelOpen(false);
+      initData();
     } catch (error) {
       console.error("Error saving service:", error);
     } finally {
@@ -165,322 +256,360 @@ export default function ServicesPage() {
     if (confirm("Are you sure you want to delete this service?")) {
       try {
         await deleteService(id);
-        fetchServices();
+        initData();
       } catch (error) {
         console.error("Error deleting service:", error);
       }
     }
   };
 
-  const handleSeed = async () => {
-    if (!confirm("This will import the 12 default services into the database. Proceed?")) return;
-    setIsSubmitting(true);
-    const defaults = [
-      { name: "General Service", icon: "Wrench", image: "", category: "general", price: "AED 150", duration: "1 Hour", description: "Standard service", active: true },
-      { name: "Oil Change", icon: "Droplets", image: "", category: "general", price: "AED 100", duration: "30 Min", description: "Oil and filter change", active: true },
-      { name: "Battery Replacement", icon: "Zap", image: "", category: "general", price: "AED 350", duration: "30 Min", description: "New battery installation", active: true },
-      { name: "Brake Service", icon: "Disc", image: "", category: "general", price: "AED 250", duration: "1.5 Hours", description: "Brake pad replacement", active: true },
-      { name: "AC Check & Gas", icon: "Snowflake", image: "", category: "general", price: "AED 120", duration: "45 Min", description: "AC gas refill and check", active: true },
-      { name: "Premium Wash", icon: "Waves", image: "", category: "general", price: "AED 80", duration: "45 Min", description: "Deep cleaning wash", active: true },
-      { name: "Engine Tuning", icon: "Settings", image: "", category: "general", price: "AED 300", duration: "2 Hours", description: "Complete engine tune-up", active: true },
-      { name: "Suspension", icon: "Wrench", image: "", category: "general", price: "AED 400", duration: "3 Hours", description: "Suspension check and fix", active: true },
-      { name: "Alignment Checking", icon: "Wrench", image: "", category: "general", price: "AED 100", duration: "30 Min", description: "Wheel alignment", active: true },
-      { name: "Paint & Body", icon: "ShieldCheck", image: "", category: "general", price: "Contact Us", duration: "Varies", description: "Bodywork and paint", active: true },
-      { name: "Inspections", icon: "Wrench", image: "", category: "general", price: "AED 150", duration: "1 Hour", description: "Full car inspection", active: true },
-      { name: "Ceramic Coating", icon: "ShieldCheck", image: "", category: "detailing", price: "AED 1200", duration: "1 Day", description: "Premium ceramic coating", active: true },
-    ];
-    try {
-      for (const service of defaults) {
-        await addService(service);
-      }
-      fetchServices();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const addIncludedItem = () => {
+    if (!newItem.trim()) return;
+    setFormData({
+      ...formData,
+      includedItems: [...(formData.includedItems || []), newItem.trim()]
+    });
+    setNewItem("");
+  };
+
+  const removeIncludedItem = (index: number) => {
+    setFormData({
+      ...formData,
+      includedItems: formData.includedItems?.filter((_, i) => i !== index)
+    });
   };
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Services</h1>
-          <p className="text-white/40 text-sm font-medium">Configure your washing plans and detailing packages.</p>
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#F59E0B]/30 font-sans">
+      <div className="p-8 max-w-[1600px] mx-auto space-y-12">
+        
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shrink-0">
+                <LayoutGrid size={24} strokeWidth={3} />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter">Services Dashboard</h1>
+            </div>
+            <p className="text-white/40 text-sm font-medium max-w-xl">
+              Manage your premium detailing Treatments and Categories.
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+             <button onClick={handleSyncData} disabled={isSubmitting} className="flex-1 sm:flex-none bg-white/5 text-white/40 hover:bg-white/10 hover:text-white px-5 sm:px-6 py-4 sm:py-5 rounded-2xl font-black uppercase italic tracking-widest text-[9px] sm:text-[10px] transition-all flex items-center justify-center gap-3 border border-white/5">
+               {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : <History size={14} />}
+               <span>Sync Engine</span>
+             </button>
+             <button onClick={handleAddNew} className="flex-1 sm:flex-none bg-[#F59E0B] text-black px-8 sm:px-10 py-4 sm:py-5 rounded-2xl font-black uppercase italic tracking-widest text-[11px] sm:text-xs flex items-center justify-center gap-3 sm:gap-4 hover:scale-[1.03] active:scale-95 transition-all shadow-2xl shadow-[#F59E0B]/20">
+               <Plus size={20} strokeWidth={4} />
+               <span>New Package</span>
+             </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleSeed}
-            disabled={isSubmitting}
-            className="bg-white/10 text-white px-4 py-3 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors"
-          >
-            Import Default Services
-          </button>
-          <button 
-            onClick={handleAddNew}
-            className="bg-brand-orange text-black px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white transition-colors"
-          >
-            <Plus size={18} />
-            <span>Add Service</span>
-          </button>
-        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-48 gap-8">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-[#F59E0B]/10 border-t-[#F59E0B] rounded-full animate-spin" />
+              <Zap className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#F59E0B] animate-pulse" size={28} />
+            </div>
+            <p className="text-white/20 font-black uppercase tracking-[0.4em] text-xs">Accessing Catalog...</p>
+          </div>
+        ) : (
+          <div className="space-y-10">
+
+            {/* ── Category Icon Row ── */}
+            <div className="overflow-x-auto no-scrollbar">
+              <div className="flex gap-8 min-w-max pb-4 pt-5 overflow-visible">
+                {categories.map(cat => {
+                  const IC = ICON_MAP[cat.icon] || Package;
+                  const isActive = selectedAdminCategory === cat.name;
+                  const count = services.filter(s => (s.category||'').toLowerCase().trim() === (cat.name||'').toLowerCase().trim()).length;
+                  return (
+                    <button key={cat.id} onClick={() => setSelectedAdminCategory(cat.name)} className="flex flex-col items-center gap-3 group relative">
+                      <div className={`w-20 h-20 rounded-3xl flex items-center justify-center transition-all duration-300 relative overflow-visible ${isActive ? 'bg-[#F59E0B] text-black shadow-[0_12px_30px_rgba(245,158,11,0.3)] scale-110' : 'bg-white/5 border border-white/5 text-white/30 hover:border-white/15 hover:text-white/60'}`}>
+                        <IC size={30} />
+                        <span className={`absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full text-[8px] font-black flex items-center justify-center shadow-lg z-10 ${isActive ? 'bg-black text-[#F59E0B]' : 'bg-[#1a1a1a] border border-white/10 text-white/40'}`}>{count}</span>
+                      </div>
+                      <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${isActive ? 'text-[#F59E0B]' : 'text-white/20'}`}>{cat.name}</span>
+                    </button>
+                  );
+                })}
+                {/* Add category */}
+                <button onClick={() => { setEditingCategoryId(null); setNewCatData({name:'',icon:'Waves'}); setIsAddingCategory(true); setIsPanelOpen(true); }} className="flex flex-col items-center gap-3">
+                  <div className="w-20 h-20 rounded-3xl border-2 border-dashed border-white/10 flex items-center justify-center text-white/15 hover:border-[#F59E0B]/40 hover:text-[#F59E0B]/40 transition-all">
+                    <Plus size={24} />
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-white/10">New Category</span>
+                </button>
+              </div>
+            </div>
+
+
+            {/* ── Services under selected category ── */}
+            {(() => {
+              const catServices = services.filter(s => (s.category||'').toLowerCase().trim() === (selectedAdminCategory||'').toLowerCase().trim());
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-xl font-black italic uppercase tracking-tighter text-white">{selectedAdminCategory}</h2>
+                      <span className="px-3 py-1 bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-full text-[9px] font-black text-[#F59E0B] uppercase tracking-widest">{catServices.length} services</span>
+                    </div>
+                    <button onClick={handleAddNew} className="flex items-center gap-2 bg-[#F59E0B] text-black px-5 py-3 rounded-xl font-black uppercase italic tracking-widest text-[10px] hover:scale-[1.03] active:scale-95 transition-all shadow-lg shadow-[#F59E0B]/20">
+                      <Plus size={16} strokeWidth={4}/> Add Service
+                    </button>
+                  </div>
+
+                  {catServices.length === 0 ? (
+                    <div className="text-center py-20 border border-dashed border-white/8 rounded-3xl">
+                      <Package size={36} className="text-white/10 mx-auto mb-4"/>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-white/15">No services in this category</p>
+                      <button onClick={handleAddNew} className="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#F59E0B]/60 hover:text-[#F59E0B] transition-colors"><Plus size={14}/> Add first service</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {catServices.map((service, idx) => {
+                        const IC = ICON_MAP[service.icon] || Package;
+                        const facilities = service.includedItems || [];
+                        const isExpanded = expandedServiceId === service.id;
+                        return (
+                          <motion.div key={service.id} initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:idx*0.05}} className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-all">
+                            {/* Service row */}
+                            <div className="flex items-center gap-5 px-5 py-4">
+                              {/* Icon */}
+                              <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/15 flex items-center justify-center text-[#F59E0B] shrink-0">
+                                <IC size={22}/>
+                              </div>
+                              {/* Info */}
+                              <div className="flex-grow min-w-0 flex flex-col justify-center gap-0.5">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-sm font-black italic uppercase tracking-tight text-white leading-none">{service.name}</h3>
+                                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase leading-none ${service.active ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/20 border border-white/5'}`}>{service.active ? 'Live' : 'Draft'}</span>
+                                </div>
+                                {service.description && <p className="text-[11px] text-white/25 truncate leading-none">{service.description}</p>}
+                                <div className="flex items-center gap-3 mt-0.5">
+                                  <span className="text-sm font-black text-white italic leading-none">{service.price}</span>
+                                  {service.duration && <span className="text-[10px] text-white/20 flex items-center gap-1 leading-none"><Clock size={9}/> {service.duration}</span>}
+                                  <span className="text-[10px] text-white/15 leading-none">{facilities.length} {facilities.length === 1 ? 'facility' : 'facilities'}</span>
+                                </div>
+                              </div>
+                              {/* Actions */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={() => setExpandedServiceId(isExpanded ? null : (service.id||null))} title="Manage facilities" className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isExpanded ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/20' : 'bg-white/5 text-white/30 hover:bg-white/10 hover:text-white'}`}>
+                                  <ChevronRight size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}/>
+                                </button>
+                                <button onClick={() => handleEdit(service)} title="Edit" className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/30 hover:bg-white hover:text-black transition-all">
+                                  <Edit2 size={14}/>
+                                </button>
+                                <button onClick={() => service.id && handleDelete(service.id)} title="Delete" className="w-9 h-9 rounded-xl bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500/30 hover:bg-red-500 hover:text-white transition-all">
+                                  <Trash2 size={14}/>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Expanded: facilities */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:0.25}} className="overflow-hidden">
+                                  <div className="px-4 pb-4 border-t border-white/5 pt-4 space-y-3">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#F59E0B]">Included Facilities</p>
+                                    {/* Existing facilities */}
+                                    <div className="flex flex-wrap gap-2">
+                                      {facilities.map((item, i) => (
+                                        <div key={i} className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1.5 group/fac">
+                                          <Check size={10} strokeWidth={4} className="text-[#F59E0B]/60"/>
+                                          <span className="text-[11px] font-semibold text-white/50">{item}</span>
+                                          <button onClick={async () => {
+                                            const updated = facilities.filter((_,fi) => fi !== i);
+                                            await updateService(service.id!, { includedItems: updated });
+                                            initData();
+                                          }} className="w-4 h-4 rounded-full flex items-center justify-center text-white/10 hover:bg-red-500/20 hover:text-red-400 opacity-0 group-hover/fac:opacity-100 transition-all ml-1">
+                                            <X size={9}/>
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {/* Inline add facility */}
+                                    <InlineFacilityInput serviceId={service.id!} currentItems={facilities} onSave={initData}/>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="animate-spin text-brand-orange" size={32} />
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-          {services.map((service, idx) => (
-            <motion.div
-              key={service.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden group hover:border-white/10 transition-colors relative flex flex-col h-full shadow-2xl"
-            >
-              {/* Icon/Image Preview */}
-              <div className="h-24 sm:h-40 bg-white/5 relative flex items-center justify-center">
-                <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-brand-orange/20 to-transparent" />
-                <div className="relative z-10 scale-[1.2] sm:scale-[2.5]">
-                  {(() => {
-                    const iconSource = (service.icon || service.name).toLowerCase();
-                    const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
-                    if (emojiRegex.test(service.icon || "")) {
-                      return <span className="text-xl">{service.icon}</span>;
-                    }
-                    
-                    const IconMap: any = { Droplets, Zap, Snowflake, Waves, Wrench, Settings, Disc, Car, ShieldCheck, Clock };
-                    const lucideMatch = Object.keys(IconMap).find(k => k.toLowerCase() === iconSource);
-                    if (lucideMatch) {
-                      const IconComponent = IconMap[lucideMatch];
-                      return <IconComponent className="text-brand-orange" />;
-                    }
-
-                    if (iconSource.includes("wash") || iconSource.includes("clean")) return <Waves className="text-blue-400" />;
-                    if (iconSource.includes("oil")) return <Droplets className="text-red-400" />;
-                    if (iconSource.includes("battery")) return <Zap className="text-yellow-400" />;
-                    
-                    return <Wrench className="text-white/20" />;
-                  })()}
-                </div>
-                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex items-center gap-2">
-                  <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[8px] sm:text-[10px] font-black uppercase tracking-wider ${service.active ? 'bg-emerald-500/20 text-emerald-500' : 'bg-white/10 text-white/30'}`}>
-                    {service.active ? "Active" : "Draft"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 sm:p-6 flex-1 flex flex-col space-y-3 sm:space-y-4">
-                <div>
-                  <h3 className="text-sm sm:text-xl font-black text-white italic uppercase tracking-tight mb-0.5 sm:mb-1 line-clamp-1">{service.name}</h3>
-                  <p className="text-white/40 text-[9px] sm:text-xs leading-tight sm:leading-relaxed line-clamp-1 sm:line-clamp-2 font-medium">{service.description}</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-white/5 mt-auto">
-                  <div>
-                    <p className="text-[8px] sm:text-[10px] font-black text-white/20 uppercase tracking-widest mb-0.5 sm:mb-1">Price</p>
-                    <p className="text-sm sm:text-lg font-black text-brand-orange tracking-tighter leading-none">{service.price}</p>
-                  </div>
-                  <div className="hidden sm:block">
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Duration</p>
-                    <p className="text-lg font-black text-white tracking-tighter leading-none">{service.duration}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 pt-1 sm:pt-2">
-                  <button 
-                    onClick={() => handleEdit(service)}
-                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[9px] sm:text-xs font-black uppercase tracking-widest transition-all"
-                  >
-                    <Edit2 size={12} className="sm:w-3.5 sm:h-3.5" /> Edit
-                  </button>
-                  <button 
-                    onClick={() => service.id && handleDelete(service.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 text-[9px] sm:text-xs font-black uppercase tracking-widest transition-all"
-                  >
-                    <Trash2 size={12} className="sm:w-3.5 sm:h-3.5" /> Delete
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-
-          {/* Add New Placeholder Card */}
-          <motion.button 
-            onClick={handleAddNew}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-[#050505] border-2 border-dashed border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center gap-3 sm:gap-4 hover:border-brand-orange/20 hover:bg-brand-orange/[0.02] transition-all group min-h-[200px] sm:min-h-[300px]"
-          >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Plus size={20} className="text-white/20 group-hover:text-brand-orange" />
-            </div>
-            <div className="text-center">
-              <p className="font-black text-[10px] sm:text-sm text-white/40 group-hover:text-white uppercase tracking-widest">New Service</p>
-              <p className="hidden sm:block text-[10px] text-white/20 group-hover:text-white/40 mt-1">Add a new washing plan</p>
-            </div>
-          </motion.button>
-        </div>
-      )}
-
-      {/* Add Service Modal */}
+      {/* Slide-over Wizard — 2 Phase */}
       <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
-            >
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-6 right-6 p-2 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-2">Add New Service</h2>
-                <p className="text-white/40 text-sm">Fill in the details below to add a new detailing package.</p>
+        {isPanelOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPanelOpen(false)} className="fixed inset-0 z-[199] bg-black/95 backdrop-blur-xl" />
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 35, stiffness: 350 }} className="fixed top-0 right-0 h-full w-full max-w-2xl bg-[#0A0A0A] border-l border-white/10 z-[200] shadow-2xl flex flex-col">
+              
+              <div className="p-10 border-b border-white/5 flex items-center justify-between bg-[#0F0F0F]">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[#F59E0B]">
+                    {editingId ? `Edit Mode: ${formData.name || 'Service Detail'}` : `Phase 0${currentFormStep} Configuration`}
+                  </span>
+                  <h2 className="text-3xl font-black italic uppercase tracking-tighter">
+                    {editingId ? "Update Treatment" : "Initialize Package"}
+                  </h2>
+                </div>
+                <button onClick={() => setIsPanelOpen(false)} className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-white/30 hover:bg-white/10 hover:text-white transition-all"><X size={24} /></button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Service Name</label>
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="e.g. Full Detailing"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Category</label>
-                    <select 
-                      value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
-                      className="w-full bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all appearance-none text-white"
-                    >
-                      <option>Full Service</option>
-                      <option>Exterior</option>
-                      <option>Interior</option>
-                      <option>Protection</option>
-                      <option>Add-ons</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Price (e.g. AED 450)</label>
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="AED 0"
-                      value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
-                      className="w-full bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Duration (e.g. 2 hours)</label>
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="30 min"
-                      value={formData.duration}
-                      onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                      className="w-full bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Select Icon</label>
-                  
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {ICON_OPTIONS.map((opt) => {
-                      const IconComp = opt.icon;
-                      const isSelected = formData.icon === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, icon: opt.id })}
-                          className={`aspect-square rounded-xl border flex items-center justify-center transition-all ${
-                            isSelected 
-                              ? "bg-brand-orange border-brand-orange text-black scale-105 shadow-lg shadow-brand-orange/20" 
-                              : "bg-white/5 border-white/5 text-white/40 hover:border-white/10 hover:text-white"
-                          }`}
-                        >
-                          <IconComp size={20} />
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="pt-2">
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Custom Keyword or Emoji</label>
-                    <div className="mt-2 flex gap-3">
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 🔥 or Engine"
-                        value={formData.icon}
-                        onChange={(e) => setFormData({...formData, icon: e.target.value})}
-                        className="flex-1 bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                      />
-                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center flex-shrink-0">
-                         {(() => {
-                            const iconSource = (formData.icon || "").toLowerCase();
-                            const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
-                            if (emojiRegex.test(formData.icon || "")) return <span className="text-xl">{formData.icon}</span>;
-                            const IconMap: any = { Droplets, Zap, Snowflake, Waves, Wrench, Settings, Disc, Car, ShieldCheck, Clock, Sparkles, Package };
-                            const lucideMatch = Object.keys(IconMap).find(k => k.toLowerCase() === iconSource);
-                            const IconComp = lucideMatch ? IconMap[lucideMatch] : Wrench;
-                            return <IconComp size={20} className={lucideMatch ? "text-brand-orange" : "text-white/20"} />;
-                          })()}
+              
+              {/* Phase tabs */}
+              <div className="flex bg-[#0F0F0F]/50 border-b border-white/5">
+                {[{n:1,label:'Service Details'},{n:2,label:'Facilities'}].map(({n,label})=>(
+                  <button key={n} onClick={()=>n<currentFormStep&&setCurrentFormStep(n)}
+                    className={`flex-1 py-5 text-[9px] font-black uppercase tracking-[0.3em] transition-all relative flex items-center justify-center gap-2 ${currentFormStep===n?'text-[#F59E0B]':n<currentFormStep?'text-white/40 cursor-pointer':'text-white/10 cursor-not-allowed'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border ${currentFormStep===n?'bg-[#F59E0B] border-[#F59E0B] text-black':n<currentFormStep?'bg-white/10 border-white/10 text-white/40':'border-white/10 text-white/10'}`}>{n}</span>
+                    {label}
+                    {currentFormStep===n&&<motion.div layoutId="step-indicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#F59E0B]"/>}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-grow overflow-y-auto p-10 custom-scrollbar">
+                <AnimatePresence mode="wait">
+                  {currentFormStep===1&&(
+                    <motion.div key="p1" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Service Name</label>
+                        <input type="text" placeholder="e.g. Premium Full Detail" value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:border-[#F59E0B]"/>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">Description</label>
-                  <textarea 
-                    required
-                    rows={4}
-                    placeholder="Describe the service details..."
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full bg-[#050505] border border-white/5 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all resize-none"
-                  />
-                </div>
-
-                <button 
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-brand-orange text-black py-4 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : "Add Service Package"}
-                </button>
-              </form>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Description</label>
+                        <textarea rows={3} placeholder="Short summary..." value={formData.description} onChange={e=>setFormData({...formData,description:e.target.value})} className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:border-[#F59E0B] resize-none italic"/>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Price</label>
+                          <input type="text" placeholder="450" value={formData.price} onChange={e=>setFormData({...formData,price:e.target.value})} className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-lg font-black italic focus:outline-none focus:border-[#F59E0B]"/>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Duration</label>
+                          <input type="text" placeholder="2-3 Hours" value={formData.duration} onChange={e=>setFormData({...formData,duration:e.target.value})} className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-lg font-black italic focus:outline-none focus:border-[#F59E0B]"/>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Category</label>
+                          <button onClick={()=>{setEditingCategoryId(null);setNewCatData({name:'',icon:'Waves'});setIsAddingCategory(true);}} className="flex items-center gap-1 text-[9px] font-black uppercase text-white/30 hover:text-[#F59E0B] transition-colors"><PlusCircle size={12}/> New</button>
+                        </div>
+                        {isAddingCategory?(
+                          <div className="p-5 bg-[#111] rounded-2xl border border-[#F59E0B]/30 space-y-4">
+                            <input type="text" placeholder="Category name" value={newCatData.name} onChange={e=>setNewCatData({...newCatData,name:e.target.value})} className="w-full bg-black border border-white/5 rounded-xl px-5 py-3 text-sm font-bold focus:outline-none focus:border-[#F59E0B]"/>
+                            <div className="grid grid-cols-7 gap-2">
+                              {ICON_OPTIONS.map(opt=>(<button key={opt.id} onClick={()=>setNewCatData({...newCatData,icon:opt.id})} className={`aspect-square rounded-xl border flex items-center justify-center ${newCatData.icon===opt.id?'bg-[#F59E0B] text-black border-[#F59E0B]':'bg-white/5 border-white/5 text-white/20'}`}><opt.icon size={14}/></button>))}
+                            </div>
+                            <div className="flex gap-3">
+                              <button onClick={handleSaveCategory} disabled={isSubmitting} className="flex-grow bg-[#F59E0B] text-black py-3 rounded-xl font-black uppercase italic text-[9px] tracking-widest">{editingCategoryId?'Update':'Create'}</button>
+                              <button onClick={()=>{setIsAddingCategory(false);setEditingCategoryId(null);}} className="px-5 bg-white/5 text-white/40 rounded-xl font-black uppercase italic text-[9px]">Cancel</button>
+                            </div>
+                          </div>
+                        ):(
+                          <div className="grid grid-cols-3 gap-3">
+                            {categories.map(cat=>{
+                              const IC=ICON_MAP[cat.icon]||Package;
+                              const on=(formData.category||'').toLowerCase().trim()===(cat.name||'').toLowerCase().trim();
+                              return(
+                                <div key={cat.id} className="relative group/cat">
+                                  <button onClick={()=>setFormData({...formData,category:cat.name})} className={`w-full p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${on?'bg-[#F59E0B] border-[#F59E0B] text-black shadow-xl':'bg-[#111] border-white/5 text-white/30 hover:border-white/15'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${on?'bg-black/10 text-black':'bg-white/5 text-white/30'}`}><IC size={20}/></div>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-center leading-tight">{cat.name}</span>
+                                    {on&&<Check size={10} strokeWidth={4} className="absolute top-2 right-2"/>}
+                                  </button>
+                                  <button onClick={e=>{e.stopPropagation();handleEditCategory(cat);}} className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/30 opacity-0 group-hover/cat:opacity-100 flex items-center justify-center text-white/40 hover:text-white z-20"><Settings2 size={11}/></button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Service Icon</label>
+                        <div className="grid grid-cols-7 gap-2 max-h-44 overflow-y-auto custom-scrollbar">
+                          {ICON_OPTIONS.map(opt=>(<button key={opt.id} onClick={()=>setFormData({...formData,icon:opt.id})} className={`aspect-square rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${formData.icon===opt.id?'bg-[#F59E0B] text-black border-[#F59E0B] shadow-lg':'bg-white/5 border-white/5 text-white/25 hover:text-white/60'}`}><opt.icon size={16}/><span className="text-[6px] font-black uppercase leading-none opacity-60">{opt.label}</span></button>))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-5 bg-[#F59E0B]/5 border border-[#F59E0B]/10 rounded-2xl">
+                        <div><p className="text-xs font-black uppercase text-white">Publish Service</p><p className="text-[10px] text-white/20 mt-0.5">Visible in booking engine</p></div>
+                        <button onClick={()=>setFormData({...formData,active:!formData.active})} className={`w-14 h-8 rounded-full relative transition-all duration-300 ${formData.active?'bg-[#F59E0B]':'bg-white/10'}`}><motion.div animate={{x:formData.active?24:3}} className="absolute top-1 w-6 h-6 rounded-full bg-white shadow"/></button>
+                      </div>
+                    </motion.div>
+                  )}
+                  {currentFormStep===2&&(
+                    <motion.div key="p2" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-6">
+                      <div className="flex items-center gap-4 p-4 bg-[#111] rounded-2xl border border-white/5">
+                        <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center text-[#F59E0B]">
+                          {(()=>{const IC=ICON_MAP[formData.icon]||Package;return<IC size={22}/>;})()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black italic uppercase tracking-tight text-white">{formData.name||'Service Name'}</p>
+                          <p className="text-[10px] text-white/30">{formData.category} · {formData.price} · {formData.duration}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#F59E0B]">Service Facilities</h3>
+                        <p className="text-[10px] text-white/20 mt-1">Add what is included. Press Enter or click Add.</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <input type="text" placeholder="e.g. Full exterior hand wash" value={newItem} onChange={e=>setNewItem(e.target.value)} onKeyDown={e=>e.key==='Enter'&&(e.preventDefault(),addIncludedItem())} className="flex-grow bg-[#111] border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:border-[#F59E0B]"/>
+                        <button onClick={addIncludedItem} className="px-6 bg-[#F59E0B] text-black rounded-2xl font-black uppercase text-[9px] tracking-widest flex items-center gap-2 hover:scale-[1.03] active:scale-95 shadow-lg"><Plus size={15} strokeWidth={3}/> Add</button>
+                      </div>
+                      {formData.includedItems&&formData.includedItems.length>0?(
+                        <div className="space-y-3">
+                          {formData.includedItems.map((item,i)=>(
+                            <motion.div key={i} initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} transition={{delay:i*0.04}} className="flex items-center justify-between p-4 bg-[#111] rounded-2xl border border-white/5 group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-6 h-6 rounded-full bg-[#F59E0B]/15 flex items-center justify-center text-[#F59E0B] shrink-0"><Check size={12} strokeWidth={4}/></div>
+                                <span className="text-sm font-semibold text-white/70 italic">{item}</span>
+                              </div>
+                              <button onClick={()=>removeIncludedItem(i)} className="w-8 h-8 rounded-full flex items-center justify-center text-white/10 hover:bg-red-500/15 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ):(
+                        <div className="text-center py-12 border border-dashed border-white/8 rounded-2xl">
+                          <List size={28} className="text-white/10 mx-auto mb-3"/>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/15">No facilities added yet</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="p-8 border-t border-white/5 bg-[#0F0F0F] flex gap-4">
+                {currentFormStep===1?(
+                  <button onClick={()=>setCurrentFormStep(2)} disabled={!formData.name||!formData.price} className="flex-grow bg-white text-black py-5 rounded-2xl font-black uppercase italic tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl disabled:opacity-30 disabled:cursor-not-allowed">
+                    Next — Add Facilities <ChevronRight size={18} strokeWidth={4}/>
+                  </button>
+                ):(
+                  <>
+                    <button onClick={()=>setCurrentFormStep(1)} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/30 hover:bg-white/10 hover:text-white transition-all">
+                      <ChevronRight size={20} className="rotate-180"/>
+                    </button>
+                    <button onClick={handleSubmit} disabled={isSubmitting} className="flex-grow bg-[#F59E0B] text-black py-5 rounded-2xl font-black uppercase italic tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-[#F59E0B]/20">
+                      {isSubmitting?<Loader2 className="animate-spin" size={20}/>:<>{editingId?'Save Changes':'Deploy Service'}</>}
+                    </button>
+                  </>
+                )}
+              </div>
             </motion.div>
-          </div>
+          </>
         )}
       </AnimatePresence>
     </div>

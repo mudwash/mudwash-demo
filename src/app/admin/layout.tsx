@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { 
-  LayoutDashboard, 
-  CalendarCheck, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  X, 
-  Bell, 
+import {
+  LayoutDashboard,
+  CalendarCheck,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Bell,
   Search,
   Wrench,
   User,
@@ -85,7 +85,7 @@ export default function AdminLayout({
             <span className="font-bold text-black text-xl">M</span>
           </div>
           {(isSidebarOpen || isMobileMenuOpen) && (
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="font-bold text-xl tracking-tight"
@@ -94,7 +94,7 @@ export default function AdminLayout({
             </motion.span>
           )}
         </Link>
-        <button 
+        <button
           onClick={() => isMobileMenuOpen ? setIsMobileMenuOpen(false) : setIsSidebarOpen(false)}
           className="p-1 hover:bg-white/5 rounded-md transition-colors lg:hidden"
         >
@@ -110,11 +110,10 @@ export default function AdminLayout({
             <Link
               key={link.name}
               href={link.href}
-              className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all group ${
-                isActive 
-                  ? "bg-brand-orange text-black" 
+              className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all group ${isActive
+                  ? "bg-brand-orange text-black"
                   : "text-white/50 hover:bg-white/5 hover:text-white"
-              }`}
+                }`}
             >
               <Icon size={20} className={isActive ? "text-black" : "group-hover:text-brand-orange"} />
               {(isSidebarOpen || isMobileMenuOpen) && (
@@ -138,7 +137,7 @@ export default function AdminLayout({
       </nav>
 
       <div className="p-4 border-t border-white/5">
-        <button 
+        <button
           onClick={handleLogout}
           className="flex items-center gap-4 px-4 py-3 w-full text-white/50 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-all"
         >
@@ -176,10 +175,9 @@ export default function AdminLayout({
         </motion.aside>
 
         {/* Desktop Sidebar */}
-        <aside 
-          className={`${
-            isSidebarOpen ? "w-64" : "w-20"
-          } transition-all duration-300 bg-[#0A0A0A] border-r border-white/5 hidden lg:flex flex-col z-50`}
+        <aside
+          className={`${isSidebarOpen ? "w-64" : "w-20"
+            } transition-all duration-300 bg-[#0A0A0A] border-r border-white/5 hidden lg:flex flex-col z-50`}
         >
           <SidebarContent />
         </aside>
@@ -189,13 +187,13 @@ export default function AdminLayout({
           {/* Topbar */}
           <header className="h-20 bg-[#0A0A0A]/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-40">
             <div className="flex items-center gap-2 sm:gap-4">
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="p-2 hover:bg-white/5 rounded-lg transition-colors lg:hidden"
               >
                 <Menu size={20} className="text-white/50" />
               </button>
-              <button 
+              <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 className="p-2 hover:bg-white/5 rounded-lg transition-colors hidden lg:block"
               >
@@ -203,9 +201,9 @@ export default function AdminLayout({
               </button>
               <div className="relative group hidden sm:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-orange transition-colors" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
+                <input
+                  type="text"
+                  placeholder="Search..."
                   className="bg-[#111111] border border-white/5 rounded-full py-2 pl-10 pr-4 text-sm w-40 md:w-64 focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/20 transition-all"
                 />
               </div>
@@ -213,7 +211,7 @@ export default function AdminLayout({
 
             <div className="flex items-center gap-2 sm:gap-6">
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                   className="relative p-2 text-white/50 hover:text-white transition-colors"
                 >
@@ -241,8 +239,8 @@ export default function AdminLayout({
                       >
                         <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                           <h3 className="text-sm font-black uppercase tracking-widest italic text-white/80">Activity</h3>
-                          <button 
-                            onClick={() => setNotifications(notifications.map(n => ({...n, read: true})))}
+                          <button
+                            onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
                             className="text-[9px] font-black uppercase tracking-widest text-brand-orange hover:text-white transition-colors"
                           >
                             Mark all read

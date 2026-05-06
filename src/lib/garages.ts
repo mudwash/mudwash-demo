@@ -1,10 +1,10 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  updateDoc, 
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
   deleteDoc,
-  doc, 
+  doc,
   query,
   serverTimestamp
 } from "firebase/firestore";

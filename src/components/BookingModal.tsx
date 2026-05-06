@@ -2,7 +2,20 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, CheckCircle2 } from 'lucide-react';
+import { 
+  X, 
+  Loader2, 
+  CheckCircle2, 
+  Car, 
+  Calendar, 
+  Clock, 
+  ChevronRight, 
+  ChevronLeft,
+  Plus,
+  Check,
+  Zap,
+  Info
+} from 'lucide-react';
 import { createBooking } from "@/lib/bookings";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
@@ -13,255 +26,287 @@ interface BookingModalProps {
   serviceName: string;
 }
 
+const steps = [
+  { id: 1, title: "Vehicle", icon: Car },
+  { id: 2, title: "Schedule", icon: Calendar },
+  { id: 3, title: "Checkout", icon: CheckCircle2 },
+];
+
 export default function BookingModal({ isOpen, onClose, serviceName }: BookingModalProps) {
+  const [currentStep, setCurrentStep] = useState(1);
   const [carQuery, setCarQuery] = useState("");
   const [carSuggestions, setCarSuggestions] = useState<string[]>([]);
-  const [isSearchingCars, setIsSearchingCars] = useState(false);
   const [showCarDropdown, setShowCarDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [allCars, setAllCars] = useState<string[]>([]);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  
   const router = useRouter();
 
-  const isMounted = useRef(false);
-
-  // Enforce login only after Firebase confirms user is not signed in
+  // Reset modal
   useEffect(() => {
-    isMounted.current = true;
-    if (isOpen) {
-      const unsubscribe = auth.onAuthStateChanged((user) => {
-        if (user === null && isMounted.current) {
-          // Firebase has resolved and user is definitely not logged in
-          onClose();
-          router.push("/sign-in?returnTo=/services");
-        }
-      });
-      return () => {
-        isMounted.current = false;
-        unsubscribe();
-      };
-    }
-    return () => { isMounted.current = false; };
-  }, [isOpen, router, onClose]);
-
-  // Clear state on open/close
-  useEffect(() => {
-    if (!isOpen && isMounted.current) {
-      setCarQuery("");
-      setShowCarDropdown(false);
-      setCarSuggestions([]);
+    if (!isOpen) {
+      setTimeout(() => {
+        setCurrentStep(1);
+        setIsSuccess(false);
+        setCarQuery("");
+        setDate("");
+        setTime("");
+      }, 300);
     }
   }, [isOpen]);
 
-  // Handle clicking outside the dropdown to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && isMounted.current) {
-        setShowCarDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Fetch the local indian cars dataset once when the modal opens
+  // Fetch cars
   useEffect(() => {
     if (isOpen && allCars.length === 0) {
-      if (isMounted.current) setIsSearchingCars(true);
       fetch('/indian_cars.json')
         .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data) && isMounted.current) {
-            setAllCars(data);
-          }
-          if (isMounted.current) setIsSearchingCars(false);
-        })
-        .catch(err => {
-          console.error("Failed to load cars dataset", err);
-          if (isMounted.current) setIsSearchingCars(false);
-        });
+        .then(data => { if (Array.isArray(data)) setAllCars(data); })
+        .catch(err => console.error(err));
     }
   }, [isOpen, allCars.length]);
 
-  // Filter cars smoothly in-memory
+  // Filter cars
   useEffect(() => {
-    if ((!carQuery || !showCarDropdown) && isMounted.current) {
+    if (!carQuery || !showCarDropdown) {
       setCarSuggestions([]);
       return;
     }
-
     const query = carQuery.toLowerCase();
     const matches = allCars.filter(car => car.toLowerCase().includes(query));
-    if (isMounted.current) setCarSuggestions(matches.slice(0, 10));
+    setCarSuggestions(matches.slice(0, 5));
   }, [carQuery, allCars, showCarDropdown]);
 
-  // Prevent scrolling when modal is open
+  // Prevent scroll
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
+
+  const handleNext = () => {
+    if (currentStep === 1 && !carQuery) return;
+    if (currentStep === 2 && (!date || !time)) return;
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await createBooking({
+        customerName: name || auth.currentUser?.displayName || "Guest",
+        phone: phone,
+        email: auth.currentUser?.email || "",
+        service: serviceName,
+        date: date,
+        time: time,
+        location: "Service Center",
+        amount: "₹ TBD",
+        status: "Pending"
+      });
+      setIsSuccess(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-md"
           />
 
-          {/* Modal Container */}
           <div className="fixed inset-0 z-[1001] flex items-center justify-center pointer-events-none px-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md bg-[#111111] border border-white/10 p-6 shadow-2xl relative pointer-events-auto"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-lg bg-[#0A0A0A] border border-[#262626] rounded-[2.5rem] overflow-hidden shadow-2xl pointer-events-auto flex flex-col h-auto max-h-[90vh]"
             >
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 text-white/50 hover:text-brand-orange transition-colors"
-              >
-                <X size={20} />
-              </button>
+              {/* Progress Bar Top */}
+              <div className="h-[2px] bg-white/5 w-full">
+                <motion.div 
+                  className="h-full bg-[#F59E0B]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(currentStep / 3) * 100}%` }}
+                />
+              </div>
 
-              {isSuccess ? (
-                <div className="py-12 flex flex-col items-center text-center space-y-6">
-                  <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500">
-                    <CheckCircle2 size={32} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2 uppercase">Success!</h3>
-                    <p className="text-white/60 text-xs px-6">Your booking for <span className="text-brand-orange">{serviceName}</span> has been received. We will contact you shortly.</p>
-                  </div>
-                  <button 
-                    onClick={() => { setIsSuccess(false); onClose(); }}
-                    className="text-brand-orange font-bold uppercase tracking-widest text-[10px] hover:underline pt-4"
-                  >
-                    Close Window
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2 uppercase tracking-tight">Book Service</h2>
-                  <p className="text-white/60 text-xs mb-6">
-                    Provide your details below to schedule your <span className="text-brand-orange font-bold">{serviceName}</span> appointment.
-                  </p>
+              <div className="p-8 md:p-10 flex flex-col relative">
+                <button onClick={onClose} className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors">
+                  <X size={24} />
+                </button>
 
-                  <form 
-                    className="flex flex-col gap-4" 
-                    onSubmit={async (e) => { 
-                      e.preventDefault(); 
-                      const formData = new FormData(e.currentTarget);
-                      setIsSubmitting(true);
-                      try {
-                        await createBooking({
-                          customerName: formData.get("name") as string,
-                          phone: formData.get("phone") as string,
-                          email: "", // Not in modal but in Firestore schema
-                          service: serviceName,
-                          date: new Date().toLocaleDateString(), // Mock for now
-                          time: "ASAP",
-                          location: "Mobile Detailing",
-                          amount: "AED 0",
-                          status: "Pending"
-                        });
-                        setIsSuccess(true);
-                      } catch (err) {
-                        console.error(err);
-                      } finally {
-                        setIsSubmitting(false);
-                      }
-                    }}
-                  >
-                <div>
-                  <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-1 px-1">Full Name</label>
-                  <input name="name" type="text" placeholder="John Doe" className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors" required />
-                </div>
-                
-                <div>
-                  <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-1 px-1">Phone Number</label>
-                  <input name="phone" type="tel" placeholder="+1 (555) 000-0000" className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors" required />
-                </div>
+                <AnimatePresence mode="wait">
+                  {isSuccess ? (
+                    <motion.div
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex flex-col items-center justify-center text-center py-10 space-y-6"
+                    >
+                      <div className="w-20 h-20 bg-[#F59E0B]/20 rounded-full flex items-center justify-center text-[#F59E0B] border border-[#F59E0B]/30">
+                        <Check size={40} strokeWidth={3} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white uppercase italic tracking-tighter mb-2">Request Received!</h3>
+                        <p className="text-white/40 text-xs max-w-[200px] leading-relaxed mx-auto">Our team will call you shortly to confirm the appointment.</p>
+                      </div>
+                      <button onClick={onClose} className="bg-[#F59E0B] text-black font-bold uppercase tracking-widest text-[10px] px-10 py-4 rounded-full transition-all active:scale-95">
+                        Close
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={currentStep}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="flex flex-col"
+                    >
+                      <div className="mb-8">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-0.5 bg-[#F59E0B]/10 text-[#F59E0B] text-[8px] font-bold uppercase tracking-widest rounded border border-[#F59E0B]/20">
+                            Quick Book
+                          </span>
+                          <span className="text-white/20 text-[8px] font-bold uppercase tracking-widest">
+                            Step {currentStep} of 3
+                          </span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white uppercase italic tracking-tighter">
+                          {serviceName}
+                        </h2>
+                      </div>
 
-                <div className="relative" ref={dropdownRef}>
-                  <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-1 px-1">Vehicle Model</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Honda Civic" 
-                    className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors" 
-                    required 
-                    value={carQuery}
-                    onChange={(e) => {
-                      setCarQuery(e.target.value);
-                      setShowCarDropdown(true);
-                    }}
-                    onFocus={() => setShowCarDropdown(true)}
-                  />
-                  
-                  <AnimatePresence>
-                    {showCarDropdown && (carSuggestions.length > 0 || isSearchingCars) && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="absolute left-0 right-0 top-[100%] mt-1 max-h-48 overflow-y-auto bg-[#1A1A1A] border border-white/10 z-[1005] flex flex-col shadow-2xl"
-                      >
-                        {isSearchingCars ? (
-                           <div className="px-4 py-3 text-xs text-white/40 animate-pulse">Searching models...</div>
-                        ) : (
-                           carSuggestions.map((suggestion, idx) => (
-                             <div 
-                               key={idx}
-                               className="px-4 py-3 text-xs text-white hover:bg-brand-orange/10 hover:text-brand-orange cursor-pointer border-b border-white/5 last:border-none uppercase tracking-wide"
-                               onClick={() => {
-                                 setCarQuery(suggestion);
-                                 setShowCarDropdown(false);
-                               }}
-                             >
-                               {suggestion}
-                             </div>
-                           ))
+                      <div className="flex-grow space-y-6">
+                        {currentStep === 1 && (
+                          <div className="space-y-6" ref={dropdownRef}>
+                            <div className="space-y-2">
+                              <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest px-1">Vehicle Model</label>
+                              <div className="relative">
+                                <input 
+                                  type="text" 
+                                  placeholder="e.g. Tata Nexon"
+                                  className="w-full bg-[#171717] border border-[#262626] text-white px-5 py-4 text-sm rounded-xl focus:outline-none focus:border-[#F59E0B]/50 transition-all font-medium"
+                                  value={carQuery}
+                                  onChange={(e) => { setCarQuery(e.target.value); setShowCarDropdown(true); }}
+                                  onFocus={() => setShowCarDropdown(true)}
+                                />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20">
+                                  <Car size={18} />
+                                </div>
+                                <AnimatePresence>
+                                  {showCarDropdown && carSuggestions.length > 0 && (
+                                    <motion.div 
+                                      initial={{ opacity: 0, y: 5 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      className="absolute left-0 right-0 top-[110%] bg-[#171717] border border-[#262626] z-50 rounded-xl overflow-hidden shadow-2xl"
+                                    >
+                                      {carSuggestions.map((s, i) => (
+                                        <div key={i} onClick={() => { setCarQuery(s); setShowCarDropdown(false); }} className="px-5 py-3 text-[10px] text-white/60 hover:bg-[#F59E0B]/10 hover:text-[#F59E0B] cursor-pointer border-b border-white/5 last:border-none font-bold uppercase tracking-widest">
+                                          {s}
+                                        </div>
+                                      ))}
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          </div>
                         )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
 
-                <div>
-                  <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-1 px-1">Service Type</label>
-                  <input type="text" value={serviceName} readOnly className="w-full bg-[#1A1A1A] border border-white/5 text-brand-orange px-4 py-3 text-sm focus:outline-none cursor-not-allowed" />
-                </div>
+                        {currentStep === 2 && (
+                          <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest px-1">Select Date</label>
+                                <input 
+                                  type="date" 
+                                  min={new Date().toISOString().split('T')[0]}
+                                  className="w-full bg-[#171717] border border-[#262626] text-white px-5 py-4 text-sm rounded-xl focus:outline-none [color-scheme:dark]"
+                                  value={date}
+                                  onChange={(e) => setDate(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest px-1">Select Slot</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {["10:00 AM", "12:00 PM", "02:00 PM", "04:00 PM"].map(t => (
+                                    <button key={t} onClick={() => setTime(t)} className={`py-3 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all ${time === t ? 'bg-[#F59E0B] border-[#F59E0B] text-black' : 'bg-[#171717] border-[#262626] text-white/40 hover:text-white'}`}>
+                                      {t}
+                                    </button>
+                                  ))}
+                                </div>
+                            </div>
+                          </div>
+                        )}
 
-                <div className="mt-2">
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="w-full bg-brand-orange hover:bg-white text-black font-bold uppercase tracking-wider text-xs px-6 py-4 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : "Confirm Booking"}
-                  </button>
-                </div>
-              </form>
-              </>
-              )}
+                        {currentStep === 3 && (
+                          <div className="space-y-6">
+                            <div className="bg-[#171717] border border-[#262626] rounded-2xl p-5 space-y-3">
+                              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-white/30">
+                                <span>Vehicle</span>
+                                <span className="text-white">{carQuery}</span>
+                              </div>
+                              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-white/30">
+                                <span>Schedule</span>
+                                <span className="text-white">{date} at {time}</span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest px-1">Phone Number</label>
+                              <input 
+                                type="tel" 
+                                placeholder="+91 00000 00000"
+                                className="w-full bg-[#171717] border border-[#262626] text-white px-5 py-4 text-sm rounded-xl focus:outline-none focus:border-[#F59E0B]/50 transition-all font-medium"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-10 pt-6 border-t border-white/5 flex gap-3">
+                        {currentStep > 1 && (
+                          <button onClick={handleBack} className="w-14 h-14 rounded-2xl bg-[#171717] border border-[#262626] flex items-center justify-center text-white/50 hover:text-white">
+                            <ChevronLeft size={20} />
+                          </button>
+                        )}
+                        <button 
+                          onClick={currentStep === 3 ? handleSubmit : handleNext}
+                          disabled={isSubmitting || (currentStep === 1 && !carQuery) || (currentStep === 2 && (!date || !time)) || (currentStep === 3 && !phone)}
+                          className="flex-grow h-14 bg-[#F59E0B] text-black font-bold uppercase tracking-widest text-[10px] rounded-full flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-95 shadow-xl"
+                        >
+                          {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : (currentStep === 3 ? 'Complete' : 'Continue')}
+                          {currentStep < 3 && <ChevronRight size={18} />}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           </div>
         </>
       )}
     </AnimatePresence>
   );
-};
-
+}

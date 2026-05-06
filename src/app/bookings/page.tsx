@@ -1,268 +1,1084 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Plus, 
+  Minus,
+  Check, 
+  Clock, 
+  Calendar, 
+  CreditCard, 
+  Info,
+  ShieldCheck,
+  Zap,
+  Waves,
+  Droplets,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Heart,
+  Sparkles,
+  Car as CarIcon,
+  Paintbrush,
+  Wrench,
+  X,
+  Star,
+  CheckCircle,
+  Clock3,
+  Timer,
+  Fuel,
+  Gauge,
+  Navigation,
+  Smartphone,
+  Trophy,
+  Activity,
+  Palette,
+  Droplet,
+  GlassWater,
+  CloudRain,
+  Snowflake,
+  Settings,
+  Disc,
+  Package,
+  SprayCan,
+  Brush,
+  Wind,
+  Sun,
+  Shield,
+  Crown,
+  Diamond,
+  Flame,
+  Award,
+  BadgeCheck,
+  Truck,
+  Bike,
+  Loader2,
+  MapPin,
+  Map,
+  User
+} from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
+import { createBooking } from '@/lib/bookings';
+import { getServices, Service } from '@/lib/services';
+import { getCategories, Category } from '@/lib/categories';
+import { getVehicleTypes, VehicleType } from '@/lib/vehicleTypes';
+import { getGarages, Garage } from '@/lib/garages';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
-import Footer from '@/components/Footer';
-import { ShieldCheck, Clock, Zap, MapPin } from 'lucide-react';
+const InteractiveMapModal = dynamic(() => import('@/components/InteractiveMapModal'), { 
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[10000] text-white/20 font-black uppercase tracking-widest italic">Initializing High-Fidelity Map...</div>
+});
 
-const availableServices = [
-  "Exterior detailing",
-  "Interior cleaning",
-  "Wheel shining",
-  "Leather conditioning",
-  "Engine cleaning",
-  "Paint correction",
-  "Ceramic Coating",
-  "General Service",
-  "Oil Change",
-  "Battery Replacement"
+const reverseGeocode = async (lat: number, lng: number) => {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`);
+    const data = await response.json();
+    if (data && data.display_name) {
+      return data.display_name;
+    }
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  } catch (err) {
+    console.error("Reverse geocoding failed:", err);
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+};
+
+import 'leaflet/dist/leaflet.css';
+
+const ICON_MAP: any = { 
+  Waves, Sparkles, Car: CarIcon, ShieldCheck, Paintbrush, Zap, Wrench, Droplets, 
+  Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
+  Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
+  Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
+};
+
+
+const timeSlots = [
+  "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+  "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"
 ];
 
-export default function BookingPage() {
-  const [carQuery, setCarQuery] = useState("");
-  const [carSuggestions, setCarSuggestions] = useState<string[]>([]);
-  const [isSearchingCars, setIsSearchingCars] = useState(false);
-  const [showCarDropdown, setShowCarDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [allCars, setAllCars] = useState<string[]>([]);
-  const [serviceType, setServiceType] = useState(availableServices[0]);
-  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+// --- COMPONENTS ---
 
-  // Handle clicking outside the dropdown to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowCarDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+const ProgressBar = ({ progress }: { progress: number }) => (
+  <div className="fixed top-0 left-0 w-full h-[3px] bg-white/5 z-[100]">
+    <motion.div 
+      className="h-full bg-gradient-to-r from-brand-orange to-[#FFB347] shadow-[0_0_15px_#f69621]"
+      initial={{ width: 0 }}
+      animate={{ width: `${progress}%` }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    />
+  </div>
+);
 
-  // Fetch the local indian cars dataset when page mounts
-  useEffect(() => {
-    setIsSearchingCars(true);
-    fetch('/indian_cars.json')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setAllCars(data);
-        }
-        setIsSearchingCars(false);
-      })
-      .catch(err => {
-        console.error("Failed to load cars dataset", err);
-        setIsSearchingCars(false);
-      });
-  }, []);
+interface SelectedService {
+  id: string;
+  quantity: number;
+}
 
-  // Filter cars smoothly in-memory
-  useEffect(() => {
-    if (!showCarDropdown) {
-      setCarSuggestions([]);
-      return;
-    }
-
-    if (!carQuery) {
-      // Show default suggestions when empty
-      setCarSuggestions(allCars.slice(0, 10));
-      return;
-    }
-
-    const query = carQuery.toLowerCase();
-    const matches = allCars.filter(car => car.toLowerCase().includes(query));
-    setCarSuggestions(matches.slice(0, 10));
-  }, [carQuery, allCars, showCarDropdown]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setBookingConfirmed(true);
-  }
+const ServiceDetailDrawer = ({ 
+  service, 
+  isOpen, 
+  onClose, 
+  onAdd, 
+  onRemove, 
+  quantity 
+}: { 
+  service: Service | null, 
+  isOpen: boolean, 
+  onClose: () => void,
+  onAdd: (id: string) => void,
+  onRemove: (id: string) => void,
+  quantity: number
+}) => {
+  if (!service) return null;
+  const inclusions = service.includedItems || [
+    "Premium hand wash exterior",
+    "Wheel and tire deep cleaning",
+    "Glass and mirror streak-free wipe",
+    "Full interior vacuuming",
+    "Dashboard and trim dressing",
+    "Tire shine application"
+  ];
 
   return (
-    <>
-
-      <main className="min-h-screen bg-[#0A0A0A] pt-32 pb-24 px-6 md:px-12 lg:px-24 flex items-center">
-        
-        <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          
-          {/* Left Side: Info & Marketing */}
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col"
-          >
-            <span className="text-brand-orange text-[10px] md:text-xs font-semibold uppercase tracking-[0.15em] mb-4 block">
-              Schedule An Appointment
-            </span>
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight mb-6">
-              BOOK YOUR <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-yellow-500">
-                PREMIUM WASH
-              </span>
-            </h1>
-            <p className="text-white/50 text-sm md:text-base max-w-md mb-12 leading-relaxed">
-              Experience the pinnacle of automotive care. Reserve your slot today and let our expert detailers bring back your vehicle's showroom shine.
-            </p>
-
-            <div className="flex flex-col gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#1A1A1A] border border-white/5 flex items-center justify-center text-brand-orange">
-                  <ShieldCheck size={20} />
-                </div>
-                <div>
-                  <h3 className="text-white font-bold text-sm tracking-wide">100% Satisfaction</h3>
-                  <p className="text-white/40 text-xs">Quality guaranteed on all services.</p>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/90 backdrop-blur-md z-[2000]" />
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-white/10 rounded-t-[3.5rem] z-[2001] p-10 pb-16 max-h-[95vh] overflow-y-auto">
+            <div className="w-16 h-1.5 bg-white/10 rounded-full mx-auto mb-10" />
+            <div className="flex justify-between items-start mb-10">
+              <div className="space-y-3">
+                <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">{service.name}</h2>
+                <div className="flex items-center gap-6">
+                  <span className="text-3xl font-black text-brand-orange">₹{service.price}</span>
+                  <span className="text-white/20 line-through text-lg italic">₹{parseInt(service.price.replace(/[^\d]/g, '')) * 1.4}</span>
                 </div>
               </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#1A1A1A] border border-white/5 flex items-center justify-center text-brand-orange">
-                  <Clock size={20} />
-                </div>
+              <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"><X size={28} /></button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-10">
                 <div>
-                  <h3 className="text-white font-bold text-sm tracking-wide">Timely Delivery</h3>
-                  <p className="text-white/40 text-xs">Prompt service with zero compromises.</p>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-6 flex items-center gap-2"><Info size={14}/> Treatment Overview</h3>
+                  <p className="text-base text-white/60 leading-relaxed font-medium">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
+                </div>
+                <div className="p-8 bg-brand-orange/5 border border-brand-orange/10 rounded-3xl">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-orange mb-6 flex items-center gap-2"><Clock size={14}/> Service Duration</h3>
+                  <p className="text-xl font-bold text-white italic">Approx. {service.duration || '2-3 Hours'}</p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#1A1A1A] border border-white/5 flex items-center justify-center text-brand-orange">
-                  <MapPin size={20} />
-                </div>
-                <div>
-                  <h3 className="text-white font-bold text-sm tracking-wide">Prime Locations</h3>
-                  <p className="text-white/40 text-xs">Easily accessible, premium garages.</p>
+              <div>
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-6 flex items-center gap-2"><CheckCircle size={14}/> What's Included</h3>
+                <div className="grid grid-cols-1 gap-5">
+                  {inclusions.map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-4 group">
+                      <div className="w-6 h-6 rounded-full bg-brand-orange/20 flex items-center justify-center text-brand-orange group-hover:scale-110 transition-transform"><Check size={14} strokeWidth={4} /></div>
+                      <span className="text-sm text-white/70 font-bold tracking-tight">{item}</span>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
-          </motion.div>
-
-          {/* Right Side: Booking Form */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="w-full bg-[#111111] border border-white/10 p-8 md:p-12 shadow-2xl relative rounded-2xl"
-          >
-            {bookingConfirmed ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-20 h-20 bg-brand-orange/20 rounded-full flex items-center justify-center mb-6">
-                  <ShieldCheck size={40} className="text-brand-orange" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">Booking Confirmed!</h2>
-                <p className="text-white/60 text-sm max-w-xs mb-8">
-                  Your appointment has been successfully scheduled. We will contact you shortly to confirm the exact details.
-                </p>
-                <button 
-                  onClick={() => setBookingConfirmed(false)}
-                  className="bg-[#1A1A1A] border border-white/10 hover:border-brand-orange text-white text-xs font-bold uppercase tracking-wider px-8 py-3 transition-colors"
-                >
-                  Book Another Service
-                </button>
+            <div className="mt-16 pt-10 border-t border-white/5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-10">
+              <div className="flex items-center justify-between md:justify-start gap-8 bg-white/5 px-8 md:px-10 py-5 rounded-[2rem] border border-white/5">
+                <button onClick={() => onRemove(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Minus size={20} strokeWidth={3} /></button>
+                <span className="text-2xl font-black min-w-[40px] text-center italic">{quantity}</span>
+                <button onClick={() => onAdd(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
               </div>
-            ) : (
-              <>
-                <h2 className="text-2xl font-bold text-white mb-8 uppercase tracking-wide border-b border-white/5 pb-4">Reservation Details</h2>
-                
-                <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2 px-1">Full Name</label>
-                      <input type="text" placeholder="John Doe" className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors" required />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2 px-1">Phone Number</label>
-                      <input type="tel" placeholder="+1 (555) 000-0000" className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors" required />
-                    </div>
-                  </div>
+              <button onClick={onClose} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
+                {quantity > 0 ? `Update Booking Selection` : `Add Package for ₹${service.price}`}
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
-                  <div className="relative z-50" ref={dropdownRef}>
-                    <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2 px-1">Vehicle Model</label>
+export function BookingPageInner() {
+  const { profile } = useAuth();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [detailService, setDetailService] = useState<Service | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
+  const [carDetails, setCarDetails] = useState({ make: "", model: "", type: "" });
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const [garages, setGarages] = useState<Garage[]>([]);
+  const [selectedGarageId, setSelectedGarageId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [showMap, setShowMap] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [mapZoom, setMapZoom] = useState(17);
+  const [mapCoords, setMapCoords] = useState<{lat: number, lng: number}>({ lat: 25.2048, lng: 55.2708 });
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [mapType, setMapType] = useState<'hybrid' | 'streets'>('hybrid');
+  const searchParams = useSearchParams();
+
+  // Car Suggestions API State
+  const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
+  const [isApiLoading, setIsApiLoading] = useState(false);
+  
+  useEffect(() => {
+    const term = carDetails.model.trim();
+    if (term.length < 2) {
+      setApiSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsApiLoading(true);
+      try {
+        const DUBAI_FAVORITES = [
+          "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Nissan Altima",
+          "Toyota Corolla", "Toyota Camry", "Lexus LX570", "Lexus LX600",
+          "Tesla Model 3", "Tesla Model Y", "Mercedes G63 AMG", "Mercedes S-Class",
+          "Range Rover Sport", "Range Rover Vogue", "Porsche Cayenne", "Porsche Macan",
+          "BMW X5", "BMW X6", "Ferrari 488", "Ferrari F8", "Ferrari Roma",
+          "Lamborghini Urus", "Lamborghini Huracan", "Rolls Royce Cullinan", "Bentley Bentayga"
+        ];
+
+        const localMatches = DUBAI_FAVORITES.filter(c => 
+          c.toLowerCase().includes(term.toLowerCase())
+        );
+
+        const res = await fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/all-vehicles-model/records?limit=8&where=suggest(model, "${term}")`);
+        const data = await res.json();
+        let apiResults: string[] = [];
+        if (data.results) {
+          apiResults = data.results.map((r: any) => `${r.make} ${r.model}`);
+        }
+        
+        // Combine, prioritize local favorites, remove duplicates
+        const combined = Array.from(new Set([...localMatches, ...apiResults])).slice(0, 8);
+        setApiSuggestions(combined as string[]);
+      } catch (e) {
+        console.error("Car API Error:", e);
+      } finally {
+        setIsApiLoading(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [carDetails.model]);
+
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const [srvData, catData, vData, gData] = await Promise.all([
+          getServices(true), 
+          getCategories(),
+          getVehicleTypes(),
+          getGarages()
+        ]);
+        setServices(srvData);
+        setCategories(catData);
+        setVehicleTypes(vData);
+        setGarages(gData);
+        if (gData.length > 0) setSelectedGarageId(gData[0].id!);
+        if (catData.length > 0) setSelectedCategory(catData[0].name);
+
+        const preselectedId = searchParams.get('service');
+        if (preselectedId && srvData.length > 0) {
+          const matched = srvData.find(s => s.id === preselectedId);
+          if (matched) {
+            setSelectedServices([{ id: preselectedId, quantity: 1 }]);
+            const matchedCat = catData.find(c =>
+              (matched.category || '').toLowerCase().includes(c.name.toLowerCase()) ||
+              c.name.toLowerCase().includes((matched.category || '').toLowerCase())
+            );
+            if (matchedCat) setSelectedCategory(matchedCat.name);
+          }
+        }
+      } catch (err) { console.error(err); } finally { setLoading(false); }
+    };
+    initData();
+  }, []);
+
+  useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({ ...prev, name: profile.name || "", email: profile.email || "", phone: profile.phone || "" }));
+    }
+  }, [profile]);
+
+  const addService = (id: string) => {
+    setSelectedServices(prev => {
+      const exists = prev.find(s => s.id === id);
+      if (exists) return prev.map(s => s.id === id ? { ...s, quantity: s.quantity + 1 } : s);
+      return [...prev, { id, quantity: 1 }];
+    });
+  };
+
+  const removeService = (id: string) => {
+    setSelectedServices(prev => {
+      const exists = prev.find(s => s.id === id);
+      if (exists && exists.quantity > 1) return prev.map(s => s.id === id ? { ...s, quantity: s.quantity - 1 } : s);
+      return prev.filter(s => s.id !== id);
+    });
+  };
+
+  const toggleAddOn = (id: string) => {
+    setSelectedAddOns(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  };
+
+  const calculateTotal = () => {
+    let total = 0;
+    
+    // Dynamic Vehicle Surcharge based on Location (Garage)
+    const vType = vehicleTypes.find(v => v.name === carDetails.type);
+    if (vType) {
+      const overrides = (vType as any).locationOverrides || {};
+      if (selectedGarageId && overrides[selectedGarageId] !== undefined) {
+        total += overrides[selectedGarageId];
+      } else {
+        total += vType.surcharge;
+      }
+    }
+
+    selectedServices.forEach(sel => {
+      const service = services.find(s => s.id === sel.id);
+      if (service) total += parseInt(service.price.replace(/[^\d]/g, '')) * sel.quantity;
+    });
+    selectedAddOns.forEach(id => {
+      const addon = services.find(s => s.id === id);
+      if (addon) total += parseInt(addon.price.replace(/[^\d]/g, ''));
+    });
+    return total;
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) return;
+    if (currentStep === 2 && selectedServices.length === 0) return;
+    if (currentStep === 4 && (!selectedDate || !selectedTime)) return;
+    setCurrentStep(prev => prev + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBack = () => {
+    if (currentStep === 1) window.history.back();
+    else setCurrentStep(prev => prev - 1);
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const serviceSummary = selectedServices.map(sel => {
+        const s = services.find(x => x.id === sel.id);
+        return `${sel.quantity}x ${s?.name}`;
+      }).join(", ");
+      await createBooking({ 
+        customerName: formData.name, 
+        email: formData.email, 
+        phone: formData.phone, 
+        service: serviceSummary, 
+        date: selectedDate || "", 
+        time: selectedTime || "", 
+        location: formData.address || "Location not specified", 
+        amount: `₹${calculateTotal()}`, 
+        status: "Pending",
+        carDetails: `${carDetails.type} - ${carDetails.model}`
+      });
+      setIsSuccess(true);
+    } catch (err) { alert("Something went wrong."); } finally { setIsSubmitting(false); }
+  };
+
+  const filteredServices = services.filter(s => {
+    const sCat = (s.category || "").toLowerCase().trim();
+    const activeCat = (selectedCategory || "").toLowerCase().trim();
+    if (sCat === activeCat) return true;
+    if (activeCat === "exterior wash" && (sCat.includes("exterior") || sCat.includes("wash") || sCat === "general")) return true;
+    if (activeCat === "interior cleaning" && (sCat.includes("interior") || sCat.includes("clean"))) return true;
+    if (activeCat === "full detailing" && (sCat.includes("detail") || sCat.includes("full"))) return true;
+    if (activeCat === "ceramic coating" && (sCat.includes("ceramic") || sCat.includes("coat"))) return true;
+    if (activeCat === "paint protection" && (sCat.includes("paint") || sCat.includes("protect"))) return true;
+    return false;
+  });
+
+  const days = Array.from({ length: 10 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return { full: d.toISOString().split('T')[0], day: d.toLocaleDateString('en-US', { weekday: 'short' }), date: d.getDate(), month: d.toLocaleDateString('en-US', { month: 'short' }) };
+  });
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center p-6">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#111111] border border-white/10 rounded-[3rem] p-16 text-center max-w-md w-full shadow-2xl">
+          <div className="w-24 h-24 bg-brand-orange/10 rounded-full flex items-center justify-center mx-auto mb-10 text-brand-orange border border-brand-orange/20"><Check size={48} strokeWidth={3} /></div>
+          <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-4">Confirmed!</h2>
+          <p className="text-white/40 font-medium mb-10 leading-relaxed">Your detailing session is booked. We'll see you at the center.</p>
+          <Link href="/profile" className="block w-full bg-brand-orange text-black font-black uppercase italic tracking-widest py-5 rounded-full transition-all active:scale-95 shadow-lg">Manage Booking</Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-brand-orange/30 font-sans overflow-x-hidden">
+      <ProgressBar progress={(currentStep / 5) * 100} />
+
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-5xl z-50 bg-black/40 backdrop-blur-2xl border border-white/10 h-20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className="h-full px-8 flex items-center justify-between">
+          <button onClick={handleBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex flex-col items-center">
+            <motion.span 
+              key={currentStep}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[10px] font-black text-brand-orange uppercase tracking-[0.5em] mb-1"
+            >
+              Phase 0{currentStep}
+            </motion.span>
+            <motion.h1 
+              key={`title-${currentStep}`}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm font-black text-white uppercase italic tracking-[0.2em]"
+            >
+              {currentStep === 1 && "Location & Vehicle"}
+              {currentStep === 2 && "Choose Treatment"}
+              {currentStep === 3 && "Enhancements"}
+              {currentStep === 4 && "Schedule"}
+              {currentStep === 5 && "Review"}
+            </motion.h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex flex-col items-end mr-4">
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/20 leading-none">Vehicle</span>
+              <span className="text-[10px] font-bold text-white italic truncate max-w-[100px]">{carDetails.model || "Not Set"}</span>
+            </div>
+            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors">
+              <User size={18} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 pt-32 pb-48">
+        <AnimatePresence mode="wait">
+          
+          {/* STEP 1: LOCATION & VEHICLE SELECTION */}
+          {currentStep === 1 && (
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-16">
+              
+              {/* Location Selection */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                      <MapPin size={20} />
+                   </div>
+                   <div className="space-y-0.5">
+                      <span className="text-[10px] text-brand-orange font-black uppercase tracking-[0.3em]">Step 01</span>
+                      <h2 className="text-2xl font-black uppercase italic tracking-tighter">Choose Service Center</h2>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {garages.map(g => (
+                      <button 
+                        key={g.id}
+                        onClick={() => setSelectedGarageId(g.id!)}
+                        className={`p-6 rounded-[2rem] border transition-all duration-500 flex flex-col gap-4 text-left group relative overflow-hidden ${selectedGarageId === g.id ? 'bg-brand-orange border-brand-orange shadow-[0_20px_40px_rgba(246,150,33,0.1)]' : 'bg-[#0F0F0F] border-white/5 hover:border-white/10'}`}
+                      >
+                         <div className="flex justify-between items-start">
+                            <h3 className={`text-sm font-black uppercase italic tracking-tight ${selectedGarageId === g.id ? 'text-black' : 'text-white'}`}>{g.name}</h3>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedGarageId === g.id ? 'bg-black text-brand-orange' : 'bg-white/5 text-white/20'}`}>
+                               <Check size={16} strokeWidth={3} className={selectedGarageId === g.id ? 'opacity-100' : 'opacity-0'} />
+                            </div>
+                         </div>
+                         <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedGarageId === g.id ? 'text-black/60' : 'text-white/20'}`}>{g.location}</p>
+                         {selectedGarageId === g.id && <motion.div layoutId="locIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-black/20" />}
+                      </button>
+                   ))}
+                   {garages.length === 0 && !loading && (
+                      <div className="col-span-full py-12 border border-white/5 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-4">
+                         <Map size={32} className="text-white/10" />
+                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">No Service Centers Available</p>
+                      </div>
+                   )}
+                </div>
+              </div>
+
+              {/* Vehicle Selection */}
+              <div className="space-y-10 pt-10 border-t border-white/5">
+                <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                      <CarIcon size={20} />
+                   </div>
+                   <div className="space-y-0.5">
+                      <span className="text-[10px] text-brand-orange font-black uppercase tracking-[0.3em]">Step 02</span>
+                      <h2 className="text-2xl font-black uppercase italic tracking-tighter">Your Vehicle</h2>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {vehicleTypes.map(v => {
+                    const Icon = ICON_MAP[v.icon] || CarIcon;
+                    const isVSelected = carDetails.type === v.name;
+                    const overrides = (v as any).locationOverrides || {};
+                    const price = selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : v.surcharge;
+
+                    return (
+                      <button 
+                        key={v.id}
+                        onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
+                        className={`p-6 sm:p-8 rounded-[2.5rem] border transition-all duration-500 group flex flex-col items-center gap-4 relative overflow-hidden ${isVSelected ? 'bg-brand-orange border-brand-orange text-black shadow-[0_20px_50px_rgba(246,150,33,0.2)]' : 'bg-[#0F0F0F] border-white/5 text-white/30 hover:border-white/10 hover:text-white'}`}
+                      >
+                        <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg text-[7px] font-black uppercase tracking-widest ${isVSelected ? 'bg-black/20 text-black' : 'bg-white/5 text-white/20'}`}>
+                          AED {price >= 0 ? `+${price}` : price}
+                        </div>
+                        <Icon size={32} strokeWidth={isVSelected ? 3 : 2} className="transition-transform group-hover:scale-110" />
+                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">{v.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="max-w-2xl relative">
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mb-6 px-4">Car Model Name</p>
+                  <div className="relative group">
                     <input 
                       type="text" 
-                      placeholder="e.g. Tata Nexon" 
-                      className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors" 
-                      required 
-                      value={carQuery}
-                      onChange={(e) => {
-                        setCarQuery(e.target.value);
-                        setShowCarDropdown(true);
-                      }}
-                      onFocus={() => setShowCarDropdown(true)}
+                      placeholder="e.g. Tesla Model 3 or Audi A4" 
+                      value={carDetails.model}
+                      onChange={e => setCarDetails(prev => ({ ...prev, model: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/5 rounded-[2rem] px-10 py-6 text-lg font-bold italic focus:outline-none focus:border-brand-orange/50 focus:bg-white/[0.08] transition-all placeholder:text-white/10"
                     />
-                    
-                    <AnimatePresence>
-                      {showCarDropdown && (carSuggestions.length > 0 || isSearchingCars) && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          className="absolute left-0 right-0 top-[100%] mt-2 max-h-48 overflow-y-auto bg-[#1A1A1A] border border-white/10 z-[1005] flex flex-col shadow-2xl rounded-lg"
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-orange/10 flex items-center justify-center text-brand-orange/40 group-focus-within:text-brand-orange transition-colors">
+                      <CarIcon size={20} />
+                    </div>
+                  </div>
+
+                  {/* Suggestions via OpenDataSoft API */}
+                  <AnimatePresence>
+                    {apiSuggestions.length > 0 && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute left-0 right-0 mt-4 bg-[#0F0F0F] border border-white/10 rounded-[2rem] shadow-2xl z-50 overflow-hidden">
+                        <div className="max-h-64 overflow-y-auto no-scrollbar py-4">
+                          {isApiLoading && <div className="px-10 py-4 flex items-center gap-3 text-white/20 italic text-xs"><Loader2 className="animate-spin" size={12}/>Searching...</div>}
+                          {apiSuggestions.map((car, idx) => (
+                            <button key={idx} onClick={() => setCarDetails(prev => ({ ...prev, model: car }))} className="w-full px-10 py-4 text-left hover:bg-brand-orange/10 hover:text-brand-orange transition-all font-bold italic flex items-center justify-between group/item">
+                              <span className="text-sm">{car}</span>
+                              <Plus size={14} className="opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2: TREATMENT SELECTION */}
+          {currentStep === 2 && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange border border-brand-orange/20">
+                      <Zap size={20} />
+                    </div>
+                    <span className="text-[11px] text-brand-orange font-black uppercase tracking-[0.4em]">Select Service</span>
+                  </div>
+                  <h2 className="text-5xl font-black uppercase italic tracking-tighter text-white">Choose Treatment</h2>
+                </div>
+                
+                <div className="bg-white/[0.03] border border-white/10 p-2 rounded-[2rem] backdrop-blur-xl">
+                  <div className="flex gap-2">
+                    {categories.map(cat => {
+                      const isActive = selectedCategory === cat.name;
+                      const IC = ICON_MAP[cat.icon] || Package;
+                      return (
+                        <button 
+                          key={cat.id} 
+                          onClick={() => setSelectedCategory(cat.name)} 
+                          className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex items-center gap-3 ${isActive ? 'bg-brand-orange text-black shadow-lg' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                         >
-                          {isSearchingCars ? (
-                             <div className="px-4 py-3 text-xs text-white/40 animate-pulse">Loading dataset...</div>
-                          ) : (
-                             carSuggestions.map((suggestion, idx) => (
-                               <div 
-                                 key={idx}
-                                 className="px-4 py-3 text-xs text-white hover:bg-brand-orange/10 hover:text-brand-orange cursor-pointer border-b border-white/5 last:border-none uppercase tracking-wide"
-                                 onClick={() => {
-                                   setCarQuery(suggestion);
-                                   setShowCarDropdown(false);
-                                 }}
-                               >
-                                 {suggestion}
+                          {isActive && <motion.div layoutId="catPill" className="absolute inset-0 bg-brand-orange rounded-2xl -z-10 shadow-[0_10px_25px_rgba(246,150,33,0.4)]" />}
+                          <IC size={16} strokeWidth={3} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
+                          {cat.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="h-40 bg-white/5 rounded-3xl animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
+                  {filteredServices.map((service, index) => {
+                    const IconComp = ICON_MAP[service.icon] || Zap;
+                    const isSelected = selectedServices.some(s => s.id === service.id);
+                    const facilities = service.includedItems || [];
+                    return (
+                      <motion.div 
+                        key={service.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className={`relative group rounded-[2rem] border transition-all duration-700 overflow-hidden ${isSelected ? 'bg-brand-orange/10 border-brand-orange/40 shadow-[0_20px_40px_rgba(246,150,33,0.1)]' : 'bg-[#0F0F0F]/80 backdrop-blur-md border-white/5 hover:border-white/20'}`}
+                      >
+                        {/* Background subtle gradient */}
+                        <div className={`absolute inset-0 bg-gradient-to-br from-brand-orange/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000`} />
+                        
+                        <div className="p-5 relative z-10">
+                          <div className="flex justify-between items-start mb-6">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-700 relative overflow-hidden ${isSelected ? 'bg-brand-orange text-black shadow-[0_10px_20px_rgba(246,150,33,0.4)]' : 'bg-white/5 text-white/20 group-hover:bg-brand-orange/15 group-hover:text-brand-orange'}`}>
+                              <IconComp size={20} strokeWidth={2} />
+                              {isSelected && <motion.div layoutId={`glow-${service.id}`} className="absolute inset-0 bg-white/20 animate-pulse" />}
+                            </div>
+                            <button 
+                              onClick={() => isSelected ? removeService(service.id!) : addService(service.id!)} 
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-500 overflow-hidden ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30 hover:bg-brand-orange hover:text-black'}`}
+                            >
+                              <AnimatePresence mode="wait">
+                                <motion.div
+                                  key={isSelected ? 'check' : 'plus'}
+                                  initial={{ scale: 0, rotate: -90 }}
+                                  animate={{ scale: 1, rotate: 0 }}
+                                  exit={{ scale: 0, rotate: 90 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  {isSelected ? <Check size={16} strokeWidth={4} /> : <Plus size={16} strokeWidth={3} />}
+                                </motion.div>
+                              </AnimatePresence>
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-3 cursor-pointer" onClick={() => { setDetailService(service); setIsDrawerOpen(true); }}>
+                            <div className="space-y-1">
+                               <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-black uppercase italic tracking-tighter text-white group-hover:text-brand-orange transition-colors duration-500 leading-none">{service.name}</h3>
                                </div>
-                             ))
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                               <p className="text-[8px] font-black uppercase tracking-widest text-white/20 leading-none italic">Professional Grade</p>
+                            </div>
+                            
+                            <p className="text-[10px] text-white/40 leading-relaxed font-medium line-clamp-2 min-h-[28px]">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
+                            
+                            <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                               <div className="flex flex-col">
+                                  <span className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-0.5">Starting from</span>
+                                  <span className="text-xl font-black text-white italic tracking-tighter leading-none">₹{service.price}</span>
+                               </div>
+                               {service.duration && (
+                                 <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex items-center gap-1.5">
+                                    <Clock size={10} className="text-brand-orange" />
+                                    <span className="text-[8px] text-white/60 font-black uppercase tracking-widest">{service.duration}</span>
+                                 </div>
+                               )}
+                            </div>
+                          </div>
+                        </div>
 
-                  <div>
-                    <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2 px-1">Service Type</label>
-                    <select 
-                      value={serviceType}
-                      onChange={(e) => setServiceType(e.target.value)}
-                      className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors appearance-none cursor-pointer" 
-                      required
-                    >
-                      {availableServices.map((service, idx) => (
-                        <option key={idx} value={service} className="bg-[#111111] text-white">{service}</option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2 px-1">Preferred Date</label>
-                      <input type="date" className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors appearance-none" required />
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* STEP 3: ENHANCEMENTS */}
+          {currentStep === 3 && (() => {
+            const selectedIds = selectedServices.map(s => s.id);
+            const recommended = services.filter(s => s.active !== false && !selectedIds.includes(s.id!));
+            return (
+              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
+                <div className="space-y-2">
+                  <span className="text-[11px] text-brand-orange font-black uppercase tracking-[0.4em]">Recommended</span>
+                  <h2 className="text-4xl font-black uppercase italic tracking-tighter">Enhance Your Care</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {recommended.map((addon, idx) => {
+                    const IconComp = ICON_MAP[addon.icon as any] || Zap;
+                    const isSelected = selectedAddOns.includes(addon.id!);
+                    return (
+                      <motion.div
+                        key={addon.id}
+                        onClick={() => toggleAddOn(addon.id!)}
+                        className={`relative rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden p-6 ${isSelected ? 'bg-brand-orange/10 border-brand-orange/40' : 'bg-[#0F0F0F] border-white/5'}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30'}`}>
+                            <IconComp size={20}/>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
+                            <p className="text-brand-orange font-bold text-sm">₹{addon.price}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          })()}
+
+          {/* STEP 4: SCHEDULE */}
+          {currentStep === 4 && (
+            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-3xl mx-auto space-y-16 text-center">
+              <div className="flex gap-4 overflow-x-auto no-scrollbar pb-6">
+                {days.map(d => (
+                  <button key={d.full} onClick={() => setSelectedDate(d.full)} className={`flex flex-col items-center justify-center min-w-[90px] h-28 rounded-[2rem] border transition-all ${selectedDate === d.full ? 'bg-brand-orange border-brand-orange text-black' : 'bg-white/5 border-white/5 text-white/30'}`}>
+                    <span className="text-3xl font-black italic">{d.date}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{d.day}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {timeSlots.map(slot => (
+                  <button key={slot} onClick={() => setSelectedTime(slot)} className={`py-6 rounded-3xl text-xs font-black uppercase italic tracking-widest border transition-all ${selectedTime === slot ? 'bg-brand-orange border-brand-orange text-black' : 'bg-white/5 border-white/5 text-white/40'}`}>{slot}</button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 5: REVIEW */}
+          {currentStep === 5 && (
+            <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
+              <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-4">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Contact Info</h3>
+                <input type="text" placeholder="Full Name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange outline-none transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative group">
+                    <input 
+                      type="email" 
+                      placeholder="Email Address" 
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange outline-none transition-all" 
+                      value={formData.email} 
+                      onChange={e => setFormData({...formData, email: e.target.value})} 
+                    />
+                  </div>
+                  <div className="relative group">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                      <span className="text-[10px] font-black text-brand-orange/60">UAE</span>
+                      <div className="w-px h-3 bg-white/10" />
                     </div>
-                    
-                    <div>
-                      <label className="block text-[10px] text-white/40 uppercase tracking-wider mb-2 px-1">Preferred Time</label>
-                      <input type="time" className="w-full bg-[#1A1A1A] border border-white/5 text-white px-4 py-3 text-sm focus:outline-none focus:border-brand-orange/50 transition-colors appearance-none" required />
-                    </div>
+                    <input 
+                      type="tel" 
+                      placeholder="Phone Number" 
+                      autoComplete="off"
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl pl-20 pr-6 py-4 text-sm font-bold focus:border-brand-orange outline-none transition-all" 
+                      value={formData.phone} 
+                      onChange={e => setFormData({...formData, phone: e.target.value})} 
+                    />
                   </div>
+                </div>
+              </div>
 
-                  <div className="mt-6">
-                    <button type="submit" className="w-full bg-brand-orange hover:bg-white text-black font-bold uppercase tracking-wider text-sm px-6 py-4 transition-colors duration-300 shadow-[0_0_20px_rgba(246,150,33,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]">
-                      Confirm Reservation
-                    </button>
+              <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Service Location</h3>
+                    <p className="text-[10px] text-white/40 font-medium italic">Pin your exact spot for onsite detailing</p>
                   </div>
-                </form>
-              </>
-            )}
-          </motion.div>
-        </div>
+                  <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
+                    <button onClick={() => setShowMap(false)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!showMap ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Text</button>
+                    <button onClick={() => setShowMap(true)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${showMap ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Map</button>
+                  </div>
+                </div>
 
+                <AnimatePresence mode="wait">
+                  {!showMap ? (
+                    <motion.div key="textInput" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="relative group">
+                      <input 
+                        type="text" 
+                        placeholder="Enter Building, Street, or Area Name" 
+                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-5 pr-16 text-sm font-bold focus:border-brand-orange outline-none transition-all group-hover:bg-white/[0.07]" 
+                        value={formData.address} 
+                        onChange={e => setFormData({...formData, address: e.target.value})} 
+                      />
+                      <button 
+                        onClick={() => setIsMapModalOpen(true)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-brand-orange text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-90 transition-all z-10"
+                      >
+                        <MapPin size={20} strokeWidth={3} />
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="mapInput" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-4">
+                      <div className="w-full h-64 rounded-[2rem] overflow-hidden border border-white/10 relative bg-white/5">
+                        <iframe 
+                          width="100%" 
+                          height="100%" 
+                          frameBorder="0" 
+                          style={{ filter: 'brightness(0.8) contrast(1.2)' }}
+                          src={`https://maps.google.com/maps?q=${formData.address || 'Dubai'}&t=k&z=17&ie=UTF8&iwloc=&output=embed`}
+                        />
+                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                           <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="relative flex flex-col items-center">
+                              <svg width="40" height="50" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_10px_15px_rgba(246,150,33,0.4)]">
+                                <path d="M12 0C5.37 0 0 5.37 0 12C0 21 12 30 12 30C12 30 24 21 24 12C24 5.37 18.63 0 12 0ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17Z" fill="#F69621"/>
+                                <circle cx="12" cy="12" r="4" fill="black"/>
+                              </svg>
+                           </motion.div>
+                        </div>
+                        <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md border border-white/10 p-3 rounded-2xl flex items-center justify-between">
+                           <span className="text-[9px] font-black uppercase text-white/60 truncate pr-4">{formData.address || 'Search or Pin Location'}</span>
+                           <button onClick={() => setIsMapModalOpen(true)} className="text-[9px] font-black uppercase text-brand-orange whitespace-nowrap">Open Full Map</button>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setIsMapModalOpen(true)}
+                        className="w-full bg-white/5 hover:bg-white/10 border border-white/5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center justify-center gap-3 transition-all"
+                      >
+                        <Search size={14} /> Full Map Selection
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
-      <Footer />
-    </>
+
+      <ServiceDetailDrawer service={detailService} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onAdd={addService} onRemove={removeService} quantity={selectedServices.find(s => s.id === detailService?.id)?.quantity || 0} />
+
+      <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-4xl z-[9999] bg-black/60 backdrop-blur-2xl border border-white/10 h-20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <div className="h-full px-6 sm:px-10 flex items-center justify-between gap-4">
+          <button onClick={() => setSummaryExpanded(!summaryExpanded)} className="flex flex-col items-start group min-w-0">
+            <span className="text-[8px] sm:text-[10px] font-black text-brand-orange uppercase tracking-[0.4em] group-hover:text-white transition-colors leading-none">Booking Total</span>
+            <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5">
+              <span className="text-xl sm:text-3xl font-black text-white italic tracking-tighter leading-none">₹{calculateTotal()}</span>
+              <motion.div animate={{ rotate: summaryExpanded ? 0 : 180 }} transition={{ duration: 0.3 }}>
+                <ChevronUp size={16} className="text-brand-orange group-hover:text-white transition-colors"/>
+              </motion.div>
+            </div>
+          </button>
+          
+          <button 
+            onClick={currentStep === 5 ? handleSubmit : handleNext} 
+            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime))} 
+            className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-12 sm:h-14 px-6 sm:px-10 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
+          >
+            {isSubmitting
+              ? <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"/>
+              : <>{currentStep === 5 ? "Confirm" : "Next Phase"}<ChevronRight size={14} strokeWidth={3}/></>
+            }
+          </button>
+        </div>
+      </footer>
+
+      <AnimatePresence>
+        {summaryExpanded && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSummaryExpanded(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1001]"
+            />
+            {/* Sheet — slides up from bottom, covers footer */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed bottom-0 left-0 right-0 z-[1002] bg-[#0D0D0D] border-t border-white/10 rounded-t-3xl shadow-[0_-30px_80px_rgba(0,0,0,0.7)] overflow-hidden"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-white/10"/>
+              </div>
+
+              {/* Header */}
+              <div className="px-6 pt-3 pb-4 flex items-center justify-between">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-orange flex items-center gap-2">
+                  <Sparkles size={12}/> Booking Summary
+                </h3>
+                <button
+                  onClick={() => setSummaryExpanded(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 border border-white/8 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"
+                >
+                  <X size={14}/>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-white/5 mx-6"/>
+
+              {/* Items list */}
+              <div className="px-6 py-5 space-y-4 max-h-[45vh] overflow-y-auto">
+                {(() => {
+                  const vType = vehicleTypes.find(v => v.name === carDetails.type);
+                  const overrides = (vType as any)?.locationOverrides || {};
+                  const surcharge = vType ? (selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : vType.surcharge) : 0;
+                  
+                  const hasSelection = selectedServices.length > 0 || selectedAddOns.length > 0 || surcharge !== 0;
+
+                  if (!hasSelection) return (
+                    <div className="text-center py-8">
+                      <p className="text-xs text-white/20 italic">No treatments selected yet</p>
+                    </div>
+                  );
+
+                  return (
+                    <>
+                      {/* Vehicle Base / Surcharge */}
+                      {surcharge !== 0 && (
+                         <div className="flex items-center justify-between gap-3 p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
+                           <div className="flex items-center gap-3 min-w-0">
+                             <div className="w-9 h-9 rounded-xl bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange shrink-0">
+                               <CarIcon size={16}/>
+                             </div>
+                             <div className="min-w-0">
+                               <p className="text-[10px] font-black uppercase text-brand-orange/60 leading-none">Base Category</p>
+                               <p className="text-sm font-black italic uppercase tracking-tight text-white mt-1.5 leading-none truncate">{carDetails.type} Setup</p>
+                             </div>
+                           </div>
+                           <span className="text-sm font-black text-white italic shrink-0">₹{surcharge}</span>
+                         </div>
+                      )}
+
+                      {selectedServices.map(sel => {
+                      const s = services.find(x => x.id === sel.id);
+                      if (!s) return null;
+                      const IconComp = ICON_MAP[s.icon as any] || Car;
+                      return (
+                        <div key={sel.id} className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange shrink-0">
+                              <IconComp size={16}/>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-black italic uppercase tracking-tight text-white leading-none truncate">{s.name}</p>
+                              {sel.quantity > 1 && <p className="text-[10px] text-white/30 mt-0.5">{sel.quantity}× quantity</p>}
+                            </div>
+                          </div>
+                          <span className="text-sm font-black text-white italic shrink-0">₹{parseInt(s.price.replace(/[^\d]/g,'') || '0') * sel.quantity}</span>
+                        </div>
+                      );
+                    })}
+                    {selectedGarageId && (
+                      <div className="flex items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/30 shrink-0">
+                            <MapPin size={16}/>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-black uppercase text-white/20 leading-none">Location</p>
+                            <p className="text-xs font-bold text-white leading-tight mt-1">{garages.find(g => g.id === selectedGarageId)?.name || "Default Center"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {carDetails.model && (
+                      <div className="flex items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/30 shrink-0">
+                            <Car size={16}/>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-black uppercase text-white/20 leading-none">Vehicle</p>
+                            <p className="text-xs font-bold text-white leading-tight mt-1">{carDetails.type} • {carDetails.model}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedAddOns.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2 pt-1">
+                          <div className="h-px flex-grow bg-white/5"/>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Add-ons</span>
+                          <div className="h-px flex-grow bg-white/5"/>
+                        </div>
+                        {selectedAddOns.map(id => {
+                          const addon = services.find(a => a.id === id);
+                          if (!addon) return null;
+                          return (
+                            <div key={id} className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-1.5 h-1.5 bg-brand-orange/50 rounded-full shrink-0 ml-4"/>
+                                <span className="text-xs font-bold text-white/50 italic uppercase tracking-tight truncate">{addon.name}</span>
+                              </div>
+                              <span className="text-xs font-black text-white/40 italic shrink-0">₹{addon.price}</span>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Grand total */}
+              <div className="mx-6 mb-6 mt-2 p-4 bg-brand-orange/8 border border-brand-orange/15 rounded-2xl flex items-center justify-between">
+                <span className="text-sm font-black uppercase italic tracking-widest text-brand-orange">Grand Total</span>
+                <span className="text-2xl font-black text-brand-orange italic">₹{calculateTotal()}.00</span>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isMapModalOpen && (
+          <InteractiveMapModal 
+            isOpen={isMapModalOpen}
+            onClose={() => setIsMapModalOpen(false)}
+            onConfirm={(addr) => {
+              setFormData(prev => ({ ...prev, address: addr }));
+              setShowMap(true);
+              setIsMapModalOpen(false);
+            }}
+            initialCoords={mapCoords}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Interactive Marker Component
+function LocationMarker({ onPositionChange }: { onPositionChange: (pos: string) => void }) {
+  const [position, setPosition] = React.useState<[number, number] | null>(null);
+  const MapEventsHook = (window as any).ReactLeaflet?.useMapEvents || (() => ({}));
+  
+  // Note: In a real Next.js app with dynamic imports, we need to ensure the hook is available.
+  // Since we are using dynamic imports, we'll implement it inside the MapContainer's child.
+  return null; 
+}
+
+export default function BookingPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin" />
+      </div>
+    }>
+      <BookingPageInner />
+    </React.Suspense>
   );
 }

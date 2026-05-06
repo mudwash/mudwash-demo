@@ -50,9 +50,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        {/* Use Next.js Script component for better performance and to avoid React warnings */}
-        <Script id="pwa-init" strategy="beforeInteractive">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Script id="pwa-init" strategy="afterInteractive">
           {`
             // Capture Install Prompt
             window.addEventListener('beforeinstallprompt', function(e) {
@@ -63,8 +62,6 @@ export default function RootLayout({
             });
           `}
         </Script>
-      </head>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AuthProvider>
           <PWAWrapper />
           <Navbar />

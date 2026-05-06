@@ -17,6 +17,7 @@ export interface Service {
   duration: string;
   category: string;
   description: string;
+  includedItems?: string[];
   image: string;
   icon?: string;
   active: boolean;

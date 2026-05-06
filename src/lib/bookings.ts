@@ -24,7 +24,7 @@ export interface Booking {
   createdAt?: any;
 }
 
-const COLLECTION_NAME = "bookings";
+export const COLLECTION_NAME = "bookings";
 
 export const getBookings = async () => {
   const bookingsCol = collection(db, COLLECTION_NAME);
