@@ -13,7 +13,8 @@ import {
   Save,
   ImageIcon,
   Hash,
-  DollarSign
+  DollarSign,
+  Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -27,7 +28,12 @@ import {
   deleteDoc, 
   doc 
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { 
+  ref, 
+  uploadBytes, 
+  getDownloadURL 
+} from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 
 export default function VehicleTypesAdmin() {
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -35,6 +41,7 @@ export default function VehicleTypesAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<VehicleType | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<Omit<VehicleType, 'id'>>({
     name: '',
     surcharge: 0,
@@ -75,6 +82,24 @@ export default function VehicleTypesAdmin() {
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `vehicles/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      setFormData(prev => ({ ...prev, image: downloadURL }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -303,16 +328,29 @@ export default function VehicleTypesAdmin() {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Visual Preview URL (Unsplash/ImgBB)</label>
-                    <div className="relative group">
-                      <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-orange transition-colors" size={18} />
-                      <input 
-                        type="url" 
-                        value={formData.image}
-                        onChange={(e) => setFormData({...formData, image: e.target.value})}
-                        className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm focus:outline-none focus:border-brand-orange/50 transition-all text-white font-bold"
-                        placeholder="https://images.unsplash.com/..."
-                      />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Visual Preview (Image File or URL)</label>
+                    <div className="flex gap-4">
+                       <div className="relative group flex-1">
+                        <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-orange transition-colors" size={18} />
+                        <input 
+                          type="url" 
+                          value={formData.image}
+                          onChange={(e) => setFormData({...formData, image: e.target.value})}
+                          className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm focus:outline-none focus:border-brand-orange/50 transition-all text-white font-bold"
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <label className="flex flex-col items-center justify-center px-6 py-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer group min-w-[140px]">
+                        {uploading ? (
+                          <div className="w-5 h-5 border-2 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Plus size={18} className="text-white/20 group-hover:text-brand-orange mb-1" />
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Upload File</span>
+                          </>
+                        )}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                      </label>
                     </div>
                   </div>
 
