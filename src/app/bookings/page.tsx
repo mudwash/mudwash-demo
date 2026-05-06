@@ -574,13 +574,35 @@ export function BookingPageInner() {
                   {/* Suggestions via OpenDataSoft API */}
                   <AnimatePresence>
                     {apiSuggestions.length > 0 && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute left-0 right-0 mt-4 bg-[#0F0F0F] border border-white/10 rounded-[2rem] shadow-2xl z-50 overflow-hidden">
-                        <div className="max-h-64 overflow-y-auto no-scrollbar py-4">
-                          {isApiLoading && <div className="px-10 py-4 flex items-center gap-3 text-white/20 italic text-xs"><Loader2 className="animate-spin" size={12}/>Searching...</div>}
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                        animate={{ opacity: 1, y: 0, scale: 1 }} 
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }} 
+                        className="absolute left-0 right-0 mt-4 bg-[#111111] border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10001] overflow-hidden backdrop-blur-xl"
+                      >
+                        <div className="max-h-72 overflow-y-auto custom-scrollbar py-4">
+                          {isApiLoading && (
+                            <div className="px-10 py-6 flex items-center gap-3 text-brand-orange/50 italic text-xs">
+                              <Loader2 className="animate-spin" size={14}/>
+                              <span className="font-black uppercase tracking-widest">Searching Catalog...</span>
+                            </div>
+                          )}
                           {apiSuggestions.map((car, idx) => (
-                            <button key={idx} onClick={() => setCarDetails(prev => ({ ...prev, model: car }))} className="w-full px-10 py-4 text-left hover:bg-brand-orange/10 hover:text-brand-orange transition-all font-bold italic flex items-center justify-between group/item">
-                              <span className="text-sm">{car}</span>
-                              <Plus size={14} className="opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                            <button 
+                              key={idx} 
+                              onClick={() => {
+                                setCarDetails(prev => ({ ...prev, model: car }));
+                                setApiSuggestions([]);
+                              }} 
+                              className="w-full px-10 py-5 text-left hover:bg-brand-orange text-white hover:text-black transition-all font-bold italic flex items-center justify-between group/item border-b border-white/[0.03] last:border-none"
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-sm uppercase tracking-tight">{car}</span>
+                                <span className="text-[9px] opacity-40 uppercase tracking-widest group-hover/item:opacity-70 transition-opacity">Precision Match</span>
+                              </div>
+                              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover/item:bg-black/20 transition-colors">
+                                <Plus size={14} className="opacity-40 group-hover/item:opacity-100 transition-opacity" />
+                              </div>
                             </button>
                           ))}
                         </div>
