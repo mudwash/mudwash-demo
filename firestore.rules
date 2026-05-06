@@ -27,6 +27,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    match /vehicleTypes/{typeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     // Bookings: Admin can do anything, Users can read/write their own
     match /bookings/{bookingId} {

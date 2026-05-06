@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -97,6 +97,13 @@ const ICON_MAP: any = {
   Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
   Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
   Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
+};
+
+const VEHICLE_IMAGES: Record<string, string> = {
+  "Sedan": "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=800",
+  "SUV": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800",
+  "Van": "https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&q=80&w=800",
+  "Adventure": "https://images.unsplash.com/photo-1533590901646-4a6011172f59?auto=format&fit=crop&q=80&w=800"
 };
 
 
@@ -206,8 +213,7 @@ const ServiceDetailDrawer = ({
 };
 
 export function BookingPageInner() {
-  const { user, profile } = useAuth();
-  const router = useRouter();
+  const { profile } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -369,13 +375,6 @@ export function BookingPageInner() {
 
   const handleNext = () => {
     if (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) return;
-    
-    // Enforce sign-in after phase 1
-    if (currentStep === 1 && !user) {
-      router.push('/sign-up?returnTo=/bookings');
-      return;
-    }
-
     if (currentStep === 2 && selectedServices.length === 0) return;
     if (currentStep === 4 && (!selectedDate || !selectedTime)) return;
     setCurrentStep(prev => prev + 1);
@@ -388,10 +387,6 @@ export function BookingPageInner() {
   };
 
   const handleSubmit = async () => {
-    if (!user) {
-      router.push('/sign-up?returnTo=/bookings');
-      return;
-    }
     setIsSubmitting(true);
     try {
       const serviceSummary = selectedServices.map(sel => {
@@ -565,7 +560,7 @@ export function BookingPageInner() {
                         className={`p-6 sm:p-8 rounded-[2.5rem] border transition-all duration-500 group flex flex-col items-center gap-4 relative overflow-hidden ${isVSelected ? 'bg-brand-orange border-brand-orange text-black shadow-[0_20px_50px_rgba(246,150,33,0.2)]' : 'bg-[#0F0F0F] border-white/5 text-white/30 hover:border-white/10 hover:text-white'}`}
                       >
                         <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg text-[7px] font-black uppercase tracking-widest ${isVSelected ? 'bg-black/20 text-black' : 'bg-white/5 text-white/20'}`}>
-                          AED {price >= 0 ? `+${price}` : price}
+                          ₹ {price >= 0 ? `+${price}` : price}
                         </div>
                         <Icon size={32} strokeWidth={isVSelected ? 3 : 2} className="transition-transform group-hover:scale-110" />
                         <span className="text-[10px] font-black uppercase tracking-widest leading-none">{v.name}</span>
@@ -573,6 +568,43 @@ export function BookingPageInner() {
                     );
                   })}
                 </div>
+
+                {/* Selected Vehicle Preview */}
+                <AnimatePresence mode="wait">
+                  {carDetails.type && (
+                    <motion.div 
+                      key={carDetails.type}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="relative h-64 md:h-80 rounded-[3rem] overflow-hidden group shadow-2xl border border-white/5"
+                    >
+                      <img 
+                        src={VEHICLE_IMAGES[carDetails.type] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800"} 
+                        alt={carDetails.type}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                      <div className="absolute bottom-10 left-10">
+                        <motion.div 
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="space-y-1"
+                        >
+                          <span className="text-brand-orange text-[10px] font-black uppercase tracking-[0.4em]">Selected Class</span>
+                          <h3 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">{carDetails.type}</h3>
+                        </motion.div>
+                      </div>
+                      <div className="absolute top-8 right-8 w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white/50 border border-white/10">
+                        {(() => {
+                           const v = vehicleTypes.find(x => x.name === carDetails.type);
+                           const Icon = (v?.icon && ICON_MAP[v.icon]) || CarIcon;
+                           return <Icon size={32} />;
+                        })()}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className="max-w-2xl relative">
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mb-6 px-4">Car Model Name</p>

@@ -17,6 +17,7 @@ export interface VehicleType {
   locationOverrides?: Record<string, number>;
   order: number;
   icon?: string;
+  image?: string;
 }
 
 const COLLECTION_NAME = "vehicleTypes";
