@@ -72,6 +72,7 @@ export default function BookingContactForm() {
         time: "10:00 AM", 
         location: "Mobile Detailing",
         amount: "AED 450",
+        carDetails: "Sedan - Standard",
         status: "Pending"
       });
       setIsSuccess(true);
