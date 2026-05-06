@@ -535,7 +535,7 @@ export function BookingPageInner() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   {vehicleTypes.map(v => {
-                    const Icon = ICON_MAP[v.icon] || CarIcon;
+                    const Icon = (v.icon && ICON_MAP[v.icon]) || CarIcon;
                     const isVSelected = carDetails.type === v.name;
                     const overrides = (v as any).locationOverrides || {};
                     const price = selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : v.surcharge;

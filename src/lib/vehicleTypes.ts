@@ -16,6 +16,7 @@ export interface VehicleType {
   surcharge: number;
   locationOverrides?: Record<string, number>;
   order: number;
+  icon?: string;
 }
 
 const COLLECTION_NAME = "vehicleTypes";
