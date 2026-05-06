@@ -54,6 +54,7 @@ export default function BookingsPage() {
     time: "",
     location: "",
     amount: "AED 0",
+    carDetails: "",
     status: "Pending" as Booking["status"]
   });
 
@@ -129,7 +130,8 @@ export default function BookingsPage() {
       setIsModalOpen(false);
       setFormData({
         customerName: "", email: "", phone: "", service: "",
-        date: "", time: "", location: "", amount: "AED 0", status: "Pending"
+        date: "", time: "", location: "", amount: "AED 0", 
+        carDetails: "", status: "Pending"
       });
       fetchBookings();
     } catch (error) {
@@ -569,6 +571,21 @@ export default function BookingsPage() {
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
                       className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Vehicle Info (Make, Model, Type)</label>
+                  <div className="relative group">
+                    <CarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-orange transition-colors" size={16} />
+                    <input 
+                      required
+                      type="text" 
+                      value={formData.carDetails}
+                      onChange={(e) => setFormData({...formData, carDetails: e.target.value})}
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all font-bold"
+                      placeholder="e.g. SUV - Nissan Patrol"
                     />
                   </div>
                 </div>
