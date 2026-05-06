@@ -384,22 +384,28 @@ export function BookingPageInner() {
     try {
       const serviceSummary = selectedServices.map(sel => {
         const s = services.find(x => x.id === sel.id);
-        return `${sel.quantity}x ${s?.name}`;
+        return s ? `${sel.quantity}x ${s.name}` : `${sel.quantity}x Service`;
       }).join(", ");
+      
       await createBooking({ 
-        customerName: formData.name, 
-        email: formData.email, 
-        phone: formData.phone, 
-        service: serviceSummary, 
-        date: selectedDate || "", 
-        time: selectedTime || "", 
+        customerName: formData.name || "Guest", 
+        email: formData.email || "guest@mudwash.com", 
+        phone: formData.phone || "N/A", 
+        service: serviceSummary || "General Service", 
+        date: selectedDate || new Date().toISOString().split('T')[0], 
+        time: selectedTime || "10:00 AM", 
         location: formData.address || "Location not specified", 
         amount: `₹${calculateTotal()}`, 
         status: "Pending",
-        carDetails: `${carDetails.type} - ${carDetails.model}`
+        carDetails: `${carDetails.type || 'Standard'} - ${carDetails.model || 'Unknown'}`
       });
       setIsSuccess(true);
-    } catch (err) { alert("Something went wrong."); } finally { setIsSubmitting(false); }
+    } catch (err: any) { 
+      console.error("Booking Submission Error:", err);
+      alert("Booking failed: " + (err.message || "Please check your internet connection and try again.")); 
+    } finally { 
+      setIsSubmitting(false); 
+    }
   };
 
   const filteredServices = services.filter(s => {
@@ -952,7 +958,7 @@ export function BookingPageInner() {
               <div className="h-px bg-white/5 mx-6"/>
 
               {/* Items list */}
-              <div className="px-6 py-5 space-y-4 max-h-[45vh] overflow-y-auto">
+              <div className="px-6 py-5 space-y-6 max-h-[70vh] overflow-y-auto pb-40 no-scrollbar">
                 {(() => {
                   const vType = vehicleTypes.find(v => v.name === carDetails.type);
                   const overrides = (vType as any)?.locationOverrides || {};

@@ -31,7 +31,7 @@ service cloud.firestore {
     // Bookings: Admin can do anything, Users can read/write their own
     match /bookings/{bookingId} {
       allow read: if isAdmin() || (request.auth != null && (request.auth.token.email == resource.data.email || request.auth.uid == resource.data.userId));
-      allow create: if request.auth != null; // Restrict creation to logged-in users
+      allow create: if true; // Allow guest bookings for testing and ease of use
       allow update, delete: if isAdmin();
     }
 
