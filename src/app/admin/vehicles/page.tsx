@@ -8,6 +8,7 @@ import {
   Edit2, 
   Trash2, 
   Car, 
+  Bike,
   ArrowUpDown, 
   X,
   Save,
@@ -322,6 +323,7 @@ export default function VehicleTypesAdmin() {
                           <option value="ShieldCheck" className="bg-black text-white">Shield (SUV)</option>
                           <option value="Package" className="bg-black text-white">Box (Van)</option>
                           <option value="Truck" className="bg-black text-white">Truck (Heavy)</option>
+                          <option value="Bike" className="bg-black text-white">Bike</option>
                         </select>
                       </div>
                     </div>

@@ -4,7 +4,26 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MapPin, ChevronDown } from "lucide-react";
+
+const DUBAI_LOCATIONS = [
+  "Downtown Dubai",
+  "Dubai Marina",
+  "Jumeirah Village Circle",
+  "Palm Jumeirah",
+  "Business Bay",
+  "JLT",
+  "Al Barsha",
+  "Dubai Hills",
+  "Mirdif",
+  "Deira",
+  "Bur Dubai",
+  "Silicon Oasis",
+  "Jumeirah",
+  "Al Quoz",
+  "Discovery Gardens",
+  "International City",
+];
 
 const heroData = [
   {
@@ -20,6 +39,7 @@ const heroData = [
 
 export default function Hero() {
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("Choose Location");
   const currentSlide = 0;
 
   useEffect(() => {
@@ -28,6 +48,20 @@ export default function Hero() {
       setVideoLoaded(true);
     }, 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const readLocation = () => {
+      const savedLocation = localStorage.getItem("userLocation");
+      if (savedLocation) {
+        setSelectedLocation(savedLocation);
+      }
+    };
+
+    window.addEventListener("locationChanged", readLocation);
+    readLocation(); // Run on mount
+
+    return () => window.removeEventListener("locationChanged", readLocation);
   }, []);
 
   return (
@@ -78,10 +112,11 @@ export default function Hero() {
           </div>
 
           {/* Location pill */}
-          <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 mt-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
-            <span className="text-white text-[10px] font-bold">Dubai, UAE</span>
-          </div>
+          <Link href="/location" className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 mt-1 text-white hover:bg-white/20 transition-colors">
+            <MapPin size={12} className="text-brand-orange" />
+            <span className="text-[10px] font-bold truncate max-w-[100px]">{selectedLocation}</span>
+            <ChevronDown size={12} className="text-white/50" />
+          </Link>
         </motion.div>
 
         {/* ── CENTRE: Hero Tagline ── */}

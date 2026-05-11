@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getServices, Service } from "@/lib/services";
 import {
   Loader2, ArrowRight, Check, X, ChevronRight,
@@ -60,6 +61,7 @@ export default function ServicesGrid() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Service | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
@@ -79,7 +81,7 @@ export default function ServicesGrid() {
   }, [selected]);
 
   const handleCardClick = (service: Service) => {
-    setSelected(prev => prev?.id === service.id ? null : service);
+    router.push(`/bookings?service=${service.id}`);
   };
 
   return (

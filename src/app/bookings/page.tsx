@@ -253,46 +253,59 @@ export function BookingPageInner() {
   // Car Suggestions API State
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
   const [isApiLoading, setIsApiLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const suggestionCache = React.useRef<Record<string, string[]>>({});
+  
+  const DUBAI_FAVORITES = [
+    "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado",
+    "Tesla Model Y", "Mercedes G63 AMG", "Lexus LX600"
+  ];
   
   useEffect(() => {
     const term = carDetails.model.trim();
+    
+    if (term.length < 1) {
+      setApiSuggestions(DUBAI_FAVORITES);
+      return;
+    }
+    
     if (term.length < 2) {
-      setApiSuggestions([]);
+      const matches = DUBAI_FAVORITES.filter(c => 
+        c.toLowerCase().includes(term.toLowerCase())
+      );
+      setApiSuggestions(matches);
+      return;
+    }
+
+    // Check cache first for instant results
+    const cacheKey = `${term}-${carDetails.type}`;
+    if (suggestionCache.current[cacheKey]) {
+      setApiSuggestions(suggestionCache.current[cacheKey]);
       return;
     }
 
     const timer = setTimeout(async () => {
       setIsApiLoading(true);
       try {
-        const DUBAI_FAVORITES = [
-          "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Nissan Altima",
-          "Toyota Corolla", "Toyota Camry", "Lexus LX570", "Lexus LX600",
-          "Tesla Model 3", "Tesla Model Y", "Mercedes G63 AMG", "Mercedes S-Class",
-          "Range Rover Sport", "Range Rover Vogue", "Porsche Cayenne", "Porsche Macan",
-          "BMW X5", "BMW X6", "Ferrari 488", "Ferrari F8", "Ferrari Roma",
-          "Lamborghini Urus", "Lamborghini Huracan", "Rolls Royce Cullinan", "Bentley Bentayga"
-        ];
-
-        const localMatches = DUBAI_FAVORITES.filter(c => 
-          c.toLowerCase().includes(term.toLowerCase())
-        );
-
-        const res = await fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/all-vehicles-model/records?limit=8&where=suggest(model, "${term}")`);
-        const data = await res.json();
-        let apiResults: string[] = [];
-        if (data.results) {
-          apiResults = data.results.map((r: any) => `${r.make} ${r.model}`);
-        }
+        const res = await fetch('/api/car-suggestions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ term, category: carDetails.type })
+        });
         
-        // Combine, prioritize local favorites, remove duplicates
-        const combined = Array.from(new Set([...localMatches, ...apiResults])).slice(0, 8);
-        setApiSuggestions(combined as string[]);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setApiSuggestions(data);
+          suggestionCache.current[cacheKey] = data; // Save to cache
+        }
       } catch (e) {
         console.error("Car API Error:", e);
       } finally {
         setIsApiLoading(false);
       }
-    }, 400);
+    }, 200); // Reduced from 400ms to 200ms for faster response
 
     return () => clearTimeout(timer);
   }, [carDetails.model]);
@@ -517,57 +530,19 @@ export function BookingPageInner() {
           {currentStep === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-16">
               
-              {/* Location Selection */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-                      <MapPin size={20} />
-                   </div>
-                   <div className="space-y-0.5">
-                      <span className="text-[10px] text-brand-orange font-black uppercase tracking-[0.3em]">Step 01</span>
-                      <h2 className="text-2xl font-black uppercase italic tracking-tighter">Choose Service Center</h2>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   {garages.map(g => (
-                      <button 
-                        key={g.id}
-                        onClick={() => setSelectedGarageId(g.id!)}
-                        className={`p-6 rounded-[2rem] border transition-all duration-500 flex flex-col gap-4 text-left group relative overflow-hidden ${selectedGarageId === g.id ? 'bg-brand-orange border-brand-orange shadow-[0_20px_40px_rgba(246,150,33,0.1)]' : 'bg-[#0F0F0F] border-white/5 hover:border-white/10'}`}
-                      >
-                         <div className="flex justify-between items-start">
-                            <h3 className={`text-sm font-black uppercase italic tracking-tight ${selectedGarageId === g.id ? 'text-black' : 'text-white'}`}>{g.name}</h3>
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedGarageId === g.id ? 'bg-black text-brand-orange' : 'bg-white/5 text-white/20'}`}>
-                               <Check size={16} strokeWidth={3} className={selectedGarageId === g.id ? 'opacity-100' : 'opacity-0'} />
-                            </div>
-                         </div>
-                         <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedGarageId === g.id ? 'text-black/60' : 'text-white/20'}`}>{g.location}</p>
-                         {selectedGarageId === g.id && <motion.div layoutId="locIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-black/20" />}
-                      </button>
-                   ))}
-                   {garages.length === 0 && !loading && (
-                      <div className="col-span-full py-12 border border-white/5 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-4">
-                         <Map size={32} className="text-white/10" />
-                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">No Service Centers Available</p>
-                      </div>
-                   )}
-                </div>
-              </div>
-
               {/* Vehicle Selection */}
-              <div className="space-y-10 pt-10 border-t border-white/5">
+              <div className="space-y-10">
                 <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
                       <CarIcon size={20} />
                    </div>
                    <div className="space-y-0.5">
-                      <span className="text-[10px] text-brand-orange font-black uppercase tracking-[0.3em]">Step 02</span>
+                      <span className="text-[10px] text-brand-orange font-black uppercase tracking-[0.3em]">Step 01</span>
                       <h2 className="text-2xl font-black uppercase italic tracking-tighter">Your Vehicle</h2>
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="flex overflow-x-auto gap-4 sm:gap-6 pb-6 snap-x snap-mandatory">
                   {vehicleTypes.map(v => {
                     const isVSelected = carDetails.type === v.name;
                     const overrides = (v as any).locationOverrides || {};
@@ -578,7 +553,7 @@ export function BookingPageInner() {
                       <button 
                         key={v.id}
                         onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
-                        className={`h-48 sm:h-56 rounded-[2.5rem] border transition-all duration-500 group relative overflow-hidden ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
+                        className={`flex-shrink-0 w-64 sm:w-72 h-48 sm:h-56 rounded-[2.5rem] border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
                       >
                         <img 
                           src={imgSrc} 
@@ -590,9 +565,7 @@ export function BookingPageInner() {
                         <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
                           <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-1 transition-colors ${isVSelected ? 'text-black' : 'text-white/60'}`}>Category</p>
                           <h4 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tighter transition-colors ${isVSelected ? 'text-black' : 'text-white'}`}>{v.name}</h4>
-                          <div className={`mt-3 inline-flex px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${isVSelected ? 'bg-black/20 text-black' : 'bg-white/5 text-white/40'}`}>
-                            ₹ {price >= 0 ? `+${price}` : price}
-                          </div>
+
                         </div>
                         
                         {isVSelected && (
@@ -660,6 +633,8 @@ export function BookingPageInner() {
                       placeholder="e.g. Tesla Model 3 or Audi A4" 
                       value={carDetails.model}
                       onChange={e => setCarDetails(prev => ({ ...prev, model: e.target.value }))}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                       className="w-full bg-white/5 border border-white/5 rounded-[2rem] px-10 py-6 text-lg font-bold italic focus:outline-none focus:border-brand-orange/50 focus:bg-white/[0.08] transition-all placeholder:text-white/10"
                     />
                     <div className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-orange/10 flex items-center justify-center text-brand-orange/40 group-focus-within:text-brand-orange transition-colors">
@@ -669,7 +644,7 @@ export function BookingPageInner() {
 
                   {/* Suggestions via OpenDataSoft API */}
                   <AnimatePresence>
-                    {apiSuggestions.length > 0 && (
+                    {isFocused && (apiSuggestions.length > 0 || isApiLoading) && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10, scale: 0.95 }} 
                         animate={{ opacity: 1, y: 0, scale: 1 }} 
@@ -729,15 +704,19 @@ export function BookingPageInner() {
                     {categories.map(cat => {
                       const isActive = selectedCategory === cat.name;
                       const IC = ICON_MAP[cat.icon] || Package;
+                      const serviceCount = services.filter(s => s.category === cat.name).length;
                       return (
                         <button 
                           key={cat.id} 
                           onClick={() => setSelectedCategory(cat.name)} 
-                          className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex items-center gap-3 ${isActive ? 'bg-brand-orange text-black shadow-lg' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                          className={`w-24 h-24 flex-shrink-0 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-2 ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)]' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5'}`}
                         >
-                          {isActive && <motion.div layoutId="catPill" className="absolute inset-0 bg-brand-orange rounded-2xl -z-10 shadow-[0_10px_25px_rgba(246,150,33,0.4)]" />}
-                          <IC size={16} strokeWidth={3} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
-                          {cat.name}
+                          <IC size={28} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
+                          <span className={`text-[8px] font-black uppercase tracking-widest mt-1 ${isActive ? 'text-black' : 'text-white/60'}`}>{cat.name}</span>
+                          {/* Badge with service count */}
+                          <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${isActive ? 'bg-black text-brand-orange border border-brand-orange/20' : 'bg-[#1A1A1A] text-white/40 border border-white/10'}`}>
+                            {serviceCount}
+                          </div>
                         </button>
                       );
                     })}
@@ -989,7 +968,6 @@ export function BookingPageInner() {
           <button onClick={() => setSummaryExpanded(!summaryExpanded)} className="flex flex-col items-start group min-w-0">
             <span className="text-[8px] sm:text-[10px] font-black text-brand-orange uppercase tracking-[0.4em] group-hover:text-white transition-colors leading-none">Booking Total</span>
             <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5">
-              <span className="text-xl sm:text-3xl font-black text-white italic tracking-tighter leading-none">₹{calculateTotal()}</span>
               <motion.div animate={{ rotate: summaryExpanded ? 0 : 180 }} transition={{ duration: 0.3 }}>
                 <ChevronUp size={16} className="text-brand-orange group-hover:text-white transition-colors"/>
               </motion.div>
