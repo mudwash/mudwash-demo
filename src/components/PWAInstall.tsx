@@ -129,7 +129,7 @@ export default function PWAInstall() {
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-14 h-14 md:w-12 md:h-12 rounded-xl bg-[#1a1a1a] border border-white/10 overflow-hidden flex items-center justify-center shadow-lg shrink-0">
                                         <Image
-                                            src="/icon-192x192.png"
+                                            src="/mudwash-logo-final.png"
                                             alt="MUDWASH"
                                             width={48}
                                             height={48}
