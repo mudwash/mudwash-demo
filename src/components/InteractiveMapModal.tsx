@@ -59,6 +59,17 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
   const [mapZoom, setMapZoom] = useState(17);
   const [mapType, setMapType] = useState<'hybrid' | 'streets'>('hybrid');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState("Fetching address...");
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      setIsGeocoding(true);
+      const addr = await reverseGeocode(mapCoords.lat, mapCoords.lng);
+      setCurrentAddress(addr);
+      setIsGeocoding(false);
+    }, 500); // 500ms debounce
+    return () => clearTimeout(timer);
+  }, [mapCoords]);
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-10">
@@ -159,7 +170,7 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
               <div className="flex-grow px-4">
                 <span className="text-[10px] font-black text-black/80 uppercase tracking-widest flex items-center gap-2.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-                  {isGeocoding ? "Decoding..." : `${mapCoords.lat.toFixed(5)}, ${mapCoords.lng.toFixed(5)}`}
+                  {isGeocoding ? "Decoding..." : currentAddress}
                 </span>
               </div>
               <button 

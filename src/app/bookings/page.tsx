@@ -248,6 +248,12 @@ export function BookingPageInner() {
   const [mapCoords, setMapCoords] = useState<{lat: number, lng: number}>({ lat: 25.2048, lng: 55.2708 });
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapType, setMapType] = useState<'hybrid' | 'streets'>('hybrid');
+  const [isAddressDetailsOpen, setIsAddressDetailsOpen] = useState(false);
+  const [addressDetails, setAddressDetails] = useState({
+    type: "Home" as "Home" | "Work" | "Other",
+    flatNo: "",
+    directions: ""
+  });
   const searchParams = useSearchParams();
 
   // Car Suggestions API State
@@ -646,10 +652,10 @@ export function BookingPageInner() {
                   <AnimatePresence>
                     {isFocused && (apiSuggestions.length > 0 || isApiLoading) && (
                       <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }} 
                         animate={{ opacity: 1, y: 0, scale: 1 }} 
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }} 
-                        className="absolute left-0 right-0 mt-4 bg-[#111111] border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10001] overflow-hidden backdrop-blur-xl"
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }} 
+                        className="absolute left-0 right-0 bottom-full mb-4 bg-[#111111] border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10001] overflow-hidden backdrop-blur-xl"
                       >
                         <div className="max-h-72 overflow-y-auto custom-scrollbar py-4">
                           {isApiLoading && (
@@ -784,7 +790,7 @@ export function BookingPageInner() {
                             <div className="flex items-center justify-between pt-3 border-t border-white/5">
                                <div className="flex flex-col">
                                   <span className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-0.5">Starting from</span>
-                                  <span className="text-xl font-black text-white italic tracking-tighter leading-none">₹{service.price}</span>
+                                  <span className="text-xl font-black text-white italic tracking-tighter leading-none">AED {service.price}</span>
                                </div>
                                {service.duration && (
                                  <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex items-center gap-1.5">
@@ -831,7 +837,7 @@ export function BookingPageInner() {
                           </div>
                           <div>
                             <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
-                            <p className="text-brand-orange font-bold text-sm">₹{addon.price}</p>
+                            <p className="text-brand-orange font-bold text-sm">AED {addon.price}</p>
                           </div>
                         </div>
                       </motion.div>
@@ -1054,7 +1060,7 @@ export function BookingPageInner() {
                                <p className="text-sm font-black italic uppercase tracking-tight text-white mt-1.5 leading-none truncate">{carDetails.type} Setup</p>
                              </div>
                            </div>
-                           <span className="text-sm font-black text-white italic shrink-0">₹{surcharge}</span>
+                           <span className="text-sm font-black text-white italic shrink-0">AED {surcharge}</span>
                          </div>
                       )}
 
@@ -1073,7 +1079,7 @@ export function BookingPageInner() {
                               {sel.quantity > 1 && <p className="text-[10px] text-white/30 mt-0.5">{sel.quantity}× quantity</p>}
                             </div>
                           </div>
-                          <span className="text-sm font-black text-white italic shrink-0">₹{parseInt(s.price.replace(/[^\d]/g,'') || '0') * sel.quantity}</span>
+                          <span className="text-sm font-black text-white italic shrink-0">AED {parseInt(s.price.replace(/[^\d]/g,'') || '0') * sel.quantity}</span>
                         </div>
                       );
                     })}
@@ -1119,7 +1125,7 @@ export function BookingPageInner() {
                                 <div className="w-1.5 h-1.5 bg-brand-orange/50 rounded-full shrink-0 ml-4"/>
                                 <span className="text-xs font-bold text-white/50 italic uppercase tracking-tight truncate">{addon.name}</span>
                               </div>
-                              <span className="text-xs font-black text-white/40 italic shrink-0">₹{addon.price}</span>
+                              <span className="text-xs font-black text-white/40 italic shrink-0">AED {addon.price}</span>
                             </div>
                           );
                         })}
@@ -1133,7 +1139,7 @@ export function BookingPageInner() {
               {/* Grand total */}
               <div className="mx-6 mb-6 mt-2 p-4 bg-brand-orange/8 border border-brand-orange/15 rounded-2xl flex items-center justify-between">
                 <span className="text-sm font-black uppercase italic tracking-widest text-brand-orange">Grand Total</span>
-                <span className="text-2xl font-black text-brand-orange italic">₹{calculateTotal()}.00</span>
+                <span className="text-2xl font-black text-brand-orange italic">AED {calculateTotal()}.00</span>
               </div>
             </motion.div>
           </>
@@ -1148,9 +1154,95 @@ export function BookingPageInner() {
               setFormData(prev => ({ ...prev, address: addr }));
               setShowMap(true);
               setIsMapModalOpen(false);
+              setIsAddressDetailsOpen(true);
             }}
             initialCoords={mapCoords}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Address Details Modal */}
+      <AnimatePresence>
+        {isAddressDetailsOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddressDetailsOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-md z-[10002]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 100, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-x-4 bottom-4 top-20 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[500px] md:h-auto bg-[#0D0D0D] border border-white/10 rounded-[2.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.8)] z-[10003] overflow-hidden flex flex-col"
+            >
+              <div className="p-8 space-y-6 flex-grow overflow-y-auto no-scrollbar">
+                <div>
+                  <h3 className="text-xl font-black uppercase italic tracking-tight text-white">Address Details</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mt-1">Complete your location info</p>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
+                  {["Home", "Work", "Other"].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setAddressDetails(prev => ({ ...prev, type: t as any }))}
+                      className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${addressDetails.type === t ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Inputs */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Address / Building Name</label>
+                    <input 
+                      type="text" 
+                      value={formData.address}
+                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Flat / Villa No.</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Flat 402 or Villa 12"
+                      value={addressDetails.flatNo}
+                      onChange={(e) => setAddressDetails(prev => ({ ...prev, flatNo: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/10"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Directions (Optional)</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Near the supermarket"
+                      value={addressDetails.directions}
+                      onChange={(e) => setAddressDetails(prev => ({ ...prev, directions: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="p-8 pt-0 mt-auto">
+                <button
+                  onClick={() => setIsAddressDetailsOpen(false)}
+                  className="w-full bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] text-xs h-14 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-brand-orange/20"
+                >
+                  Save Address <ChevronRight size={14} strokeWidth={3}/>
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
