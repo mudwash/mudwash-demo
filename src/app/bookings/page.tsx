@@ -1047,22 +1047,8 @@ export function BookingPageInner() {
                   );
 
                   return (
-                    <>
-                      {/* Vehicle Base / Surcharge */}
-                      {surcharge !== 0 && (
-                         <div className="flex items-center justify-between gap-3 p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
-                           <div className="flex items-center gap-3 min-w-0">
-                             <div className="w-9 h-9 rounded-xl bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange shrink-0">
-                               <CarIcon size={16}/>
-                             </div>
-                             <div className="min-w-0">
-                               <p className="text-[10px] font-black uppercase text-brand-orange/60 leading-none">Base Category</p>
-                               <p className="text-sm font-black italic uppercase tracking-tight text-white mt-1.5 leading-none truncate">{carDetails.type} Setup</p>
-                             </div>
-                           </div>
-                           <span className="text-sm font-black text-white italic shrink-0">AED {surcharge}</span>
-                         </div>
-                      )}
+                    <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] space-y-6">
+                      {/* Surcharge section removed as requested */}
 
                       {selectedServices.map(sel => {
                       const s = services.find(x => x.id === sel.id);
@@ -1131,7 +1117,7 @@ export function BookingPageInner() {
                         })}
                       </>
                     )}
-                    </>
+                    </div>
                   );
                 })()}
               </div>

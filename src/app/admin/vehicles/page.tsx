@@ -171,11 +171,11 @@ export default function VehicleTypesAdmin() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-white/[0.02]">
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5">Preview</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5">Category Name</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 text-right">Surcharge</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 text-center">Order</th>
-                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 text-right">Actions</th>
+                <th className="px-4 sm:px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 hidden sm:table-cell">Preview</th>
+                <th className="px-4 sm:px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5">Category Name</th>
+                <th className="px-4 sm:px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 text-right">Surcharge</th>
+                <th className="px-4 sm:px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 text-center hidden sm:table-cell">Order</th>
+                <th className="px-4 sm:px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/30 border-b border-white/5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -187,7 +187,7 @@ export default function VehicleTypesAdmin() {
                 ))
               ) : filteredTypes.map((type) => (
                 <tr key={type.id} className="group hover:bg-white/[0.02] transition-all">
-                  <td className="px-8 py-6">
+                  <td className="px-4 sm:px-8 py-6 hidden sm:table-cell">
                     <div className="w-16 h-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden relative">
                       {type.image ? (
                         <img src={type.image} alt={type.name} className="w-full h-full object-cover" />
@@ -198,22 +198,22 @@ export default function VehicleTypesAdmin() {
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-4 sm:px-8 py-6">
                     <div className="flex flex-col">
                       <span className="text-sm font-black italic uppercase tracking-tight text-white">{type.name}</span>
                       <span className="text-[10px] text-white/20 uppercase tracking-widest mt-1">Icon: {type.icon || 'Default'}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
-                    <span className="text-sm font-black text-brand-orange italic">₹{type.surcharge}</span>
+                  <td className="px-4 sm:px-8 py-6 text-right">
+                    <span className="text-sm font-black text-brand-orange italic">AED {type.surcharge}</span>
                   </td>
-                  <td className="px-8 py-6 text-center">
+                  <td className="px-4 sm:px-8 py-6 text-center hidden sm:table-cell">
                     <span className="inline-flex w-8 h-8 rounded-lg bg-white/5 border border-white/10 items-center justify-center text-[10px] font-black text-white/40">
                       {type.order}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                  <td className="px-4 sm:px-8 py-6">
+                    <div className="flex items-center justify-end gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                       <button 
                         onClick={() => handleOpenModal(type)}
                         className="p-3 bg-white/5 text-white/40 hover:bg-brand-orange hover:text-black rounded-xl transition-all"

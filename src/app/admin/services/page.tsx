@@ -281,10 +281,10 @@ export default function ServicesPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-[#F59E0B]/30 font-sans">
-      <div className="p-8 max-w-[1600px] mx-auto space-y-12">
+      <div className="px-0 sm:px-8 py-4 sm:py-8 max-w-[1600px] mx-auto space-y-8 sm:space-y-12">
         
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shrink-0">
@@ -378,7 +378,7 @@ export default function ServicesPage() {
                         return (
                           <motion.div key={service.id} initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:idx*0.05}} className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-all">
                             {/* Service row */}
-                            <div className="flex items-center gap-5 px-5 py-4">
+                            <div className="flex items-start sm:items-center gap-3 sm:gap-5 px-4 sm:px-5 py-4">
                               {/* Icon */}
                               <div className="w-12 h-12 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/15 flex items-center justify-center text-[#F59E0B] shrink-0">
                                 <IC size={22}/>
@@ -390,7 +390,7 @@ export default function ServicesPage() {
                                   <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase leading-none ${service.active ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/20 border border-white/5'}`}>{service.active ? 'Live' : 'Draft'}</span>
                                 </div>
                                 {service.description && <p className="text-[11px] text-white/25 truncate leading-none">{service.description}</p>}
-                                <div className="flex items-center gap-3 mt-0.5">
+                                <div className="flex items-center flex-wrap gap-2 sm:gap-3 mt-1">
                                   <span className="text-sm font-black text-white italic leading-none">{service.price}</span>
                                   {service.duration && <span className="text-[10px] text-white/20 flex items-center gap-1 leading-none"><Clock size={9}/> {service.duration}</span>}
                                   <span className="text-[10px] text-white/15 leading-none">{facilities.length} {facilities.length === 1 ? 'facility' : 'facilities'}</span>
