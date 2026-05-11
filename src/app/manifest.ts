@@ -13,25 +13,25 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     icons: [
       {
-        src: "/icon.png",
+        src: "/mudwash-logo-final.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon.png",
+        src: "/mudwash-logo-final.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/icon.png",
+        src: "/mudwash-logo-final.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon.png",
+        src: "/mudwash-logo-final.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
