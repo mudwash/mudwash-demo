@@ -5,12 +5,11 @@ import ServicesGrid from "@/components/ServicesGrid";
 
 // Lazy load components below the fold
 const BeforeAfterSlider = dynamic(() => import("@/components/BeforeAfterSlider"));
-const NearbyGarages = dynamic(() => import("@/components/NearbyGarages"));
+const Testimonials = dynamic(() => import("@/components/Testimonials"));
 const Locations = dynamic(() => import("@/components/Locations"));
-const BookingCalendar = dynamic(() => import("@/components/BookingCalendar"));
+const GoogleReviews = dynamic(() => import("@/components/GoogleReviews"));
 const PremiumDetailing = dynamic(() => import("@/components/PremiumDetailing"));
 const BookingContactForm = dynamic(() => import("@/components/BookingContactForm"));
-const WhatsAppButton = dynamic(() => import("@/components/WhatsAppButton"));
 const Footer = dynamic(() => import("@/components/Footer"));
 
 export default function Home() {
@@ -21,12 +20,11 @@ export default function Home() {
       <ServicesGrid />
       <BeforeAfterSlider />
       <Locations />
-      <NearbyGarages />
-      <BookingCalendar />
+      <Testimonials />
       <PremiumDetailing />
       <BookingContactForm />
+      <GoogleReviews />
       <Footer />
-      <WhatsAppButton />
     </main>
   );
 }

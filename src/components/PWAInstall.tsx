@@ -139,9 +139,7 @@ export default function PWAInstall() {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-1.5">
-                                            <h3 className="text-white font-black text-base md:text-sm uppercase italic tracking-tight">
-                                                MUD<span className="text-brand-orange">WASH</span>
-                                            </h3>
+                                            <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-4 w-auto object-contain" />
                                             <Sparkles size={12} className="text-brand-orange animate-pulse" />
                                         </div>
                                         <p className="text-white/40 text-[10px] font-medium">Premium Auto Detailing</p>

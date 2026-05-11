@@ -57,8 +57,12 @@ function SignInContent() {
         router.push(returnTo || "/");
       }
     } catch (err: any) {
-      console.error(err);
-      setError("Invalid email or password. Please check your credentials.");
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+        setError("Invalid email or password. Please check your credentials.");
+      } else {
+        console.error(err);
+        setError("An error occurred. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }

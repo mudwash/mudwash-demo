@@ -179,7 +179,7 @@ export default function ServicesGrid() {
                         <div>
                           <h3 className="text-sm font-black italic uppercase tracking-tight text-white leading-none">{selected.name}</h3>
                           <p className="text-[10px] text-white/30 mt-0.5 flex items-center gap-2">
-                            <span className="font-black text-brand-orange">₹{selected.price}</span>
+                            <span className="font-black text-brand-orange">AED {selected.price}</span>
                             {selected.duration && <span className="flex items-center gap-1"><Clock size={9}/> {selected.duration}</span>}
                           </p>
                         </div>

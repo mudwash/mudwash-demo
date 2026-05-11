@@ -55,10 +55,13 @@ import {
   History,
   Paintbrush,
   PlusCircle,
-  Settings2
+  Settings2,
+  Upload
 } from "lucide-react";
 import { getServices, addService, updateService, deleteService, Service } from "@/lib/services";
 import { getCategories, addCategory, updateCategory, Category } from "@/lib/categories";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 
 const ICON_MAP: any = { Waves, Sparkles, Car, ShieldCheck, Paintbrush, Wrench, Droplets, Zap, Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, Heart, Palette, Droplet, GlassWater, CloudRain };
 
@@ -104,6 +107,39 @@ export default function ServicesPage() {
   const [currentFormStep, setCurrentFormStep] = useState(1);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("image", file);
+      
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=da3add1fa6e71df983e8368086715c4d`, {
+        method: "POST",
+        body: formDataUpload,
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setFormData(prev => ({ 
+          ...prev, 
+          image: prev.image || data.data.url,
+          images: [...(prev.images || []), data.data.url]
+        }));
+      } else {
+        throw new Error(data.error?.message || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Error uploading image to ImgBB:", error);
+      alert("Failed to upload image.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Form State
   const [formData, setFormData] = useState<Service>({
@@ -113,6 +149,7 @@ export default function ServicesPage() {
     category: "Exterior Wash",
     description: "",
     image: "",
+    images: [],
     icon: "Waves",
     active: true,
     includedItems: []
@@ -184,7 +221,7 @@ export default function ServicesPage() {
     setEditingId(null);
     setCurrentFormStep(1);
     setFormData({
-      name: "", price: "", duration: "", category: selectedAdminCategory || categories[0]?.name || "Exterior Wash", description: "", image: "", icon: "Waves", active: true, includedItems: []
+      name: "", price: "", duration: "", category: selectedAdminCategory || categories[0]?.name || "Exterior Wash", description: "", image: "", images: [], icon: "Waves", active: true, includedItems: []
     });
     setIsPanelOpen(true);
   };
@@ -195,7 +232,8 @@ export default function ServicesPage() {
     setFormData({
       ...service,
       category: service.category || categories[0]?.name || "Exterior Wash",
-      includedItems: service.includedItems || []
+      includedItems: service.includedItems || [],
+      images: service.images || []
     });
     setIsPanelOpen(true);
   };
@@ -543,6 +581,53 @@ export default function ServicesPage() {
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Service Icon</label>
                         <div className="grid grid-cols-7 gap-2 max-h-44 overflow-y-auto custom-scrollbar">
                           {ICON_OPTIONS.map(opt=>(<button key={opt.id} onClick={()=>setFormData({...formData,icon:opt.id})} className={`aspect-square rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${formData.icon===opt.id?'bg-[#F59E0B] text-black border-[#F59E0B] shadow-lg':'bg-white/5 border-white/5 text-white/25 hover:text-white/60'}`}><opt.icon size={16}/><span className="text-[6px] font-black uppercase leading-none opacity-60">{opt.label}</span></button>))}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Service Images</label>
+                        <div className="space-y-3">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleImageUpload} 
+                            className="hidden" 
+                            id="service-image-upload" 
+                          />
+                          <label 
+                            htmlFor="service-image-upload" 
+                            className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:border-[#F59E0B] cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Upload size={16} className="text-[#F59E0B]" />
+                            <span className="text-white/40 text-[9px] font-black uppercase tracking-widest">
+                              {uploading ? "Uploading..." : "Upload Image"}
+                            </span>
+                          </label>
+                          
+                          {formData.images && formData.images.length > 0 && (
+                            <div className="grid grid-cols-4 gap-3">
+                              {formData.images.map((img, idx) => (
+                                <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
+                                  <img src={img} alt="Service" className="w-full h-full object-cover" />
+                                  <button 
+                                    onClick={() => setFormData(prev => {
+                                      const newImages = prev.images?.filter((_, i) => i !== idx) || [];
+                                      return {
+                                        ...prev,
+                                        images: newImages,
+                                        image: prev.image === img ? (newImages[0] || "") : prev.image
+                                      };
+                                    })} 
+                                    className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full flex items-center justify-center text-white/60 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                  {formData.image === img && (
+                                    <div className="absolute bottom-0 left-0 right-0 bg-[#F59E0B] text-black text-[8px] font-black uppercase text-center py-0.5">Cover</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center justify-between p-5 bg-[#F59E0B]/5 border border-[#F59E0B]/10 rounded-2xl">

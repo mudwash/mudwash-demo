@@ -87,13 +87,13 @@ export default function AdminLayout({
             <span className="font-bold text-black text-xl">M</span>
           </div>
           {(isSidebarOpen || isMobileMenuOpen) && (
-            <motion.span
+            <motion.img
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="font-bold text-xl tracking-tight"
-            >
-              MUDWASH
-            </motion.span>
+              src="/mudwash-logo-final.png"
+              alt="MUDWASH"
+              className="h-5 w-auto object-contain ml-1"
+            />
           )}
         </Link>
         <button

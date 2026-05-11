@@ -17,7 +17,8 @@ import {
   Loader2,
   Edit3,
   Calendar,
-  Zap
+  Zap,
+  MessageCircle
 } from "lucide-react";
 
 import Footer from "@/components/Footer";
@@ -154,6 +155,15 @@ export default function ProfilePage() {
                           <span>{authProfile.phone}</span>
                         </div>
                       )}
+                      <a 
+                        href="https://wa.me/971502374199?text=hai%20mudwash"
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-white/60 text-xs font-medium hover:text-[#25D366] transition-colors mt-0.5"
+                      >
+                        <MessageCircle size={12} className="text-[#25D366]" />
+                        <span>Contact on WhatsApp</span>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -457,7 +467,7 @@ export default function ProfilePage() {
                                 <div className="text-right">
                                   <p className="text-white/20 text-[9px] font-black uppercase tracking-widest mb-1">Service Value</p>
                                   <p className="text-2xl font-black text-white tracking-tighter group-hover:text-brand-orange transition-colors">
-                                    {booking.amount === "₹ TBD" ? "TBD" : booking.amount}
+                                    {booking.amount === "AED TBD" ? "TBD" : booking.amount}
                                   </p>
                                 </div>
                                 <button className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-brand-orange/10 group-hover:text-brand-orange transition-all">

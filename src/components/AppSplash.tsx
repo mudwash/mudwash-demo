@@ -66,9 +66,7 @@ export default function AppSplash() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
             >
-              <h1 className="text-white text-5xl font-black tracking-tighter italic">
-                MUD<span className="text-brand-orange">WASH</span>
-              </h1>
+              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-14 w-auto object-contain drop-shadow-2xl" />
             </motion.div>
           </div>
 

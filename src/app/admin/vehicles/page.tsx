@@ -281,7 +281,7 @@ export default function VehicleTypesAdmin() {
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Surcharge (₹)</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Surcharge (AED)</label>
                       <div className="relative group">
                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-orange transition-colors" size={18} />
                         <input 

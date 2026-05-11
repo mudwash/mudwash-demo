@@ -20,11 +20,7 @@ export default function Footer() {
           {/* Column 1: Brand & Intro */}
           <div className="w-full lg:w-[35%] flex flex-col gap-6">
             <Link href="/" className="inline-block">
-              <div className="text-3xl font-black tracking-tighter flex items-baseline">
-                <span className="text-brand-orange italic">MUD</span>
-                <span className="text-white italic">WASH</span>
-                <div className="w-2 h-2 bg-brand-orange ml-1 rounded-full" />
-              </div>
+              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-10 w-auto object-contain object-left" />
             </Link>
             <p className="text-white/50 text-sm font-medium leading-relaxed max-w-sm">
               We bring premium car detailing exactly where you are. Uncompromising quality, advanced techniques, and doorstep convenience for your vehicle.

@@ -7,7 +7,14 @@ import Image from 'next/image';
 export default function BeforeAfterSlider() {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const comparisons = [
+    { title: "Exterior", before: "/car-dirty.png", after: "/car-clean.png" },
+    { title: "Interior", before: "/interior-dirty.png", after: "/interior-clean.png" },
+    { title: "Detailing", before: "/detailing-dirty.png", after: "/detailing-clean.png" }
+  ];
 
   const handleMove = (clientX: number) => {
     if (!containerRef.current) return;
@@ -59,7 +66,7 @@ export default function BeforeAfterSlider() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="text-center mb-8"
         >
           <span className="text-brand-orange text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mb-4 block">
             Transformation
@@ -67,9 +74,22 @@ export default function BeforeAfterSlider() {
           <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-4">
             See the <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-yellow-500">Difference</span>
           </h2>
-          <p className="text-white/50 text-sm max-w-xl mx-auto">
+          <p className="text-white/50 text-sm max-w-xl mx-auto mb-8">
             Drag the slider to see our premium detailing transformation. From heavily soiled to showroom perfection.
           </p>
+
+          {/* Tabs */}
+          <div className="flex justify-center gap-4 bg-white/5 p-1.5 rounded-2xl border border-white/5 max-w-sm mx-auto mb-8">
+            {comparisons.map((tab, i) => (
+              <button
+                key={tab.title}
+                onClick={() => setActiveTab(i)}
+                className={`flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === i ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}
+              >
+                {tab.title}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         <motion.div 
@@ -91,15 +111,15 @@ export default function BeforeAfterSlider() {
           {/* Dirty Car Image (Background) */}
           <div className="absolute inset-0 pointer-events-none">
             <Image 
-              src="/car-dirty.png" 
-              alt="Dirty car" 
+              src={comparisons[activeTab].before} 
+              alt="Before" 
               fill 
               className="object-cover" 
               sizes="(max-width: 1280px) 100vw, 1280px"
             />
           </div>
 
-          {/* Clean Car Image (Clipped Overlay) - Removed transition to fix lag */}
+          {/* Clean Car Image (Clipped Overlay) */}
           <div 
             className="absolute inset-0 pointer-events-none z-10"
             style={{ 
@@ -108,8 +128,8 @@ export default function BeforeAfterSlider() {
             }}
           >
             <Image 
-              src="/car-clean.png" 
-              alt="Clean car" 
+              src={comparisons[activeTab].after} 
+              alt="After" 
               fill 
               className="object-cover" 
               sizes="(max-width: 1280px) 100vw, 1280px"

@@ -75,4 +75,15 @@ export const deleteBooking = async (id: string) => {
   await deleteDoc(bookingRef);
 };
 
+export const getBookingsByDate = async (date: string) => {
+  const bookingsCol = collection(db, COLLECTION_NAME);
+  const q = query(bookingsCol, where("date", "==", date));
+  const bookingSnapshot = await getDocs(q);
+  return bookingSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as Booking[];
+};
+
+
 

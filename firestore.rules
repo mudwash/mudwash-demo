@@ -32,9 +32,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Settings: Public read, Admin write
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Bookings: Admin can do anything, Users can read/write their own
     match /bookings/{bookingId} {
-      allow read: if isAdmin() || (request.auth != null && (request.auth.token.email == resource.data.email || request.auth.uid == resource.data.userId));
+      allow read: if true; // Allowed for slot availability checking
       allow create: if true; // Allow guest bookings for testing and ease of use
       allow update, delete: if isAdmin();
     }

@@ -63,10 +63,10 @@ function SignUpContent() {
         }
       }
     } catch (err: any) {
-      console.error("Sign up error:", err);
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Please sign in.");
       } else {
+        console.error("Sign up error:", err);
         setError("Failed to create account. Please try again.");
       }
     } finally {

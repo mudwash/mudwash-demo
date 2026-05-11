@@ -62,7 +62,9 @@ import {
   User
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
-import { createBooking } from '@/lib/bookings';
+import { createBooking, getBookingsByDate } from '@/lib/bookings';
+import { doc, getDoc, onSnapshot, query, collection, where, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { getServices, Service } from '@/lib/services';
 import { getCategories, Category } from '@/lib/categories';
 import { getVehicleTypes, VehicleType } from '@/lib/vehicleTypes';
@@ -145,7 +147,24 @@ const ServiceDetailDrawer = ({
   onRemove: (id: string) => void,
   quantity: number
 }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [service]);
+
+  useEffect(() => {
+    if (!service?.images || service.images.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % service.images!.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [service]);
+
   if (!service) return null;
+  
   const inclusions = service.includedItems || [
     "Premium hand wash exterior",
     "Wheel and tire deep cleaning",
@@ -155,40 +174,86 @@ const ServiceDetailDrawer = ({
     "Tire shine application"
   ];
 
+  const nextImage = () => {
+    if (service.images) {
+      setCurrentImageIndex((currentImageIndex + 1) % service.images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (service.images) {
+      setCurrentImageIndex((currentImageIndex - 1 + service.images.length) % service.images.length);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/90 backdrop-blur-md z-[2000]" />
-          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-white/10 rounded-t-[3.5rem] z-[2001] p-10 pb-16 max-h-[95vh] overflow-y-auto">
-            <div className="w-16 h-1.5 bg-white/10 rounded-full mx-auto mb-10" />
-            <div className="flex justify-between items-start mb-10">
-              <div className="space-y-3">
-                <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">{service.name}</h2>
-                <div className="flex items-center gap-6">
-                  <span className="text-3xl font-black text-brand-orange">₹{service.price}</span>
-                  <span className="text-white/20 line-through text-lg italic">₹{parseInt(service.price.replace(/[^\d]/g, '')) * 1.4}</span>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000]" />
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-white/10 rounded-t-[2.5rem] z-[10001] p-6 pb-24 h-[100dvh] overflow-y-auto">
+            <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mb-6" />
+            <div className="flex justify-between items-start mb-6">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">{service.name}</h2>
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl font-black text-brand-orange">AED {service.price}</span>
+                  <span className="text-white/20 line-through text-base italic">AED {parseInt(service.price.replace(/[^\d]/g, '')) * 1.4}</span>
                 </div>
               </div>
-              <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"><X size={28} /></button>
+              <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"><X size={20} /></button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                {service.images && service.images.length > 0 ? (
+                  <div className="w-full h-48 relative rounded-2xl overflow-hidden border border-white/10 group">
+                    <motion.div 
+                      className="flex h-full"
+                      animate={{ x: `-${currentImageIndex * 100}%` }}
+                      transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                    >
+                      {service.images.map((img, idx) => (
+                        <div key={idx} className="w-full h-full flex-shrink-0">
+                          <img src={img} alt={service.name} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </motion.div>
+                    {service.images.length > 1 && (
+                      <>
+                        <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"><ChevronLeft size={16} /></button>
+                        <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"><ChevronRight size={16} /></button>
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {service.images.map((_, idx) => (
+                            <button 
+                              key={idx} 
+                              onClick={() => setCurrentImageIndex(idx)}
+                              className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-[#F59E0B] w-4' : 'bg-white/30'}`} 
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : service.image ? (
+                  <div className="w-full h-48 relative rounded-2xl overflow-hidden border border-white/10">
+                    <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : null}
                 <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-6 flex items-center gap-2"><Info size={14}/> Treatment Overview</h3>
-                  <p className="text-base text-white/60 leading-relaxed font-medium">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-3 flex items-center gap-2"><Info size={14}/> Treatment Overview</h3>
+                  <p className="text-sm text-white/60 leading-relaxed font-medium">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
                 </div>
-                <div className="p-8 bg-brand-orange/5 border border-brand-orange/10 rounded-3xl">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-orange mb-6 flex items-center gap-2"><Clock size={14}/> Service Duration</h3>
-                  <p className="text-xl font-bold text-white italic">Approx. {service.duration || '2-3 Hours'}</p>
+                <div className="p-5 bg-brand-orange/5 border border-brand-orange/10 rounded-2xl">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-orange mb-2 flex items-center gap-2"><Clock size={14}/> Service Duration</h3>
+                  <p className="text-lg font-bold text-white italic">Approx. {service.duration || '2-3 Hours'}</p>
                 </div>
               </div>
               <div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-6 flex items-center gap-2"><CheckCircle size={14}/> What's Included</h3>
-                <div className="grid grid-cols-1 gap-5">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-3 flex items-center gap-2"><CheckCircle size={14}/> What's Included</h3>
+                <div className="grid grid-cols-1 gap-3">
                   {inclusions.map((item, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-4 group">
-                      <div className="w-6 h-6 rounded-full bg-brand-orange/20 flex items-center justify-center text-brand-orange group-hover:scale-110 transition-transform"><Check size={14} strokeWidth={4} /></div>
+                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-3 group">
+                      <div className="w-5 h-5 rounded-full bg-brand-orange/20 flex items-center justify-center text-brand-orange group-hover:scale-110 transition-transform"><Check size={10} strokeWidth={4} /></div>
                       <span className="text-sm text-white/70 font-bold tracking-tight">{item}</span>
                     </motion.div>
                   ))}
@@ -202,7 +267,7 @@ const ServiceDetailDrawer = ({
                 <button onClick={() => onAdd(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
               </div>
               <button onClick={onClose} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
-                {quantity > 0 ? `Update Booking Selection` : `Add Package for ₹${service.price}`}
+                {quantity > 0 ? `Update Booking Selection` : `Add Package for AED ${service.price}`}
               </button>
             </div>
           </motion.div>
@@ -225,8 +290,73 @@ export function BookingPageInner() {
 
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
+  const [maxBookings, setMaxBookings] = useState(3);
+
+  useEffect(() => {
+    const docRef = doc(db, "settings", "schedule");
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setMaxBookings(docSnap.data().maxBookingsPerSlot || 3);
+      }
+    }, (error) => {
+      console.error("Error listening to settings:", error);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDate) {
+      const bookingsCol = collection(db, "bookings");
+      const q = query(bookingsCol, where("date", "==", selectedDate));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const counts: Record<string, number> = {};
+        snapshot.docs.forEach(doc => {
+          const b = doc.data();
+          counts[b.time] = (counts[b.time] || 0) + 1;
+        });
+        setSlotCounts(counts);
+      }, (error) => {
+        console.error("Error listening to bookings:", error);
+      });
+      return () => unsubscribe();
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          if (data.savedAddress) {
+            setFormData(prev => ({ ...prev, address: data.savedAddress }));
+          }
+          if (data.addressType) {
+            setAddressDetails(prev => ({ ...prev, type: data.addressType }));
+          }
+          if (data.flatNo) {
+            setAddressDetails(prev => ({ ...prev, flatNo: data.flatNo }));
+          }
+          if (data.directions) {
+            setAddressDetails(prev => ({ ...prev, directions: data.directions }));
+          }
+        }
+      }
+    };
+    fetchUserProfile();
+  }, [user]);
+
+  useEffect(() => {
+    const savedLocation = localStorage.getItem("userLocation");
+    if (savedLocation) {
+      setFormData(prev => ({ ...prev, address: savedLocation }));
+    }
+  }, []);
+
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -235,6 +365,42 @@ export function BookingPageInner() {
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
   const [carDetails, setCarDetails] = useState({ make: "", model: "", type: "" });
+
+  useEffect(() => {
+    const savedCar = localStorage.getItem("mudwash_carDetails");
+    if (savedCar) {
+      try {
+        const parsed = JSON.parse(savedCar);
+        setCarDetails(prev => ({ ...prev, ...parsed }));
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (carDetails.type || carDetails.model) {
+      localStorage.setItem("mudwash_carDetails", JSON.stringify(carDetails));
+      window.dispatchEvent(new Event("carChanged"));
+
+      // Save to history (keep only 3)
+      if (carDetails.model && carDetails.type) {
+        const history = localStorage.getItem("mudwash_carHistory");
+        let parsedHistory: any[] = [];
+        if (history) {
+          try {
+            parsedHistory = JSON.parse(history);
+          } catch (e) {}
+        }
+        
+        // Remove duplicates
+        const filtered = parsedHistory.filter(item => item.model !== carDetails.model);
+        
+        // Add to front and limit to 3
+        const newHistory = [carDetails, ...filtered].slice(0, 3);
+        
+        localStorage.setItem("mudwash_carHistory", JSON.stringify(newHistory));
+      }
+    }
+  }, [carDetails]);
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -262,21 +428,38 @@ export function BookingPageInner() {
   const [isFocused, setIsFocused] = useState(false);
   const suggestionCache = React.useRef<Record<string, string[]>>({});
   
-  const DUBAI_FAVORITES = [
-    "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado",
-    "Tesla Model Y", "Mercedes G63 AMG", "Lexus LX600"
+  const POPULAR_CARS = [
+    // Dubai Favorites (First)
+    "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Lexus LX600",
+    "Mercedes G63 AMG", "Range Rover", "Land Rover Defender",
+    "Tesla Model Y", "Tesla Model 3", "Porsche Cayenne", "Rolls Royce Cullinan",
+    "Lamborghini Urus", "Bentley Bentayga", "BMW X7", "Audi Q8",
+    // Worldwide Popular (Sedans & Hatchbacks)
+    "Toyota Camry", "Toyota Corolla", "Honda Civic", "Honda Accord",
+    "Nissan Altima", "Nissan Maxima", "Hyundai Elantra", "Hyundai Sonata",
+    "Kia K5", "Volkswagen Golf", "Volkswagen Passat", "Ford Mustang",
+    "Chevrolet Camaro", "Dodge Challenger", "Dodge Charger",
+    // Worldwide Popular (SUVs & Trucks)
+    "Toyota RAV4", "Honda CR-V", "Ford F-150", "Chevrolet Silverado",
+    "Ram 1500", "Jeep Wrangler", "Jeep Grand Cherokee", "Subaru Outback",
+    "Mazda CX-5", "Hyundai Tucson", "Kia Sportage", "Nissan Rogue",
+    // Worldwide Luxury
+    "Mercedes C-Class", "Mercedes E-Class", "Mercedes S-Class",
+    "BMW 3 Series", "BMW 5 Series", "BMW 7 Series", "BMW X5", "BMW X6",
+    "Audi A4", "Audi A6", "Audi Q5", "Audi Q7", "Lexus RX", "Lexus ES",
+    "Porsche 911", "Porsche Panamera", "Porsche Macan"
   ];
   
   useEffect(() => {
     const term = carDetails.model.trim();
     
     if (term.length < 1) {
-      setApiSuggestions(DUBAI_FAVORITES);
+      setApiSuggestions(POPULAR_CARS);
       return;
     }
     
     if (term.length < 2) {
-      const matches = DUBAI_FAVORITES.filter(c => 
+      const matches = POPULAR_CARS.filter(c => 
         c.toLowerCase().includes(term.toLowerCase())
       );
       setApiSuggestions(matches);
@@ -429,10 +612,23 @@ export function BookingPageInner() {
         date: selectedDate || new Date().toISOString().split('T')[0], 
         time: selectedTime || "10:00 AM", 
         location: formData.address || "Location not specified", 
-        amount: `₹${calculateTotal()}`, 
+        amount: `AED ${calculateTotal()}`, 
         status: "Pending",
         carDetails: `${carDetails.type || 'Standard'} - ${carDetails.model || 'Unknown'}`
       });
+      
+      // Save address to user profile if logged in
+      const { useAuth } = await import('@/lib/AuthContext'); // Fallback if not available in scope
+      // Wait, we already have `user` from `useAuth` in scope!
+      // Let's just use it!
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, {
+          savedAddress: formData.address,
+          addressType: addressDetails.type
+        });
+      }
+
       setIsSuccess(true);
     } catch (err: any) { 
       console.error("Booking Submission Error:", err);
@@ -675,7 +871,9 @@ export function BookingPageInner() {
                             >
                               <div className="flex flex-col">
                                 <span className="text-sm uppercase tracking-tight">{car}</span>
-                                <span className="text-[9px] opacity-40 uppercase tracking-widest group-hover/item:opacity-70 transition-opacity">Precision Match</span>
+                                <span className="text-[9px] opacity-40 uppercase tracking-widest group-hover/item:opacity-70 transition-opacity">
+                                  {carDetails.type ? `${carDetails.type} CLASS` : 'WORLDWIDE DATABASE'}
+                                </span>
                               </div>
                               <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover/item:bg-black/20 transition-colors">
                                 <Plus size={14} className="opacity-40 group-hover/item:opacity-100 transition-opacity" />
@@ -705,8 +903,8 @@ export function BookingPageInner() {
                   <h2 className="text-5xl font-black uppercase italic tracking-tighter text-white">Choose Treatment</h2>
                 </div>
                 
-                <div className="bg-white/[0.03] border border-white/10 p-2 rounded-[2rem] backdrop-blur-xl">
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-[300px] sm:max-w-md lg:max-w-lg snap-x">
+                <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
+                  <div className="flex gap-1 no-scrollbar w-full">
                     {categories.map(cat => {
                       const isActive = selectedCategory === cat.name;
                       const IC = ICON_MAP[cat.icon] || Package;
@@ -715,12 +913,12 @@ export function BookingPageInner() {
                         <button 
                           key={cat.id} 
                           onClick={() => setSelectedCategory(cat.name)} 
-                          className={`w-24 h-24 flex-shrink-0 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-2 snap-start ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)]' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5'}`}
+                          className={`flex-1 h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
                         >
-                          <IC size={28} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
-                          <span className={`text-[8px] font-black uppercase tracking-widest mt-1 ${isActive ? 'text-black' : 'text-white/60'}`}>{cat.name}</span>
+                          <IC size={24} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
+                          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{cat.name}</span>
                           {/* Badge with service count */}
-                          <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${isActive ? 'bg-black text-brand-orange border border-brand-orange/20' : 'bg-[#1A1A1A] text-white/40 border border-white/10'}`}>
+                          <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${isActive ? 'bg-black text-brand-orange border border-brand-orange/20' : 'bg-[#1A1A1A] text-white/40 border border-white/10'}`}>
                             {serviceCount}
                           </div>
                         </button>
@@ -787,15 +985,15 @@ export function BookingPageInner() {
                             
                             <p className="text-[10px] text-white/40 leading-relaxed font-medium line-clamp-2 min-h-[28px]">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
                             
-                            <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                            <div className="flex items-end justify-between pt-3 border-t border-white/5">
                                <div className="flex flex-col">
                                   <span className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-0.5">Starting from</span>
                                   <span className="text-xl font-black text-white italic tracking-tighter leading-none">AED {service.price}</span>
                                </div>
                                {service.duration && (
-                                 <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex items-center gap-1.5">
+                                 <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex items-center gap-1.5 flex-shrink-0">
                                     <Clock size={10} className="text-brand-orange" />
-                                    <span className="text-[8px] text-white/60 font-black uppercase tracking-widest">{service.duration}</span>
+                                    <span className="text-[8px] text-white/60 font-black uppercase tracking-widest whitespace-nowrap">{service.duration}</span>
                                  </div>
                                )}
                             </div>
@@ -813,8 +1011,7 @@ export function BookingPageInner() {
 
           {/* STEP 3: ENHANCEMENTS */}
           {currentStep === 3 && (() => {
-            const selectedIds = selectedServices.map(s => s.id);
-            const recommended = services.filter(s => s.active !== false && !selectedIds.includes(s.id!));
+            const recommended = services.filter(s => s.active !== false);
             return (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                 <div className="space-y-2">
@@ -824,21 +1021,31 @@ export function BookingPageInner() {
                 <div className="grid grid-cols-2 gap-3">
                   {recommended.map((addon, idx) => {
                     const IconComp = ICON_MAP[addon.icon as any] || Zap;
-                    const isSelected = selectedAddOns.includes(addon.id!);
+                    const isSelectedInStep2 = selectedServices.some(s => s.id === addon.id);
+                    const isSelectedInStep3 = selectedAddOns.includes(addon.id!);
+                    const isSelected = isSelectedInStep2 || isSelectedInStep3;
                     return (
                       <motion.div
                         key={addon.id}
-                        onClick={() => toggleAddOn(addon.id!)}
+                        onClick={() => { setDetailService(addon); setIsDrawerOpen(true); }}
                         className={`relative rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden p-6 ${isSelected ? 'bg-brand-orange/10 border-brand-orange/40' : 'bg-[#0F0F0F] border-white/5'}`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30'}`}>
-                            <IconComp size={20}/>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30'}`}>
+                              <IconComp size={20}/>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
+                              <p className="text-brand-orange font-bold text-sm">AED {addon.price}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
-                            <p className="text-brand-orange font-bold text-sm">AED {addon.price}</p>
-                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleAddOn(addon.id!); }} 
+                            className={`w-8 h-8 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-500 overflow-hidden ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30 hover:bg-brand-orange hover:text-black'}`}
+                          >
+                            {isSelected ? <Check size={14} strokeWidth={4} /> : <Plus size={14} strokeWidth={3} />}
+                          </button>
                         </div>
                       </motion.div>
                     );
@@ -860,9 +1067,26 @@ export function BookingPageInner() {
                 ))}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {timeSlots.map(slot => (
-                  <button key={slot} onClick={() => setSelectedTime(slot)} className={`py-6 rounded-3xl text-xs font-black uppercase italic tracking-widest border transition-all ${selectedTime === slot ? 'bg-brand-orange border-brand-orange text-black' : 'bg-white/5 border-white/5 text-white/40'}`}>{slot}</button>
-                ))}
+                {timeSlots.map(slot => {
+                  const count = slotCounts[slot] || 0;
+                  const isFull = count >= maxBookings;
+                  const isSelected = selectedTime === slot;
+                  return (
+                    <button 
+                      key={slot} 
+                      onClick={() => !isFull && setSelectedTime(slot)} 
+                      disabled={isFull}
+                      className={`py-6 rounded-3xl text-xs font-black uppercase italic tracking-widest border transition-all ${isSelected ? 'bg-brand-orange border-brand-orange text-black' : isFull ? 'bg-white/5 border-white/5 text-white/10 cursor-not-allowed' : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'}`}
+                    >
+                      {slot}
+                      {isFull ? (
+                        <span className="block text-[8px] mt-1 text-white/20 font-black">FULL</span>
+                      ) : (
+                        <span className="block text-[8px] mt-1 text-white/30 font-bold">{count} / {maxBookings}</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           )}
@@ -898,6 +1122,17 @@ export function BookingPageInner() {
                     />
                   </div>
                 </div>
+                <button 
+                  type="button"
+                  onClick={() => alert("OTP sent via WhatsApp!")}
+                  className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border border-emerald-500/20 mt-4 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.67-1.614-.917-2.21-.242-.58-.487-.502-.67-.512-.174-.01-.373-.01-.572-.01-.199 0-.523.074-.797.373-.273.3-.1.74-.1.74s-.27 1.054.42 2.6c.69 1.547 2.06 2.519 2.208 2.717.149.198 3.036 4.637 7.356 6.508 1.028.444 1.832.709 2.457.908 1.033.328 1.974.282 2.717.172.828-.123 2.544-.694 2.905-1.362.36-.668.36-1.24.252-1.362-.108-.124-.397-.198-.694-.347z" fill="currentColor"/>
+                    <path d="M12.004 2c-5.518 0-10 4.482-10 10 0 1.758.455 3.411 1.25 4.86L1.5 22.5l5.854-1.535A9.957 9.957 0 0012.004 22c5.518 0 10-4.482 10-10s-4.482-10-10-10zm0 18a7.963 7.963 0 01-4.084-1.12l-.293-.174-3.483.913.93-3.398-.192-.306A7.962 7.962 0 014.004 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z" fill="currentColor"/>
+                  </svg>
+                  Verify via WhatsApp
+                </button>
               </div>
 
               <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-6">
@@ -914,20 +1149,34 @@ export function BookingPageInner() {
 
                 <AnimatePresence mode="wait">
                   {!showMap ? (
-                    <motion.div key="textInput" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="relative group">
-                      <input 
-                        type="text" 
-                        placeholder="Enter Building, Street, or Area Name" 
-                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-5 pr-16 text-sm font-bold focus:border-brand-orange outline-none transition-all group-hover:bg-white/[0.07]" 
-                        value={formData.address} 
-                        onChange={e => setFormData({...formData, address: e.target.value})} 
-                      />
-                      <button 
-                        onClick={() => setIsMapModalOpen(true)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-brand-orange text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-90 transition-all z-10"
-                      >
-                        <MapPin size={20} strokeWidth={3} />
-                      </button>
+                    <motion.div key="textInput" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+                      <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
+                        {["Home", "Office", "Other"].map(type => (
+                          <button 
+                            key={type} 
+                            type="button"
+                            onClick={() => setAddressDetails({...addressDetails, type: type as any})} 
+                            className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${addressDetails.type === type ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="relative group">
+                        <input 
+                          type="text" 
+                          placeholder="Enter Building, Street, or Area Name" 
+                          className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-5 pr-16 text-sm font-bold focus:border-brand-orange outline-none transition-all group-hover:bg-white/[0.07]" 
+                          value={formData.address} 
+                          onChange={e => setFormData({...formData, address: e.target.value})} 
+                        />
+                        <button 
+                          onClick={() => setIsMapModalOpen(true)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-brand-orange text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-90 transition-all z-10"
+                        >
+                          <MapPin size={20} strokeWidth={3} />
+                        </button>
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div key="mapInput" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-4">
@@ -974,6 +1223,7 @@ export function BookingPageInner() {
           <button onClick={() => setSummaryExpanded(!summaryExpanded)} className="flex flex-col items-start group min-w-0">
             <span className="text-[8px] sm:text-[10px] font-black text-brand-orange uppercase tracking-[0.4em] group-hover:text-white transition-colors leading-none">Booking Total</span>
             <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5">
+              <span className="text-lg sm:text-2xl font-black text-white italic leading-none">AED {calculateTotal()}</span>
               <motion.div animate={{ rotate: summaryExpanded ? 0 : 180 }} transition={{ duration: 0.3 }}>
                 <ChevronUp size={16} className="text-brand-orange group-hover:text-white transition-colors"/>
               </motion.div>
@@ -1221,7 +1471,22 @@ export function BookingPageInner() {
               {/* Action Button */}
               <div className="p-8 pt-0 mt-auto">
                 <button
-                  onClick={() => setIsAddressDetailsOpen(false)}
+                  onClick={async () => {
+                    if (user) {
+                      try {
+                        const userRef = doc(db, "users", user.uid);
+                        await updateDoc(userRef, {
+                          savedAddress: formData.address,
+                          addressType: addressDetails.type,
+                          flatNo: addressDetails.flatNo,
+                          directions: addressDetails.directions
+                        });
+                      } catch (e) {
+                        console.error("Error saving address to profile:", e);
+                      }
+                    }
+                    setIsAddressDetailsOpen(false);
+                  }}
                   className="w-full bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] text-xs h-14 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-brand-orange/20"
                 >
                   Save Address <ChevronRight size={14} strokeWidth={3}/>

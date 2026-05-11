@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, MapPin, ChevronDown } from "lucide-react";
+import { ChevronRight, MapPin, ChevronDown, Car } from "lucide-react";
 
 const DUBAI_LOCATIONS = [
   "Downtown Dubai",
@@ -34,21 +34,57 @@ const heroData = [
     description: "Experience the pinnacle of automotive care with our bespoke mobile detailing services. Precision, passion, and unparalleled shine delivered to your doorstep.",
     cta: "SECURE BOOKING",
     link: "/bookings"
+  },
+  {
+    video: "/0426.mp4",
+    subtitle: "PREMIUM SERVICE — DUBAI, UAE",
+    title: "Ultimate\nShine &",
+    titleAccent: "Protection",
+    description: "Advanced ceramic coatings and paint correction to keep your vehicle looking brand new every single day.",
+    cta: "SECURE BOOKING",
+    link: "/bookings"
+  },
+  {
+    video: "/0426.mp4",
+    subtitle: "DOORSTEP CONVENIENCE — DUBAI, UAE",
+    title: "Expert\nCare For Your",
+    titleAccent: "Vehicle",
+    description: "We bring the best detailing equipment and expertise directly to your location. Convenience without compromise.",
+    cta: "SECURE BOOKING",
+    link: "/bookings"
   }
 ];
 
 export default function Hero() {
-  const [videoLoaded, setVideoLoaded] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("Choose Location");
-  const currentSlide = 0;
+  const [selectedCar, setSelectedCar] = useState("Select Vehicle");
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
+  const [carHistory, setCarHistory] = useState<any[]>([]);
+  const images = ['/carousel-1.png', '/carousel-2.png', '/carousel-3.png'];
 
   useEffect(() => {
-    // Fallback: Show video after 3 seconds if events don't fire
-    const timer = setTimeout(() => {
-      setVideoLoaded(true);
-    }, 3000);
-    return () => clearTimeout(timer);
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % 3);
+    }, 4000);
+    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const history = localStorage.getItem("mudwash_carHistory");
+    if (history) {
+      try {
+        setCarHistory(JSON.parse(history));
+      } catch (e) {}
+    }
+  }, []);
+
+  const handleSelectCar = (car: any) => {
+    setSelectedCar(car.model);
+    localStorage.setItem("mudwash_carDetails", JSON.stringify(car));
+    window.dispatchEvent(new Event("carChanged"));
+    setShowVehicleDropdown(false);
+  };
 
   useEffect(() => {
     const readLocation = () => {
@@ -56,41 +92,52 @@ export default function Hero() {
       if (savedLocation) {
         setSelectedLocation(savedLocation);
       }
+      const savedCar = localStorage.getItem("mudwash_carDetails");
+      if (savedCar) {
+        try {
+          const parsed = JSON.parse(savedCar);
+          if (parsed.model) setSelectedCar(parsed.model);
+          else if (parsed.type) setSelectedCar(parsed.type);
+        } catch (e) {}
+      }
     };
 
     window.addEventListener("locationChanged", readLocation);
+    window.addEventListener("carChanged", readLocation);
     readLocation(); // Run on mount
 
-    return () => window.removeEventListener("locationChanged", readLocation);
+    return () => {
+      window.removeEventListener("locationChanged", readLocation);
+      window.removeEventListener("carChanged", readLocation);
+    };
   }, []);
 
   return (
     <section className="relative w-full px-0">
       {/* ═══ MOBILE APP HERO ═══ */}
-      <div className="md:hidden relative w-full h-[45svh] bg-[#050505] overflow-hidden">
+      <div className="md:hidden relative w-full h-[35svh] bg-[#050505] overflow-hidden">
 
-        {/* Full-bleed video background */}
+        {/* Full-bleed image carousel background */}
         <div className="absolute inset-0 z-0">
-          <AnimatePresence>
-            {!videoLoaded && (
-              <motion.div
-                initial={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-10 bg-[#050505] flex items-center justify-center"
-              >
-                <div className="w-10 h-10 border-2 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
-              </motion.div>
-            )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0.5 }}
+              transition={{ duration: 1 }}
+              className="absolute inset-0 w-full h-full"
+            >
+              <Image
+                src={images[currentSlide]}
+                alt="Premium Car Detailing"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                priority={currentSlide === 0}
+                className="object-cover grayscale-[0.2] brightness-[0.5]"
+              />
+            </motion.div>
           </AnimatePresence>
-
-          <video
-            src="/0426.mp4"
-            autoPlay muted loop playsInline preload="auto"
-            onLoadedData={() => setVideoLoaded(true)}
-            onCanPlay={() => setVideoLoaded(true)}
-            onPlaying={() => setVideoLoaded(true)}
-            className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-          />
 
           {/* Cinematic gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90 z-10" />
@@ -102,21 +149,70 @@ export default function Hero() {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="absolute top-0 left-0 right-0 z-30 pt-8 px-5 flex items-start justify-between"
+          className="absolute top-0 left-0 right-0 z-30 pt-1 px-4 flex items-start justify-between"
         >
           <div>
-            <p className="text-white/50 text-[9px] font-semibold uppercase tracking-widest">Good Day 👋</p>
-            <h2 className="text-white text-base font-black tracking-tight mt-0.5">
-              MUD<span className="text-brand-orange">WASH</span>
-            </h2>
+            <p className="text-white/50 text-[9px] font-semibold uppercase tracking-widest mb-1.5 z-10 relative">Good Day 👋</p>
+            <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-8 w-auto object-contain object-left drop-shadow-md" />
           </div>
 
-          {/* Location pill */}
-          <Link href="/location" className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 mt-1 text-white hover:bg-white/20 transition-colors">
-            <MapPin size={12} className="text-brand-orange" />
-            <span className="text-[10px] font-bold truncate max-w-[100px]">{selectedLocation}</span>
-            <ChevronDown size={12} className="text-white/50" />
-          </Link>
+          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-2 flex flex-col gap-1.5 w-[120px] mt-1 shadow-2xl">
+            {/* Location Row */}
+            <Link href="/location" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+              <MapPin size={10} className="text-brand-orange shrink-0" />
+              <span className="text-[9px] font-bold text-white truncate flex-grow text-left">{selectedLocation}</span>
+              <ChevronDown size={10} className="text-white/50 shrink-0 ml-auto" />
+            </Link>
+
+            <div className="h-[1px] bg-white/5 w-full" />
+
+            {/* Vehicle Row */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
+                className="w-full flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+              >
+                <Car size={10} className="text-brand-orange shrink-0" />
+                <span className="text-[9px] font-bold text-white truncate flex-grow text-left">{selectedCar}</span>
+                <ChevronDown size={10} className="text-white/50 shrink-0 ml-auto" />
+              </button>
+
+              {showVehicleDropdown && carHistory.length > 0 && (
+                <div className="absolute top-full right-0 mt-1 w-[150px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                  {carHistory.map((car, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSelectCar(car)}
+                      className="w-full text-left px-3 py-2 text-[9px] text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                    >
+                      <p className="font-bold truncate">{car.model}</p>
+                      <p className="text-white/40 text-[8px] truncate">{car.type}</p>
+                    </button>
+                  ))}
+                  <Link 
+                    href="/bookings?step=1"
+                    className="w-full text-left px-3 py-2 text-[9px] text-brand-orange hover:bg-white/5 transition-colors flex items-center justify-between"
+                    onClick={() => setShowVehicleDropdown(false)}
+                  >
+                    <span>Add New Car</span>
+                    <ChevronRight size={10} />
+                  </Link>
+                </div>
+              )}
+              {showVehicleDropdown && carHistory.length === 0 && (
+                <div className="absolute top-full right-0 mt-1 w-[150px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden p-3 text-center">
+                  <p className="text-white/40 text-[9px]">No history yet</p>
+                  <Link 
+                    href="/bookings?step=1"
+                    className="mt-2 inline-block text-[9px] text-brand-orange hover:underline"
+                    onClick={() => setShowVehicleDropdown(false)}
+                  >
+                    Select a Car
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
         </motion.div>
 
         {/* ── CENTRE: Hero Tagline ── */}
@@ -159,34 +255,7 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* Main CTA Card */}
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-4 flex items-center justify-between shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-            <div>
-              <p className="text-white/40 text-[9px] font-bold uppercase tracking-widest">Starting from</p>
-              <p className="text-white font-black text-xl leading-tight">AED 99<span className="text-white/30 text-xs font-medium">/session</span></p>
-              <div className="flex items-center gap-1 mt-1">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-2.5 h-2.5 text-brand-orange fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                  ))}
-                </div>
-                <span className="text-white/50 text-[9px] font-bold">4.9 (5k+ washes)</span>
-              </div>
-            </div>
 
-            <button
-              onClick={() => {
-                const contactForm = document.getElementById('booking-contact-form');
-                if (contactForm) {
-                  contactForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-              className="flex items-center gap-2 bg-brand-orange text-black px-5 py-3.5 rounded-2xl font-black uppercase italic text-[11px] tracking-wider active:scale-95 transition-transform shadow-[0_8px_25px_rgba(246,150,33,0.4)]"
-            >
-              Book Now
-              <ChevronRight size={14} />
-            </button>
-          </div>
         </motion.div>
       </div>
 
@@ -194,31 +263,25 @@ export default function Hero() {
       {/* Desktop Hero - Full viewport height, sits behind navbar */}
       <div className="hidden md:block relative h-screen w-full overflow-hidden bg-[#050505]">
         <div className="absolute inset-0">
-          <AnimatePresence>
-            {!videoLoaded && (
-              <motion.div 
-                initial={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-50 bg-[#050505] flex items-center justify-center"
-              >
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 border-2 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
-                  <span className="text-xs font-black text-white/40 uppercase tracking-[0.4em] animate-pulse">Mastering the Art...</span>
-                </div>
-              </motion.div>
-            )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0.5 }}
+              transition={{ duration: 1 }}
+              className="absolute inset-0 w-full h-full"
+            >
+              <Image
+                src={images[currentSlide]}
+                alt="Premium Car Detailing"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                priority={currentSlide === 0}
+                className="object-cover grayscale-[0.2] brightness-[0.6]"
+              />
+            </motion.div>
           </AnimatePresence>
-
-          <video 
-            src={heroData[currentSlide].video}
-            autoPlay 
-            muted 
-            loop 
-            playsInline
-            preload="auto"
-            onLoadedData={() => setVideoLoaded(true)}
-            className={`w-full h-full object-cover grayscale-[0.2] brightness-[0.7] transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-          />
           
           {/* Dynamic Overlays */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/40 to-transparent w-full z-10" />

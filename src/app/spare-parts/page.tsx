@@ -16,7 +16,7 @@ const spareParts = [
     id: 1,
     name: "Premium Ceramic Brake Pads",
     category: "Brakes",
-    price: "₹89.99",
+    price: "AED 89.99",
     rating: 4.8,
     image:
       "https://i.pinimg.com/1200x/ea/08/3d/ea083d1077d63ed81ebb8b259f19495d.jpg",
@@ -25,7 +25,7 @@ const spareParts = [
     id: 2,
     name: "High-Performance Oil Filter",
     category: "Filters",
-    price: "₹24.50",
+    price: "AED 24.50",
     rating: 4.9,
     image:
       "https://i.pinimg.com/1200x/ed/32/09/ed3209c97b6b2a084664a2894e9f2543.jpg",
@@ -34,7 +34,7 @@ const spareParts = [
     id: 3,
     name: "AGM Automotive Battery",
     category: "Electrical",
-    price: "₹210.00",
+    price: "AED 210.00",
     rating: 4.7,
     image:
       "https://i.pinimg.com/736x/4e/41/8e/4e418ea1c6fe71e4e43b6d7096f1318d.jpg",
@@ -43,7 +43,7 @@ const spareParts = [
     id: 4,
     name: "Synthetic Motor Oil 5W-30",
     category: "Fluids",
-    price: "₹45.00",
+    price: "AED 45.00",
     rating: 4.9,
     image:
       "https://i.pinimg.com/736x/cb/ba/91/cbba91ef02413a6c3d4c76ef164f1b8b.jpg",
@@ -52,7 +52,7 @@ const spareParts = [
     id: 5,
     name: "LED Headlight Bulbs",
     category: "Lighting",
-    price: "₹55.00",
+    price: "AED 55.00",
     rating: 4.6,
     image:
       "https://i.pinimg.com/1200x/71/b3/15/71b315bf7293ab337bd8dd8af703ab21.jpg",
@@ -61,7 +61,7 @@ const spareParts = [
     id: 6,
     name: "All-Terrain Tire V2",
     category: "Wheels",
-    price: "₹145.00",
+    price: "AED 145.00",
     rating: 4.8,
     image:
       "https://i.pinimg.com/736x/31/09/e6/3109e695900d6e40b13e5183860f851f.jpg",

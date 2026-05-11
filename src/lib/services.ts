@@ -19,6 +19,7 @@ export interface Service {
   description: string;
   includedItems?: string[];
   image: string;
+  images?: string[];
   icon?: string;
   active: boolean;
   createdAt?: any;

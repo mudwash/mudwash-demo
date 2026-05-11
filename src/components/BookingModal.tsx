@@ -111,7 +111,7 @@ export default function BookingModal({ isOpen, onClose, serviceName }: BookingMo
         date: date,
         time: time,
         location: "Service Center",
-        amount: "₹ TBD",
+        amount: "AED TBD",
         carDetails: carQuery || "Not specified",
         status: "Pending"
       });
