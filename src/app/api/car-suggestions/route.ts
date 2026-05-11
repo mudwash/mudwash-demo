@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     
     if (content) {
       try {
-        const match = content.match(/\[.*\]/s);
+        const match = content.match(/\[[\s\S]*\]/);
         if (match) {
           const models = JSON.parse(match[0]);
           if (Array.isArray(models)) {
