@@ -18,7 +18,8 @@ import {
   User,
   Package,
   MapPin,
-  Car
+  Car,
+  Ticket
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,6 +30,7 @@ const sidebarLinks = [
   { name: "Vehicles", href: "/admin/vehicles", icon: Car },
   { name: "Parts", href: "/admin/parts", icon: Package },
   { name: "Garages", href: "/admin/garages", icon: MapPin },
+  { name: "Promo Codes", href: "/admin/promocodes", icon: Ticket },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

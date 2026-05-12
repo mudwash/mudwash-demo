@@ -213,8 +213,8 @@ export default function BookingsPage() {
         ) : (
           <>
             {/* Desktop View */}
-            <div className="hidden lg:block overflow-visible">
-              <table className="w-full text-left overflow-visible">
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left">
                 <thead>
                   <tr className="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
                     <th className="px-6 py-5">Booking</th>

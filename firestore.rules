@@ -45,6 +45,18 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Active Selections: Public read & write for live click tracking
+    match /active_selections/{selectionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Promocodes: Public read, Admin write
+    match /promocodes/{code} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Users: Users can read/write their own profiles, Admin can read all
     match /users/{userId} {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount, currency, name, description, email, phone } = body;
+    const { amount, currency, name, description, email, phone, success_url, failure_url } = body;
 
     const response = await fetch('https://api.nomod.com/v1/links', {
       method: 'POST',
@@ -22,8 +22,8 @@ export async function POST(request: Request) {
         ],
         title: name || "Mudwash Booking",
         note: description || "Booking payment",
-        success_url: "https://mudwash.com/success",
-        failure_url: "https://mudwash.com/bookings"
+        success_url: success_url || "https://mudwash.com/success",
+        failure_url: failure_url || "https://mudwash.com/bookings"
       })
     });
 

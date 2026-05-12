@@ -260,11 +260,7 @@ export default function Navbar() {
           icon={<CalendarPlus />}
           label="Book Now"
           onClick={() => {
-            if (isLoggedIn) {
-              router.push('/bookings');
-            } else {
-              router.push('/sign-up?redirect=/bookings');
-            }
+            router.push('/bookings');
           }}
           mouseX={mouseX}
           spring={spring}

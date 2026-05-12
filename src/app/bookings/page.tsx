@@ -64,7 +64,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { createBooking, getBookingsByDate } from '@/lib/bookings';
-import { doc, getDoc, onSnapshot, query, collection, where, updateDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, query, collection, where, updateDoc, setDoc, deleteDoc, increment, arrayUnion, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getServices, Service } from '@/lib/services';
 import { getCategories, Category } from '@/lib/categories';
@@ -298,8 +298,33 @@ export function BookingPageInner() {
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  
+  const [currentSelectionId, setCurrentSelectionId] = useState<string | null>(null);
+  const [activeSelections, setActiveSelections] = useState<Record<string, number>>({});
   const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
   const [maxBookings, setMaxBookings] = useState(3);
+  const [availablePromoCodes, setAvailablePromoCodes] = useState<any[]>([]);
+
+
+
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "promocodes"));
+        const promos: any[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.active && (!data.usedBy || !user || !data.usedBy.includes(user.uid))) {
+            promos.push({ id: doc.id, ...data });
+          }
+        });
+        setAvailablePromoCodes(promos);
+      } catch (err) {
+        console.error("Error fetching promos:", err);
+      }
+    };
+    fetchPromos();
+  }, [user]);
 
   useEffect(() => {
     const docRef = doc(db, "settings", "schedule");
@@ -330,6 +355,100 @@ export function BookingPageInner() {
       return () => unsubscribe();
     }
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (selectedDate) {
+      const q = query(collection(db, "active_selections"), where("date", "==", selectedDate));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const counts: Record<string, number> = {};
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          counts[data.time] = (counts[data.time] || 0) + 1;
+        });
+        setActiveSelections(counts);
+      }, (error) => {
+        console.error("Error listening to active selections:", error);
+      });
+      return () => unsubscribe();
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    const cleanup = async () => {
+      if (currentSelectionId) {
+        try {
+          await deleteDoc(doc(db, "active_selections", currentSelectionId));
+        } catch (e) {
+          console.error("Failed to cleanup selection:", e);
+        }
+      }
+    };
+    
+    window.addEventListener('beforeunload', cleanup);
+    return () => {
+      window.removeEventListener('beforeunload', cleanup);
+      cleanup();
+    };
+  }, [currentSelectionId]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const failed = urlParams.get('failed');
+
+    if (success === 'true') {
+      const pendingBookingStr = localStorage.getItem("mudwash_pendingBooking");
+      if (pendingBookingStr) {
+        const pendingBooking = JSON.parse(pendingBookingStr);
+        
+        const saveBooking = async () => {
+          try {
+            const bookingId = await createBooking(pendingBooking);
+            console.log("Booking created successfully after payment:", bookingId);
+            
+            // Save address to profile if logged in
+            if (user && pendingBooking.location) {
+              const userRef = doc(db, "users", user.uid);
+              await updateDoc(userRef, {
+                savedAddress: pendingBooking.location
+              });
+            }
+            
+            // Update promo code usage
+            const promoCodeUsed = localStorage.getItem("mudwash_appliedPromoCode");
+            if (promoCodeUsed) {
+              try {
+                const promoRef = doc(db, "promocodes", promoCodeUsed);
+                await updateDoc(promoRef, {
+                  usedCount: increment(1),
+                  usedBy: arrayUnion(user?.uid || "guest")
+                });
+              } catch (err) {
+                console.error("Failed to update promo usage:", err);
+              }
+              localStorage.removeItem("mudwash_appliedPromoCode");
+            }
+            
+            setIsSuccess(true);
+            localStorage.removeItem("mudwash_pendingBooking");
+            
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (e) {
+            console.error("Failed to create booking after payment:", e);
+            alert("Failed to save your booking. Please contact support with your payment confirmation.");
+          }
+        };
+        
+        saveBooking();
+      }
+    } else if (failed === 'true') {
+      alert("Payment failed or was cancelled. Your slot has not been booked.");
+      localStorage.removeItem("mudwash_pendingBooking");
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -372,6 +491,10 @@ export function BookingPageInner() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [detailService, setDetailService] = useState<Service | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoError, setPromoError] = useState("");
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
   const [carDetails, setCarDetails] = useState({ make: "", model: "", type: "" });
@@ -596,7 +719,113 @@ export function BookingPageInner() {
       const addon = services.find(s => s.id === id);
       if (addon) total += parseInt(addon.price.replace(/[^\d]/g, ''));
     });
-    return total;
+    return Math.max(0, total - promoDiscount);
+  };
+
+  useEffect(() => {
+    if (promoCode) {
+      applyPromoCode();
+    } else {
+      setPromoDiscount(0);
+      setPromoError("");
+    }
+  }, [promoCode]);
+
+  const applyPromoCode = async () => {
+    setPromoError("");
+    if (!promoCode.trim()) {
+      setPromoError("Please enter a promo code");
+      return;
+    }
+    
+    try {
+      const promoRef = doc(db, "promocodes", promoCode.toUpperCase());
+      const promoSnap = await getDoc(promoRef);
+      
+      if (!promoSnap.exists()) {
+        setPromoError("Invalid promo code");
+        setPromoDiscount(0);
+        return;
+      }
+      
+      const data = promoSnap.data();
+      if (!data.active) {
+        setPromoError("This promo code is no longer active");
+        setPromoDiscount(0);
+        return;
+      }
+
+      if (data.usedBy && user && data.usedBy.includes(user.uid)) {
+        setPromoError("You have already used this promo code");
+        setPromoDiscount(0);
+        return;
+      }
+      
+      if (data.usedCount && data.usedCount >= data.usageLimit) {
+        setPromoError("This promo code has reached its usage limit");
+        setPromoDiscount(0);
+        return;
+      }
+      
+      let discount = 0;
+      let baseTotal = 0;
+      const vType = vehicleTypes.find(v => v.name === carDetails.type);
+      if (vType) {
+        const overrides = (vType as any).locationOverrides || {};
+        if (selectedGarageId && overrides[selectedGarageId] !== undefined) {
+          baseTotal += overrides[selectedGarageId];
+        } else {
+          baseTotal += vType.surcharge;
+        }
+      }
+      selectedServices.forEach(sel => {
+        const service = services.find(s => s.id === sel.id);
+        if (service) baseTotal += parseInt(service.price.replace(/[^\d]/g, '')) * sel.quantity;
+      });
+      selectedAddOns.forEach(id => {
+        const addon = services.find(s => s.id === id);
+        if (addon) baseTotal += parseInt(addon.price.replace(/[^\d]/g, ''));
+      });
+
+      if (data.type === "percentage") {
+        discount = (baseTotal * data.value) / 100;
+      } else if (data.type === "fixed") {
+        discount = data.value;
+      }
+      
+      setPromoDiscount(discount);
+      setPromoError("");
+      
+    } catch (e) {
+      console.error("Promo Error:", e);
+      setPromoError("Failed to validate promo code");
+    }
+  };
+
+  const handleTimeSelect = async (slot: string) => {
+    if (selectedTime === slot) return;
+    
+    if (currentSelectionId) {
+      try {
+        await deleteDoc(doc(db, "active_selections", currentSelectionId));
+      } catch (e) {
+        console.error("Failed to delete old selection:", e);
+      }
+    }
+    
+    setSelectedTime(slot);
+    
+    const selectionId = `${selectedDate}_${slot}_${user?.uid || 'guest_' + Math.random().toString(36).substr(2, 9)}`;
+    try {
+      await setDoc(doc(db, "active_selections", selectionId), {
+        date: selectedDate,
+        time: slot,
+        createdAt: new Date().toISOString()
+      });
+      setCurrentSelectionId(selectionId);
+    } catch (e) {
+      console.error("Failed to create selection:", e);
+    }
   };
 
   const handleNext = () => {
@@ -620,7 +849,7 @@ export function BookingPageInner() {
         return s ? `${sel.quantity}x ${s.name}` : `${sel.quantity}x Service`;
       }).join(", ");
       
-      const bookingId = await createBooking({ 
+      const pendingBooking = { 
         customerName: formData.name || "Guest", 
         email: formData.email || "guest@mudwash.com", 
         phone: formData.phone || "N/A", 
@@ -631,16 +860,16 @@ export function BookingPageInner() {
         amount: `AED ${calculateTotal()}`, 
         status: "Pending",
         carDetails: `${carDetails.type || 'Standard'} - ${carDetails.model || 'Unknown'}`
-      });
+      };
+
+      // Save to localStorage
+      localStorage.setItem("mudwash_pendingBooking", JSON.stringify(pendingBooking));
       
-      // Save address to user profile if logged in
-      if (user) {
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-          savedAddress: formData.address,
-          addressType: addressDetails.type
-        });
+      if (promoCode) {
+        localStorage.setItem("mudwash_appliedPromoCode", promoCode.toUpperCase());
       }
+      
+      const tempBookingId = `PENDING-${Date.now()}`;
 
       // Trigger Nomod Payment
       const paymentResponse = await fetch('/api/nomod', {
@@ -652,9 +881,11 @@ export function BookingPageInner() {
           amount: calculateTotal(),
           currency: "AED",
           name: serviceSummary || "Mudwash Service",
-          description: `Booking #${bookingId}`,
+          description: `Booking #${tempBookingId}`,
           email: formData.email || "guest@mudwash.com",
-          phone: formData.phone || ""
+          phone: formData.phone || "",
+          success_url: `${window.location.origin}/bookings?success=true`,
+          failure_url: `${window.location.origin}/bookings?failed=true`
         })
       });
 
@@ -1103,7 +1334,10 @@ export function BookingPageInner() {
                             <div>
                               <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
                               <p className="text-[10px] text-white/40 mt-0.5 line-clamp-2">{addon.description || "Premium add-on service."}</p>
-                              <p className="text-brand-orange font-bold text-sm mt-1">AED {addon.price}</p>
+                              <div className="flex items-baseline gap-2 mt-1">
+                                <span className="text-brand-orange font-bold text-sm">AED {addon.price}</span>
+                                <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(addon.price.replace(/[^\d]/g, '')) * 1.4)}</span>
+                              </div>
                             </div>
                           </div>
                           <button 
@@ -1135,12 +1369,15 @@ export function BookingPageInner() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {timeSlots.map(slot => {
                   const count = slotCounts[slot] || 0;
+                  const clicks = activeSelections[slot] || 0;
+                  const totalCount = count + clicks;
                   const isFull = count >= maxBookings;
                   const isSelected = selectedTime === slot;
+                  
                   return (
                     <button 
                       key={slot} 
-                      onClick={() => !isFull && setSelectedTime(slot)} 
+                      onClick={() => !isFull && handleTimeSelect(slot)} 
                       disabled={isFull}
                       className={`py-6 rounded-3xl text-xs font-black uppercase italic tracking-widest border transition-all ${isSelected ? 'bg-brand-orange border-brand-orange text-black' : isFull ? 'bg-white/5 border-white/5 text-white/10 cursor-not-allowed' : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'}`}
                     >
@@ -1148,7 +1385,7 @@ export function BookingPageInner() {
                       {isFull ? (
                         <span className="block text-[8px] mt-1 text-white/20 font-black">FULL</span>
                       ) : (
-                        <span className="block text-[8px] mt-1 text-white/30 font-bold">{count} / {maxBookings}</span>
+                        <span className="block text-[8px] mt-1 text-white/30 font-bold">{totalCount} / {maxBookings}</span>
                       )}
                     </button>
                   );
@@ -1269,7 +1506,7 @@ export function BookingPageInner() {
                       </div>
                       <button 
                         onClick={() => setIsMapModalOpen(true)}
-                        className="w-full bg-white/5 hover:bg-white/10 border border-white/5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center justify-center gap-3 transition-all"
+                        className="w-max mx-auto bg-white/5 hover:bg-white/10 border border-white/5 py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center justify-center gap-3 transition-all"
                       >
                         <Search size={14} /> Full Map Selection
                       </button>
@@ -1277,7 +1514,48 @@ export function BookingPageInner() {
                   )}
                 </AnimatePresence>
                 
+                {/* Promo Code Card */}
                 <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-4 mt-6">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Promo Code</h3>
+                  <div>
+                    <select 
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white" 
+                      value={promoCode} 
+                      onChange={e => setPromoCode(e.target.value)} 
+                    >
+                      <option value="" className="bg-[#0A0A0A]">Select Promo Code</option>
+                      {availablePromoCodes.map(promo => (
+                        <option key={promo.id} value={promo.code} className="bg-[#0A0A0A]">
+                          {promo.code} ({promo.type === 'percentage' ? `${promo.value}%` : `AED ${promo.value}`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {promoError && <p className="text-xs text-red-500 font-medium mt-1">{promoError}</p>}
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-500">
+                      <span>Discount Applied</span>
+                      <span>-AED {promoDiscount}</span>
+                    </div>
+                  )}
+                </div>
+                
+
+
+                  {!user && (
+                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 flex items-center justify-between mb-2">
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-white">Guest Booking</p>
+                        <p className="text-xs text-white/40">Sign in to save history & earn rewards</p>
+                      </div>
+                      <Link 
+                        href="/sign-in" 
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase text-white transition-all"
+                      >
+                        Sign In
+                      </Link>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3">
                     <input 
                       type="checkbox" 
@@ -1290,7 +1568,6 @@ export function BookingPageInner() {
                       I agree to the <Link href="/terms" className="text-brand-orange hover:underline">Terms and Conditions</Link>
                     </label>
                   </div>
-                </div>
               </div>
             </motion.div>
           )}
@@ -1314,7 +1591,7 @@ export function BookingPageInner() {
           <button 
             onClick={currentStep === 5 ? handleSubmit : handleNext} 
             disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && !agreedToTerms)} 
-            className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-12 sm:h-14 px-6 sm:px-10 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
+            className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-10 sm:h-12 px-4 sm:px-6 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
             {isSubmitting
               ? <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"/>
@@ -1465,7 +1742,12 @@ export function BookingPageInner() {
                 })()}
               </div>
 
-              {/* Grand total */}
+              {promoDiscount > 0 && (
+                <div className="mx-6 mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center justify-between">
+                  <span className="text-sm font-black uppercase italic tracking-widest text-green-500">Discount Applied</span>
+                  <span className="text-lg font-black text-green-500 italic">-AED {promoDiscount}</span>
+                </div>
+              )}              {/* Grand total */}
               <div className="mx-6 mb-6 mt-2 p-4 bg-brand-orange/8 border border-brand-orange/15 rounded-2xl flex items-center justify-between">
                 <span className="text-sm font-black uppercase italic tracking-widest text-brand-orange">Grand Total</span>
                 <span className="text-2xl font-black text-brand-orange italic">AED {calculateTotal()}.00</span>
