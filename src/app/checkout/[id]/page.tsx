@@ -73,6 +73,13 @@ export default function CheckoutPage() {
     return () => unsubscribe();
   }, [id, router]);
 
+  useEffect(() => {
+    const savedLocation = localStorage.getItem("userLocation");
+    if (savedLocation) {
+      setFormData(prev => ({ ...prev, address: savedLocation }));
+    }
+  }, []);
+
   const loadRazorpay = () => {
     return new Promise((resolve) => {
       const script = document.createElement("script");

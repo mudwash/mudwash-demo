@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, MapPin, ChevronDown, Car } from "lucide-react";
+import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair } from "lucide-react";
 
 const DUBAI_LOCATIONS = [
   "Downtown Dubai",
@@ -60,7 +60,28 @@ export default function Hero() {
   const [selectedCar, setSelectedCar] = useState("Select Vehicle");
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [carHistory, setCarHistory] = useState<any[]>([]);
+
+  const handleLocateMe = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const locStr = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          setSelectedLocation(locStr);
+          localStorage.setItem("userLocation", locStr);
+          window.dispatchEvent(new Event("locationChanged"));
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Could not get your location.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
   const images = ['/carousel-1.png', '/carousel-2.png', '/carousel-3.png'];
 
   useEffect(() => {
@@ -134,13 +155,13 @@ export default function Hero() {
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
                 priority={currentSlide === 0}
-                className="object-cover grayscale-[0.2] brightness-[0.5]"
+                className="object-cover brightness-[0.7]"
               />
             </motion.div>
           </AnimatePresence>
 
           {/* Cinematic gradient overlays */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/80 z-10" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
         </div>
 
@@ -149,36 +170,60 @@ export default function Hero() {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="absolute top-0 left-0 right-0 z-30 pt-1 px-4 flex items-start justify-between"
+          className="absolute top-0 left-0 right-0 z-30 pt-4 px-4 flex items-center gap-2"
         >
-          <div>
-            <p className="text-white/50 text-[9px] font-semibold uppercase tracking-widest mb-1.5 z-10 relative">Good Day 👋</p>
-            <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-8 w-auto object-contain object-left drop-shadow-md" />
-          </div>
+          {/* Logo (Left) */}
+          <Link href="/" className="shrink-0">
+            <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-6 w-auto object-contain" />
+          </Link>
 
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-2 flex flex-col gap-1.5 w-[120px] mt-1 shadow-2xl">
-            {/* Location Row */}
-            <Link href="/location" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-              <MapPin size={10} className="text-brand-orange shrink-0" />
-              <span className="text-[9px] font-bold text-white truncate flex-grow text-left">{selectedLocation}</span>
-              <ChevronDown size={10} className="text-white/50 shrink-0 ml-auto" />
-            </Link>
+          {/* Unified Location & Car Bar (Center) */}
+          {/* Unified Location & Car Bar (Center) */}
+          <div className="flex-grow grid grid-cols-[7fr_3fr] bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl h-12">
+            {/* Location Selector */}
+            <div className="relative min-w-0 border-r border-white/10 flex items-center justify-between">
+              {/* Clickable Area for Navigation */}
+              <Link href="/location" className="flex items-center gap-2 min-w-0 flex-grow hover:bg-white/5 transition-all rounded-l-xl h-full px-3">
+                <div className="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+                  <MapPin size={14} />
+                </div>
+                <div className="min-w-0 text-left">
+                  <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Location</p>
+                  <span className="text-xs font-bold text-white truncate block">{selectedLocation}</span>
+                </div>
+              </Link>
 
-            <div className="h-[1px] bg-white/5 w-full" />
+              {/* Tracking Button (Locate Me) */}
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLocateMe();
+                }}
+                className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors shrink-0 mr-2"
+                title="Use current location"
+              >
+                <Crosshair size={12} />
+              </button>
+            </div>
 
-            {/* Vehicle Row */}
-            <div className="relative">
+            {/* Car Selector */}
+            <div className="relative min-w-0">
               <button 
                 onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
-                className="w-full flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                className="w-full h-full px-3 flex items-center justify-center gap-2 hover:bg-white/5 transition-all rounded-r-xl"
               >
-                <Car size={10} className="text-brand-orange shrink-0" />
-                <span className="text-[9px] font-bold text-white truncate flex-grow text-left">{selectedCar}</span>
-                <ChevronDown size={10} className="text-white/50 shrink-0 ml-auto" />
+                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-brand-orange shrink-0">
+                  <Car size={12} />
+                </div>
+                <div className="min-w-0 text-left">
+                  <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Car</p>
+                  <span className="text-xs font-bold text-white truncate block">{selectedCar}</span>
+                </div>
               </button>
 
+              {/* Dropdown */}
               {showVehicleDropdown && carHistory.length > 0 && (
-                <div className="absolute top-full right-0 mt-1 w-[150px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute top-full right-0 mt-1 w-[200px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                   {carHistory.map((car, index) => (
                     <button
                       key={index}
@@ -200,7 +245,7 @@ export default function Hero() {
                 </div>
               )}
               {showVehicleDropdown && carHistory.length === 0 && (
-                <div className="absolute top-full right-0 mt-1 w-[150px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden p-3 text-center">
+                <div className="absolute top-full right-0 mt-1 w-[200px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden p-3 text-center">
                   <p className="text-white/40 text-[9px]">No history yet</p>
                   <Link 
                     href="/bookings?step=1"

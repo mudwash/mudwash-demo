@@ -52,14 +52,15 @@ import {
   Crown,
   Diamond,
   Flame,
+  Map,
+  User,
+  Home,
   Award,
   BadgeCheck,
   Truck,
   Bike,
   Loader2,
-  MapPin,
-  Map,
-  User
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { createBooking, getBookingsByDate } from '@/lib/bookings';
@@ -191,84 +192,88 @@ const ServiceDetailDrawer = ({
       {isOpen && (
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/90 backdrop-blur-md z-[10000]" />
-          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-white/10 rounded-t-[2.5rem] z-[10001] p-6 pb-24 h-[100dvh] overflow-y-auto">
-            <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mb-6" />
-            <div className="flex justify-between items-start mb-6">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">{service.name}</h2>
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl font-black text-brand-orange">AED {service.price}</span>
-                  <span className="text-white/20 line-through text-base italic">AED {parseInt(service.price.replace(/[^\d]/g, '')) * 1.4}</span>
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-[#0A0A0A] border-t border-white/10 rounded-t-[2.5rem] z-[10001] h-[100dvh] flex flex-col">
+            <div className="p-6 overflow-y-auto flex-grow no-scrollbar pb-24">
+              <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mb-6" />
+              <div className="flex justify-between items-start mb-6">
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">{service.name}</h2>
+                  <div className="flex items-center gap-4">
+                    <span className="text-2xl font-black text-brand-orange">AED {service.price}</span>
+                    <span className="text-white/20 line-through text-base italic">AED {parseInt(service.price.replace(/[^\d]/g, '')) * 1.4}</span>
+                  </div>
                 </div>
+                <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"><X size={20} /></button>
               </div>
-              <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"><X size={20} /></button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                {service.images && service.images.length > 0 ? (
-                  <div className="w-full h-48 relative rounded-2xl overflow-hidden border border-white/10 group">
-                    <motion.div 
-                      className="flex h-full"
-                      animate={{ x: `-${currentImageIndex * 100}%` }}
-                      transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                    >
-                      {service.images.map((img, idx) => (
-                        <div key={idx} className="w-full h-full flex-shrink-0">
-                          <img src={img} alt={service.name} className="w-full h-full object-cover" />
-                        </div>
-                      ))}
-                    </motion.div>
-                    {service.images.length > 1 && (
-                      <>
-                        <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"><ChevronLeft size={16} /></button>
-                        <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"><ChevronRight size={16} /></button>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                          {service.images.map((_, idx) => (
-                            <button 
-                              key={idx} 
-                              onClick={() => setCurrentImageIndex(idx)}
-                              className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-[#F59E0B] w-4' : 'bg-white/30'}`} 
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  {service.images && service.images.length > 0 ? (
+                    <div className="w-full h-48 relative rounded-2xl overflow-hidden border border-white/10 group">
+                      <motion.div 
+                        className="flex h-full"
+                        animate={{ x: `-${currentImageIndex * 100}%` }}
+                        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                      >
+                        {service.images.map((img, idx) => (
+                          <div key={idx} className="w-full h-full flex-shrink-0">
+                            <img src={img} alt={service.name} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </motion.div>
+                      {service.images.length > 1 && (
+                        <>
+                          <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"><ChevronLeft size={16} /></button>
+                          <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"><ChevronRight size={16} /></button>
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            {service.images.map((_, idx) => (
+                              <button 
+                                key={idx} 
+                                onClick={() => setCurrentImageIndex(idx)}
+                                className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-[#F59E0B] w-4' : 'bg-white/30'}`} 
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : service.image ? (
+                    <div className="w-full h-48 relative rounded-2xl overflow-hidden border border-white/10">
+                      <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : null}
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-3 flex items-center gap-2"><Info size={14}/> Treatment Overview</h3>
+                    <p className="text-sm text-white/60 leading-relaxed font-medium">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
                   </div>
-                ) : service.image ? (
-                  <div className="w-full h-48 relative rounded-2xl overflow-hidden border border-white/10">
-                    <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
+                  <div className="p-5 bg-brand-orange/5 border border-brand-orange/10 rounded-2xl">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-orange mb-2 flex items-center gap-2"><Clock size={14}/> Service Duration</h3>
+                    <p className="text-lg font-bold text-white italic">Approx. {service.duration || '2-3 Hours'}</p>
                   </div>
-                ) : null}
+                </div>
                 <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-3 flex items-center gap-2"><Info size={14}/> Treatment Overview</h3>
-                  <p className="text-sm text-white/60 leading-relaxed font-medium">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
-                </div>
-                <div className="p-5 bg-brand-orange/5 border border-brand-orange/10 rounded-2xl">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-orange mb-2 flex items-center gap-2"><Clock size={14}/> Service Duration</h3>
-                  <p className="text-lg font-bold text-white italic">Approx. {service.duration || '2-3 Hours'}</p>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-3 flex items-center gap-2"><CheckCircle size={14}/> What's Included</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {inclusions.map((item, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-3 group">
-                      <div className="w-5 h-5 rounded-full bg-brand-orange/20 flex items-center justify-center text-brand-orange group-hover:scale-110 transition-transform"><Check size={10} strokeWidth={4} /></div>
-                      <span className="text-sm text-white/70 font-bold tracking-tight">{item}</span>
-                    </motion.div>
-                  ))}
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 mb-3 flex items-center gap-2"><CheckCircle size={14}/> What's Included</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {inclusions.map((item, i) => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-3 group">
+                        <div className="w-5 h-5 rounded-full bg-brand-orange/20 flex items-center justify-center text-brand-orange group-hover:scale-110 transition-transform"><Check size={10} strokeWidth={4} /></div>
+                        <span className="text-sm text-white/70 font-bold tracking-tight">{item}</span>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="mt-16 pt-10 border-t border-white/5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-10">
-              <div className="flex items-center justify-between md:justify-start gap-8 bg-white/5 px-8 md:px-10 py-5 rounded-[2rem] border border-white/5">
-                <button onClick={() => onRemove(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Minus size={20} strokeWidth={3} /></button>
-                <span className="text-2xl font-black min-w-[40px] text-center italic">{quantity}</span>
-                <button onClick={() => onAdd(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
+            <div className="p-6 border-t border-white/5 bg-[#0A0A0A]">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-10">
+                <div className="flex items-center justify-between md:justify-start gap-8 bg-white/5 px-8 md:px-10 py-5 rounded-[2rem] border border-white/5">
+                  <button onClick={() => onRemove(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Minus size={20} strokeWidth={3} /></button>
+                  <span className="text-2xl font-black min-w-[40px] text-center italic">{quantity}</span>
+                  <button onClick={() => onAdd(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
+                </div>
+                <button onClick={onClose} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
+                  {quantity > 0 ? `Update Booking Selection` : `Add Package for AED ${service.price}`}
+                </button>
               </div>
-              <button onClick={onClose} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
-                {quantity > 0 ? `Update Booking Selection` : `Add Package for AED ${service.price}`}
-              </button>
             </div>
           </motion.div>
         </>
@@ -281,6 +286,7 @@ export function BookingPageInner() {
   const { user, loading: authLoading, profile } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -355,6 +361,10 @@ export function BookingPageInner() {
     if (savedLocation) {
       setFormData(prev => ({ ...prev, address: savedLocation }));
     }
+    const savedPhone = localStorage.getItem("userPhone");
+    if (savedPhone) {
+      setFormData(prev => ({ ...prev, phone: savedPhone }));
+    }
   }, []);
 
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -365,6 +375,12 @@ export function BookingPageInner() {
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
   const [carDetails, setCarDetails] = useState({ make: "", model: "", type: "" });
+
+  useEffect(() => {
+    if (formData.phone) {
+      localStorage.setItem("userPhone", formData.phone);
+    }
+  }, [formData.phone]);
 
   useEffect(() => {
     const savedCar = localStorage.getItem("mudwash_carDetails");
@@ -604,7 +620,7 @@ export function BookingPageInner() {
         return s ? `${sel.quantity}x ${s.name}` : `${sel.quantity}x Service`;
       }).join(", ");
       
-      await createBooking({ 
+      const bookingId = await createBooking({ 
         customerName: formData.name || "Guest", 
         email: formData.email || "guest@mudwash.com", 
         phone: formData.phone || "N/A", 
@@ -618,9 +634,6 @@ export function BookingPageInner() {
       });
       
       // Save address to user profile if logged in
-      const { useAuth } = await import('@/lib/AuthContext'); // Fallback if not available in scope
-      // Wait, we already have `user` from `useAuth` in scope!
-      // Let's just use it!
       if (user) {
         const userRef = doc(db, "users", user.uid);
         await updateDoc(userRef, {
@@ -629,7 +642,35 @@ export function BookingPageInner() {
         });
       }
 
-      setIsSuccess(true);
+      // Trigger Nomod Payment
+      const paymentResponse = await fetch('/api/nomod', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: calculateTotal(),
+          currency: "AED",
+          name: serviceSummary || "Mudwash Service",
+          description: `Booking #${bookingId}`,
+          email: formData.email || "guest@mudwash.com",
+          phone: formData.phone || ""
+        })
+      });
+
+      const paymentData = await paymentResponse.json();
+      const paymentUrl = paymentData.url || paymentData.link || paymentData.checkoutUrl;
+
+      if (paymentUrl) {
+        // Redirect to payment link
+        window.location.href = paymentUrl;
+      } else {
+        console.error("Nomod payment failed to return URL:", paymentData);
+        alert("Failed to create payment link. Please try again or contact support.");
+        // Fallback: show success page anyway since booking is created
+        setIsSuccess(true);
+      }
+
     } catch (err: any) { 
       console.error("Booking Submission Error:", err);
       alert("Booking failed: " + (err.message || "Please check your internet connection and try again.")); 
@@ -688,9 +729,11 @@ export function BookingPageInner() {
 
       <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-5xl z-50 bg-black/40 backdrop-blur-2xl border border-white/10 h-20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
         <div className="h-full px-8 flex items-center justify-between">
-          <button onClick={handleBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
-            <ChevronLeft size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={handleBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
+              <ChevronLeft size={20} />
+            </button>
+          </div>
           <div className="flex flex-col items-center">
             <motion.span 
               key={currentStep}
@@ -718,9 +761,9 @@ export function BookingPageInner() {
               <span className="text-[8px] font-black uppercase tracking-widest text-white/20 leading-none">Vehicle</span>
               <span className="text-[10px] font-bold text-white italic truncate max-w-[100px]">{carDetails.model || "Not Set"}</span>
             </div>
-            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors">
-              <User size={18} />
-            </button>
+            <Link href="/" className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
+              <Home size={18} />
+            </Link>
           </div>
         </div>
       </header>
@@ -946,16 +989,36 @@ export function BookingPageInner() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`relative group rounded-[2rem] border transition-all duration-700 overflow-hidden ${isSelected ? 'bg-brand-orange/10 border-brand-orange/40 shadow-[0_20px_40px_rgba(246,150,33,0.1)]' : 'bg-[#0F0F0F]/80 backdrop-blur-md border-white/5 hover:border-white/20'}`}
+                        className={`relative group rounded-[2rem] border transition-all duration-700 overflow-hidden min-h-[240px] flex flex-col justify-between ${isSelected ? 'border-brand-orange/40 shadow-[0_20px_40px_rgba(246,150,33,0.1)]' : 'border-white/5 hover:border-white/20'}`}
                       >
-                        {/* Background subtle gradient */}
-                        <div className={`absolute inset-0 bg-gradient-to-br from-brand-orange/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000`} />
+                        {/* Background Image */}
+                        {service.image ? (
+                          <div className="absolute inset-0 z-0">
+                            <img src={service.image} alt={service.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/40" />
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 z-0 bg-[#0F0F0F]/80 backdrop-blur-md">
+                            <div className="absolute inset-0 bg-gradient-to-br from-brand-orange/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                          </div>
+                        )}
                         
-                        <div className="p-5 relative z-10">
-                          <div className="flex justify-between items-start mb-6">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-700 relative overflow-hidden ${isSelected ? 'bg-brand-orange text-black shadow-[0_10px_20px_rgba(246,150,33,0.4)]' : 'bg-white/5 text-white/20 group-hover:bg-brand-orange/15 group-hover:text-brand-orange'}`}>
-                              <IconComp size={20} strokeWidth={2} />
-                              {isSelected && <motion.div layoutId={`glow-${service.id}`} className="absolute inset-0 bg-white/20 animate-pulse" />}
+                        <div className="p-5 relative z-10 flex flex-col justify-between h-full flex-grow">
+                          {/* Top Part: Badges and Action */}
+                          <div className="flex justify-between items-start mb-auto">
+                            <div className="flex gap-2">
+                              {index === 0 && (
+                                <div className="bg-brand-orange/20 backdrop-blur-md border border-brand-orange/30 text-brand-orange text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(246,150,33,0.2)]">
+                                  <Star size={8} fill="currentColor" />
+                                  <span>Recommended</span>
+                                </div>
+                              )}
+                              {index === 1 && (
+                                <div className="bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-400 text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(239,68,68,0.2)]">
+                                  <Flame size={8} fill="currentColor" />
+                                  <span>30% OFF</span>
+                                </div>
+                              )}
                             </div>
                             <button 
                               onClick={() => isSelected ? removeService(service.id!) : addService(service.id!)} 
@@ -975,32 +1038,34 @@ export function BookingPageInner() {
                             </button>
                           </div>
                           
-                          <div className="space-y-3 cursor-pointer" onClick={() => { setDetailService(service); setIsDrawerOpen(true); }}>
+                          {/* Middle/Bottom Part: Content */}
+                          <div className="mt-4 space-y-3 cursor-pointer" onClick={() => { setDetailService(service); setIsDrawerOpen(true); }}>
                             <div className="space-y-1">
                                <div className="flex items-center gap-2">
                                   <h3 className="text-lg font-black uppercase italic tracking-tighter text-white group-hover:text-brand-orange transition-colors duration-500 leading-none">{service.name}</h3>
                                </div>
-                               <p className="text-[8px] font-black uppercase tracking-widest text-white/20 leading-none italic">Professional Grade</p>
+                               <p className="text-[8px] font-black uppercase tracking-widest text-white/40 leading-none italic">Professional Grade</p>
                             </div>
                             
-                            <p className="text-[10px] text-white/40 leading-relaxed font-medium line-clamp-2 min-h-[28px]">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
+                            <p className="text-[10px] text-white/70 leading-relaxed font-medium line-clamp-2 min-h-[28px]">{service.description || "Premium detailing treatment restored to showroom condition."}</p>
                             
-                            <div className="flex items-end justify-between pt-3 border-t border-white/5">
+                            <div className="flex items-end justify-between pt-3 border-t border-white/10">
                                <div className="flex flex-col">
-                                  <span className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-0.5">Starting from</span>
-                                  <span className="text-xl font-black text-white italic tracking-tighter leading-none">AED {service.price}</span>
+                                  <span className="text-[7px] font-black uppercase tracking-widest text-white/40 mb-0.5">Starting from</span>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-black text-brand-orange italic tracking-tighter leading-none">AED {service.price}</span>
+                                    <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(service.price.replace(/[^\d]/g, '')) * 1.4)}</span>
+                                  </div>
                                </div>
                                {service.duration && (
-                                 <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 flex items-center gap-1.5 flex-shrink-0">
+                                 <div className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 flex items-center gap-1.5 flex-shrink-0">
                                     <Clock size={10} className="text-brand-orange" />
-                                    <span className="text-[8px] text-white/60 font-black uppercase tracking-widest whitespace-nowrap">{service.duration}</span>
+                                    <span className="text-[8px] text-white/80 font-black uppercase tracking-widest whitespace-nowrap">{service.duration}</span>
                                  </div>
                                )}
                             </div>
                           </div>
                         </div>
-
-
                       </motion.div>
                     );
                   })}
@@ -1037,7 +1102,8 @@ export function BookingPageInner() {
                             </div>
                             <div>
                               <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
-                              <p className="text-brand-orange font-bold text-sm">AED {addon.price}</p>
+                              <p className="text-[10px] text-white/40 mt-0.5 line-clamp-2">{addon.description || "Premium add-on service."}</p>
+                              <p className="text-brand-orange font-bold text-sm mt-1">AED {addon.price}</p>
                             </div>
                           </div>
                           <button 
@@ -1210,6 +1276,21 @@ export function BookingPageInner() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                
+                <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-4 mt-6">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      id="terms" 
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="w-5 h-5 accent-brand-orange rounded"
+                    />
+                    <label htmlFor="terms" className="text-sm text-white/60 font-medium">
+                      I agree to the <Link href="/terms" className="text-brand-orange hover:underline">Terms and Conditions</Link>
+                    </label>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -1232,7 +1313,7 @@ export function BookingPageInner() {
           
           <button 
             onClick={currentStep === 5 ? handleSubmit : handleNext} 
-            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime))} 
+            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && !agreedToTerms)} 
             className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-12 sm:h-14 px-6 sm:px-10 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
             {isSubmitting
@@ -1265,17 +1346,29 @@ export function BookingPageInner() {
                 <div className="w-10 h-1 rounded-full bg-white/10"/>
               </div>
 
-              {/* Header */}
               <div className="px-6 pt-3 pb-4 flex items-center justify-between">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-orange flex items-center gap-2">
                   <Sparkles size={12}/> Booking Summary
                 </h3>
-                <button
-                  onClick={() => setSummaryExpanded(false)}
-                  className="w-8 h-8 rounded-full bg-white/5 border border-white/8 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"
-                >
-                  <X size={14}/>
-                </button>
+                <div className="flex items-center gap-2">
+                  {(selectedServices.length > 0 || selectedAddOns.length > 0) && (
+                    <button
+                      onClick={() => {
+                        setSelectedServices([]);
+                        setSelectedAddOns([]);
+                      }}
+                      className="text-[9px] font-black uppercase text-white/40 hover:text-white transition-colors border border-white/10 px-3 py-1 rounded-full"
+                    >
+                      Clear Cart
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSummaryExpanded(false)}
+                    className="w-8 h-8 rounded-full bg-white/5 border border-white/8 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"
+                  >
+                    <X size={14}/>
+                  </button>
+                </div>
               </div>
 
               {/* Divider */}
