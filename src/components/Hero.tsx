@@ -272,9 +272,7 @@ export default function Hero() {
           className="absolute inset-0 z-20 flex items-center justify-center px-6 pt-8"
         >
           <div className="text-center">
-            <p className="text-brand-orange text-[8px] font-black uppercase tracking-[0.4em] mb-2">
-              Premium Auto Care
-            </p>
+
             <h1 className="text-[1.5rem] font-black text-white uppercase italic leading-[1] tracking-tighter drop-shadow-lg">
               Mastering The Art Of<br />
               <span className="text-brand-orange">Detailing</span>
