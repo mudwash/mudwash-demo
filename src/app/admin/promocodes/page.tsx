@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, 
   Trash2, 
+  Edit2,
   Ticket, 
   Loader2, 
   CheckCircle2, 
@@ -14,6 +15,7 @@ import {
   Percent,
   DollarSign
 } from "lucide-react";
+
 import { db } from "@/lib/firebase";
 import { collection, getDocs, deleteDoc, doc, updateDoc, setDoc } from "firebase/firestore";
 
@@ -34,6 +36,8 @@ export default function PromoCodesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   
   const [formData, setFormData] = useState({
     code: "",
@@ -73,17 +77,28 @@ export default function PromoCodesPage() {
         return;
       }
 
-      await setDoc(doc(db, "promocodes", codeUpper), {
+      if (editingId && editingId !== codeUpper) {
+        // Code changed, delete old doc
+        await deleteDoc(doc(db, "promocodes", editingId));
+      }
+
+      const updateData: any = {
         code: codeUpper,
         type: formData.type,
         value: formData.value,
         usageLimit: formData.usageLimit,
-        usedCount: 0,
         active: formData.active,
-        usedBy: []
-      });
+      };
+
+      if (!editingId || editingId !== codeUpper) {
+        updateData.usedCount = 0;
+        updateData.usedBy = [];
+      }
+
+      await setDoc(doc(db, "promocodes", codeUpper), updateData, { merge: true });
       
       setIsModalOpen(false);
+      setEditingId(null);
       setFormData({
         code: "",
         type: "percentage",
@@ -93,12 +108,13 @@ export default function PromoCodesPage() {
       });
       fetchPromoCodes();
     } catch (error) {
-      console.error("Error creating promo code:", error);
-      alert("Failed to create promo code.");
+      console.error("Error saving promo code:", error);
+      alert("Failed to save promo code.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this promo code?")) return;
@@ -121,9 +137,22 @@ export default function PromoCodesPage() {
     }
   };
 
+  const handleEdit = (promo: PromoCode) => {
+    setEditingId(promo.id);
+    setFormData({
+      code: promo.code,
+      type: promo.type,
+      value: promo.value,
+      usageLimit: promo.usageLimit,
+      active: promo.active
+    });
+    setIsModalOpen(true);
+  };
+
   const filteredCodes = promoCodes.filter(c => 
     c.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <div className="space-y-8 pb-12">
@@ -135,9 +164,20 @@ export default function PromoCodesPage() {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingId(null);
+              setFormData({
+                code: "",
+                type: "percentage",
+                value: 0,
+                usageLimit: 100,
+                active: true
+              });
+              setIsModalOpen(true);
+            }}
             className="bg-brand-orange text-black px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white transition-colors"
           >
+
             <Plus size={18} />
             <span>Create Code</span>
           </button>
@@ -229,13 +269,24 @@ export default function PromoCodesPage() {
                       </button>
                     </td>
                     <td className="px-6 py-6 text-right">
-                      <button 
-                        onClick={() => handleDelete(code.id)}
-                        className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => handleEdit(code)}
+                          className="p-2 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(code.id)}
+                          className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -264,13 +315,22 @@ export default function PromoCodesPage() {
                       </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => handleDelete(code.id)}
-                    className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => handleEdit(code)}
+                      className="p-2 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-colors"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(code.id)}
+                      className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
+
 
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
                   <div className="flex flex-col gap-1">
@@ -325,9 +385,10 @@ export default function PromoCodesPage() {
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div>
-                  <h2 className="text-xl font-black italic uppercase tracking-tight text-white">Create Promo Code</h2>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Add a new discount offer</p>
+                  <h2 className="text-xl font-black italic uppercase tracking-tight text-white">{editingId ? "Edit Promo Code" : "Create Promo Code"}</h2>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">{editingId ? "Update existing discount offer" : "Add a new discount offer"}</p>
                 </div>
+
                 <button 
                   onClick={() => setIsModalOpen(false)}
                   className="p-2 hover:bg-white/5 rounded-full text-white/20 hover:text-white transition-colors"
@@ -416,8 +477,9 @@ export default function PromoCodesPage() {
                       className="bg-brand-orange text-black px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                      {isSubmitting ? "Creating..." : "Create"}
+                      {isSubmitting ? "Saving..." : editingId ? "Save Changes" : "Create"}
                     </button>
+
                   </div>
                 </div>
               </form>
