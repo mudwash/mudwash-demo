@@ -254,7 +254,7 @@ export default function Hero() {
           {/* Mobile: Top Row (Logo + WhatsApp) / Desktop: Just Logo */}
           <div className="flex items-center justify-between w-full md:w-auto">
             <Link href="/" className="shrink-0">
-              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-6 md:h-8 w-auto object-contain" />
+              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-10 md:h-14 w-auto object-contain" />
             </Link>
             
             {/* WhatsApp Icon (Mobile only inside this div) */}
@@ -353,23 +353,7 @@ export default function Hero() {
               <span className="text-brand-orange">Detailing</span>
             </h1>
             
-            {/* CTA Button */}
-            <div className="mt-8">
-              <button 
-                onClick={() => {
-                  const contactForm = document.getElementById('booking-contact-form');
-                  if (contactForm) {
-                    contactForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }}
-                className="group inline-flex items-center gap-4 bg-brand-orange text-black px-8 py-3.5 rounded-xl font-black uppercase italic text-xs md:text-sm tracking-[0.2em] transition-all duration-500 hover:scale-105 shadow-[0_15px_30px_rgba(246,150,33,0.25)]"
-              >
-                <span>Book Your Service</span>
-                <div className="bg-black/10 p-1 rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
-                  <ChevronRight size={16} />
-                </div>
-              </button>
-            </div>
+            {/* CTA Button Removed */}
           </div>
         </motion.div>
 
