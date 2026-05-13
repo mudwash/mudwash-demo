@@ -137,6 +137,7 @@ export default function ServicesGrid() {
                   .map((cat, index) => {
                     const catName = cat.name;
                     const service = services.find(s => s.category === catName);
+                    if (!service) return null;
                     const Icon = ICON_MAP[cat.icon] || Package;
                     const color = ICON_COLORS[cat.icon] || "#f69621";
                     const isActive = selected?.category === catName;
