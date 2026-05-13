@@ -8,6 +8,7 @@ import { signOut } from "firebase/auth";
 import {
   LayoutDashboard,
   CalendarCheck,
+  CalendarClock,
   Settings,
   LogOut,
   Menu,
@@ -15,6 +16,7 @@ import {
   Bell,
   Search,
   Wrench,
+  Zap,
   User,
   Package,
   MapPin,
@@ -27,9 +29,10 @@ const sidebarLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
   { name: "Services", href: "/admin/services", icon: Wrench },
+  { name: "Add-ons", href: "/admin/addons", icon: Zap },
+  { name: "Schedule", href: "/admin/schedule", icon: CalendarClock },
   { name: "Vehicles", href: "/admin/vehicles", icon: Car },
   { name: "Parts", href: "/admin/parts", icon: Package },
-  { name: "Garages", href: "/admin/garages", icon: MapPin },
   { name: "Promo Codes", href: "/admin/promocodes", icon: Ticket },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];

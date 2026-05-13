@@ -73,7 +73,14 @@ export default function Hero() {
   const [carHistory, setCarHistory] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [mapCoords, setMapCoords] = useState({ lat: 25.2048, lng: 55.2708 }); // Dubai
+  const [mapCoords, setMapCoords] = useState({ lat: 25.2048, lng: 55.2708 });
+
+  // Address details
+  const [locationType, setLocationType] = useState<"Home" | "Work" | "Other">("Home");
+  const [buildingName, setBuildingName] = useState("");
+  const [flatNo, setFlatNo] = useState("");
+  const [locationDirections, setLocationDirections] = useState("");
+  const [locationStep, setLocationStep] = useState<"area" | "details">("area");
 
   const handleLocateMe = () => {
     if (navigator.geolocation) {
@@ -139,9 +146,19 @@ export default function Hero() {
   useEffect(() => {
     const savedLoc = localStorage.getItem("userLocation");
     const savedCar = localStorage.getItem("mudwash_carDetails");
+    const savedAddrDetails = localStorage.getItem("mudwash_addressDetails");
     
     if (savedLoc) {
       setSelectedLocation(savedLoc);
+    }
+    if (savedAddrDetails) {
+      try {
+        const d = JSON.parse(savedAddrDetails);
+        if (d.type) setLocationType(d.type);
+        if (d.buildingName) setBuildingName(d.buildingName);
+        if (d.flatNo) setFlatNo(d.flatNo);
+        if (d.directions) setLocationDirections(d.directions);
+      } catch (e) {}
     }
     if (savedCar) {
       try {
@@ -156,6 +173,24 @@ export default function Hero() {
       setShowCarPopup(true);
     }
   }, []);
+
+  const saveLocationDetails = (area: string) => {
+    setSelectedLocation(area);
+    localStorage.setItem("userLocation", area);
+    window.dispatchEvent(new Event("locationChanged"));
+    setLocationStep("details");
+  };
+
+  const confirmLocationDetails = () => {
+    const details = { type: locationType, buildingName, flatNo, directions: locationDirections };
+    localStorage.setItem("mudwash_addressDetails", JSON.stringify(details));
+    // also write to bookings pre-fill keys
+    localStorage.setItem("mudwash_locationType", locationType);
+    setShowLocationPopup(false);
+    setLocationStep("area");
+    const savedCar = localStorage.getItem("mudwash_carDetails");
+    if (!savedCar) setShowCarPopup(true);
+  };
 
   useEffect(() => {
     if (locationSearchQuery.length < 3) {
@@ -395,11 +430,22 @@ export default function Hero() {
         onClose={() => {
           if (selectedLocation !== "Choose Location") {
             setShowLocationPopup(false);
+            setLocationStep("area");
           }
         }}
-        title="Choose Location"
+        title={locationStep === "area" ? "Choose Location" : "Add Address Details"}
       >
+        {locationStep === "area" ? (
         <div className="space-y-4">
+          {/* Type tabs */}
+          <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
+            {(["Home", "Work", "Other"] as const).map(t => (
+              <button key={t} onClick={() => setLocationType(t)}
+                className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locationType === t ? 'bg-brand-orange text-black' : 'text-white/30 hover:text-white'}`}
+              >{t}</button>
+            ))}
+          </div>
+
           <button
             onClick={() => {
               setIsMapOpen(true);
@@ -420,15 +466,7 @@ export default function Hero() {
               onChange={e => setLocationSearchQuery(e.target.value)}
               onKeyDown={e => {
                 if (e.key === 'Enter' && locationSearchQuery.trim() !== '') {
-                  setSelectedLocation(locationSearchQuery);
-                  localStorage.setItem("userLocation", locationSearchQuery);
-                  window.dispatchEvent(new Event("locationChanged"));
-                  setShowLocationPopup(false);
-                  
-                  const savedCar = localStorage.getItem("mudwash_carDetails");
-                  if (!savedCar) {
-                    setShowCarPopup(true);
-                  }
+                  saveLocationDetails(locationSearchQuery);
                 }
               }}
               className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
@@ -437,17 +475,7 @@ export default function Hero() {
 
           {locationSearchQuery.trim() !== '' && (
             <button
-              onClick={() => {
-                setSelectedLocation(locationSearchQuery);
-                localStorage.setItem("userLocation", locationSearchQuery);
-                window.dispatchEvent(new Event("locationChanged"));
-                setShowLocationPopup(false);
-                
-                const savedCar = localStorage.getItem("mudwash_carDetails");
-                if (!savedCar) {
-                  setShowCarPopup(true);
-                }
-              }}
+              onClick={() => saveLocationDetails(locationSearchQuery)}
               className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between mb-2"
             >
               <div>
@@ -469,15 +497,7 @@ export default function Hero() {
                     if (!loc.includes(',')) {
                       setLocationSearchQuery(loc + ", ");
                     } else {
-                      setSelectedLocation(loc);
-                      localStorage.setItem("userLocation", loc);
-                      window.dispatchEvent(new Event("locationChanged"));
-                      setShowLocationPopup(false);
-                      
-                      const savedCar = localStorage.getItem("mudwash_carDetails");
-                      if (!savedCar) {
-                        setShowCarPopup(true);
-                      }
+                      saveLocationDetails(loc);
                     }
                   }}
                   className={`py-3 px-4 rounded-xl text-xs font-bold text-left border transition-all ${
@@ -495,12 +515,7 @@ export default function Hero() {
               {DUBAI_LOCATIONS.filter(loc => loc.toLowerCase().includes(locationSearchQuery.toLowerCase())).map((loc) => (
                 <button
                   key={loc}
-                  onClick={() => {
-                    setSelectedLocation(loc);
-                    localStorage.setItem("userLocation", loc);
-                    window.dispatchEvent(new Event("locationChanged"));
-                    setShowLocationPopup(false);
-                  }}
+                  onClick={() => saveLocationDetails(loc)}
                   className={`py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all ${
                     selectedLocation === loc
                       ? 'bg-brand-orange border-brand-orange text-black'
@@ -513,6 +528,40 @@ export default function Hero() {
             </div>
           )}
         </div>
+        ) : (
+        <div className="space-y-4">
+          <div className="bg-brand-orange/10 border border-brand-orange/20 rounded-xl px-4 py-3 flex items-center gap-3">
+            <MapPin size={16} className="text-brand-orange shrink-0" />
+            <p className="text-xs font-bold text-white">{selectedLocation}</p>
+          </div>
+
+          <div>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Building / Villa Name</label>
+            <input type="text" placeholder="e.g. Al Barsha Tower B" value={buildingName}
+              onChange={e => setBuildingName(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/10"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Flat / Villa No.</label>
+            <input type="text" placeholder="e.g. Flat 402 or Villa 12" value={flatNo}
+              onChange={e => setFlatNo(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/10"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Landmark / Directions (Optional)</label>
+            <input type="text" placeholder="e.g. Near the park" value={locationDirections}
+              onChange={e => setLocationDirections(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/10"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setLocationStep("area")} className="flex-1 py-3 bg-white/5 rounded-xl text-xs font-black text-white/40 hover:text-white uppercase tracking-widest transition-all">← Back</button>
+            <button onClick={confirmLocationDetails} className="flex-2 flex-grow py-3 bg-brand-orange text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white active:scale-95">Save Location ✓</button>
+          </div>
+        </div>
+        )}
       </BottomSheet>
 
       <BottomSheet

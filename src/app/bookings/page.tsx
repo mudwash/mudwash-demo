@@ -67,6 +67,8 @@ import { createBooking, getBookingsByDate } from '@/lib/bookings';
 import { doc, getDoc, onSnapshot, query, collection, where, updateDoc, setDoc, deleteDoc, increment, arrayUnion, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getServices, Service } from '@/lib/services';
+import { getAddons, Addon } from '@/lib/addons';
+import { getSchedule, ScheduleSettings } from '@/lib/schedule';
 import { getCategories, Category } from '@/lib/categories';
 import { getVehicleTypes, VehicleType } from '@/lib/vehicleTypes';
 import { getGarages, Garage } from '@/lib/garages';
@@ -110,11 +112,6 @@ const VEHICLE_IMAGES: Record<string, string> = {
   "Adventure": "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=800"
 };
 
-
-const timeSlots = [
-  "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
-  "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"
-];
 
 // --- COMPONENTS ---
 
@@ -325,13 +322,16 @@ export function BookingPageInner() {
   }, [user]);
 
   useEffect(() => {
-    const docRef = doc(db, "settings", "schedule");
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setMaxBookings(docSnap.data().maxBookingsPerSlot || 3);
+    // Real-time listener: auto-update schedule when admin changes it
+    const scheduleRef = doc(db, "schedule", "main");
+    const unsubscribe = onSnapshot(scheduleRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as ScheduleSettings;
+        setScheduleSettings(data);
+        setMaxBookings(data.maxBookingsPerSlot || 3);
       }
     }, (error) => {
-      console.error("Error listening to settings:", error);
+      console.error("Error listening to schedule:", error);
     });
     return () => unsubscribe();
   }, []);
@@ -389,12 +389,15 @@ export function BookingPageInner() {
     };
   }, [currentSelectionId]);
 
+  const processingSuccessRef = useRef(false);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const failed = urlParams.get('failed');
 
-    if (success === 'true') {
+    if (success === 'true' && !processingSuccessRef.current) {
+      processingSuccessRef.current = true;
       const pendingBookingStr = localStorage.getItem("mudwash_pendingBooking");
       if (pendingBookingStr) {
         const pendingBooking = JSON.parse(pendingBookingStr);
@@ -463,14 +466,25 @@ export function BookingPageInner() {
             setFormData(prev => ({ ...prev, address: savedLocation }));
           }
 
-          if (data.addressType) {
-            setAddressDetails(prev => ({ ...prev, type: data.addressType }));
-          }
-          if (data.flatNo) {
-            setAddressDetails(prev => ({ ...prev, flatNo: data.flatNo }));
-          }
-          if (data.directions) {
-            setAddressDetails(prev => ({ ...prev, directions: data.directions }));
+          // Load address details from localStorage (set from home screen)
+          const savedAddrDetails = localStorage.getItem("mudwash_addressDetails");
+          if (savedAddrDetails) {
+            try {
+              const d = JSON.parse(savedAddrDetails);
+              setAddressDetails(prev => ({
+                ...prev,
+                type: d.type || prev.type,
+                buildingName: d.buildingName || prev.buildingName,
+                flatNo: d.flatNo || prev.flatNo,
+                directions: d.directions || prev.directions,
+              }));
+            } catch (e) {}
+          } else {
+            // Fallback to Firestore profile
+            if (data.addressType) setAddressDetails(prev => ({ ...prev, type: data.addressType }));
+            if (data.flatNo) setAddressDetails(prev => ({ ...prev, flatNo: data.flatNo }));
+            if (data.buildingName) setAddressDetails(prev => ({ ...prev, buildingName: data.buildingName }));
+            if (data.directions) setAddressDetails(prev => ({ ...prev, directions: data.directions }));
           }
         }
       }
@@ -556,6 +570,8 @@ export function BookingPageInner() {
     }
   }, [carDetails]);
   const [services, setServices] = useState<Service[]>([]);
+  const [addons, setAddons] = useState<Addon[]>([]);
+  const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
   const [garages, setGarages] = useState<Garage[]>([]);
@@ -572,6 +588,7 @@ export function BookingPageInner() {
   const [addressDetails, setAddressDetails] = useState({
     type: "Home" as "Home" | "Work" | "Other",
     flatNo: "",
+    buildingName: "",
     directions: ""
   });
   const searchParams = useSearchParams();
@@ -656,13 +673,17 @@ export function BookingPageInner() {
   useEffect(() => {
     const initData = async () => {
       try {
-        const [srvData, catData, vData, gData] = await Promise.all([
+        const [srvData, catData, vData, gData, addonData, scheduleData] = await Promise.all([
           getServices(true), 
           getCategories(),
           getVehicleTypes(),
-          getGarages()
+          getGarages(),
+          getAddons(true),
+          getSchedule()
         ]);
         setServices(srvData);
+        setAddons(addonData);
+        setScheduleSettings(scheduleData);
         setCategories(catData);
         setVehicleTypes(vData);
         setGarages(gData);
@@ -735,7 +756,7 @@ export function BookingPageInner() {
     });
 
     selectedAddOns.forEach(id => {
-      const addon = services.find(s => s.id === id);
+      const addon = addons.find(a => a.id === id);
       if (addon) total += parseInt(addon.price.replace(/[^\d]/g, ''));
     });
     return Math.max(0, total - promoDiscount);
@@ -806,7 +827,7 @@ export function BookingPageInner() {
       });
 
       selectedAddOns.forEach(id => {
-        const addon = services.find(s => s.id === id);
+        const addon = addons.find(a => a.id === id);
         if (addon) baseTotal += parseInt(addon.price.replace(/[^\d]/g, ''));
       });
 
@@ -871,15 +892,31 @@ export function BookingPageInner() {
         const s = services.find(x => x.id === sel.id);
         return s ? `${sel.quantity}x ${s.name}` : `${sel.quantity}x Service`;
       }).join(", ");
-      
+
+      const addonSummary = selectedAddOns.map(id => {
+        const a = addons.find(x => x.id === id);
+        return a ? a.name : null;
+      }).filter(Boolean).join(", ");
+
+      // Build full location string
+      const locationParts = [
+        `[${addressDetails.type}]`,
+        addressDetails.buildingName && `Building: ${addressDetails.buildingName}`,
+        addressDetails.flatNo && `Flat/Villa: ${addressDetails.flatNo}`,
+        formData.address,
+        addressDetails.directions && `(${addressDetails.directions})`
+      ].filter(Boolean).join(" — ");
+
       const pendingBooking = { 
         customerName: formData.name || "Guest", 
         email: formData.email || "guest@mudwash.com", 
         phone: formData.phone || "N/A", 
-        service: serviceSummary || "General Service", 
+        service: serviceSummary || "General Service",
+        addons: addonSummary || "",
         date: selectedDate || new Date().toISOString().split('T')[0], 
         time: selectedTime || "10:00 AM", 
-        location: formData.address || "Location not specified", 
+        location: locationParts || "Location not specified",
+        addressType: addressDetails.type,
         amount: `AED ${calculateTotal()}`, 
         status: "Pending",
         carDetails: `${carDetails.type || 'Standard'} - ${carDetails.model || 'Unknown'}`
@@ -946,11 +983,31 @@ export function BookingPageInner() {
     return false;
   });
 
-  const days = Array.from({ length: 10 }, (_, i) => {
+  const timeSlots = scheduleSettings?.timeSlots || [
+    "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM",
+    "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM",
+    "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM",
+    "10:00 PM"
+  ];
+
+  const workingDays = scheduleSettings?.workingDays ?? [0,1,2,3,4,5,6];
+  const blockedDates = scheduleSettings?.blockedDates ?? [];
+
+  const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    return { full: d.toISOString().split('T')[0], day: d.toLocaleDateString('en-US', { weekday: 'short' }), date: d.getDate(), month: d.toLocaleDateString('en-US', { month: 'short' }) };
-  });
+    const full = d.toISOString().split('T')[0];
+    const dayOfWeek = d.getDay();
+    const isBlocked = blockedDates.includes(full);
+    const isWorkingDay = workingDays.includes(dayOfWeek);
+    return { 
+      full, 
+      day: d.toLocaleDateString('en-US', { weekday: 'short' }), 
+      date: d.getDate(), 
+      month: d.toLocaleDateString('en-US', { month: 'short' }),
+      disabled: isBlocked || !isWorkingDay
+    };
+  }).filter(d => !d.disabled || d.full === selectedDate);
 
   if (authLoading) {
     return (
@@ -1344,23 +1401,21 @@ export function BookingPageInner() {
 
           {/* STEP 3: ENHANCEMENTS */}
           {currentStep === 3 && (() => {
-            const recommended = services.filter(s => s.active !== false);
+            const recommended = addons.filter(a => a.active !== false);
             return (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                 <div className="space-y-2">
                   <span className="text-[11px] text-brand-orange font-black uppercase tracking-[0.4em]">Recommended</span>
-                  <h2 className="text-4xl font-black uppercase italic tracking-tighter">Enhance Your Care</h2>
+                  <h2 className="text-4xl font-black uppercase italic tracking-tighter">AI Recommended Items</h2>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {recommended.map((addon, idx) => {
                     const IconComp = ICON_MAP[addon.icon as any] || Zap;
-                    const isSelectedInStep2 = selectedServices.some(s => s.id === addon.id);
-                    const isSelectedInStep3 = selectedAddOns.includes(addon.id!);
-                    const isSelected = isSelectedInStep2 || isSelectedInStep3;
+                    const isSelected = selectedAddOns.includes(addon.id!);
                     return (
                       <motion.div
                         key={addon.id}
-                        onClick={() => { setDetailService(addon); setIsDrawerOpen(true); }}
+                        onClick={() => toggleAddOn(addon.id!)}
                         className={`relative rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden p-6 ${isSelected ? 'bg-brand-orange/10 border-brand-orange/40' : 'bg-[#0F0F0F] border-white/5'}`}
                       >
                         <div className="flex flex-col gap-4">
@@ -1491,7 +1546,7 @@ export function BookingPageInner() {
                   {!showMap ? (
                     <motion.div key="textInput" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                       <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
-                        {["Home", "Office", "Other"].map(type => (
+                        {["Home", "Work", "Other"].map(type => (
                           <button 
                             key={type} 
                             type="button"
@@ -1622,7 +1677,7 @@ export function BookingPageInner() {
           
           <button 
             onClick={currentStep === 5 ? (user ? handleSubmit : () => setShowAuthPopup(true)) : handleNext} 
-            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && !agreedToTerms)} 
+            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms))} 
             className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-10 sm:h-12 px-4 sm:px-6 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
             {isSubmitting
@@ -1761,7 +1816,7 @@ export function BookingPageInner() {
                           <div className="h-px flex-grow bg-white/5"/>
                         </div>
                         {selectedAddOns.map(id => {
-                          const addon = services.find(a => a.id === id);
+                          const addon = addons.find(a => a.id === id);
                           if (!addon) return null;
                           return (
                             <div key={id} className="flex items-center justify-between gap-3">
@@ -1853,12 +1908,23 @@ export function BookingPageInner() {
                 {/* Inputs */}
                 <div className="space-y-4">
                   <div>
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Address / Building Name</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Address / Area</label>
                     <input 
                       type="text" 
                       value={formData.address}
                       onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white"
+                      placeholder="Street, Area, or Neighbourhood"
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/10"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Building / Villa Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Al Barsha Heights Tower B"
+                      value={addressDetails.buildingName}
+                      onChange={(e) => setAddressDetails(prev => ({ ...prev, buildingName: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/10"
                     />
                   </div>
                   <div>
@@ -1872,10 +1938,10 @@ export function BookingPageInner() {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Directions (Optional)</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-2 block">Landmark / Directions (Optional)</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. Near the supermarket"
+                      placeholder="e.g. Near the supermarket, opposite park"
                       value={addressDetails.directions}
                       onChange={(e) => setAddressDetails(prev => ({ ...prev, directions: e.target.value }))}
                       className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/10"
@@ -1894,6 +1960,7 @@ export function BookingPageInner() {
                         await updateDoc(userRef, {
                           savedAddress: formData.address,
                           addressType: addressDetails.type,
+                          buildingName: addressDetails.buildingName,
                           flatNo: addressDetails.flatNo,
                           directions: addressDetails.directions
                         });

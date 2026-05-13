@@ -18,12 +18,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Services & Categories: Public read, Admin write
+    // Services, Categories & Addons: Public read, Admin write
     match /services/{serviceId} {
       allow read: if true;
       allow write: if isAdmin();
     }
     match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /addons/{addonId} {
       allow read: if true;
       allow write: if isAdmin();
     }
@@ -34,6 +38,12 @@ service cloud.firestore {
 
     // Settings: Public read, Admin write
     match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Schedule: Public read, Admin write
+    match /schedule/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }

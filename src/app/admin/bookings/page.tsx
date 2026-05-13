@@ -10,6 +10,7 @@ import {
   MoreVertical, 
   Mail, 
   Phone, 
+  MessageCircle,
   MapPin,
   Calendar,
   Clock,
@@ -20,17 +21,19 @@ import {
   XCircle,
   Eye,
   X,
+  CreditCard,
   Car as CarIcon
 } from "lucide-react";
 import { getBookings, updateBookingStatus, createBooking, deleteBooking, Booking, COLLECTION_NAME } from "@/lib/bookings";
 import { getServices, Service } from "@/lib/services";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, collection } from "firebase/firestore";
+import { doc, updateDoc, collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
 const statusStyles = {
   Completed: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   Pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   Cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
+  Accepted: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
 export default function BookingsPage() {
@@ -62,9 +65,20 @@ export default function BookingsPage() {
 
   useEffect(() => {
     isMountedRef.current = true;
-    fetchBookings();
+    // Real-time listener for bookings
+    const bookingsCol = collection(db, COLLECTION_NAME);
+    const q = query(bookingsCol, orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!isMountedRef.current) return;
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Booking[];
+      setBookings(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Realtime bookings error:", error);
+      setLoading(false);
+    });
     fetchServices();
-    return () => { isMountedRef.current = false; };
+    return () => { isMountedRef.current = false; unsubscribe(); };
   }, []);
 
   const fetchServices = async () => {
@@ -76,25 +90,9 @@ export default function BookingsPage() {
     }
   };
 
-  const fetchBookings = async () => {
-    try {
-      const data = await getBookings();
-      if (isMountedRef.current) setBookings(data);
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-    } finally {
-      if (isMountedRef.current) setLoading(false);
-    }
-  };
+  // kept for compatibility but no longer needed for bookings (onSnapshot handles it)
+  const fetchBookings = () => {};
 
-  const handleStatusUpdate = async (id: string, status: Booking["status"]) => {
-    try {
-      await updateBookingStatus(id, status);
-      fetchBookings();
-    } catch (error) {
-      console.error("Error updating status:", error);
-    }
-  };
 
   const handleAmountUpdate = async (id: string, amount: string) => {
     try {
@@ -157,6 +155,61 @@ export default function BookingsPage() {
     setActiveDropdown(null);
   };
 
+  // --- WhatsApp Helpers ---
+  const ADMIN_PHONE = "971504xxxxxx"; // Replace with your admin WhatsApp number
+
+  const sendWhatsAppConfirmation = (booking: Booking) => {
+    const phone = booking.phone?.replace(/[^\d]/g, "");
+    if (!phone) { alert("No phone number for this booking."); return; }
+    const msg = encodeURIComponent(
+      `Hello ${booking.customerName}! 🚗✨\n\nYour Mudwash booking has been *CONFIRMED*!\n\n` +
+      `📅 Date: ${booking.date}\n⏰ Time: ${booking.time}\n` +
+      `🛠️ Service: ${booking.service}${booking.addons ? `\n➕ Add-ons: ${booking.addons}` : ""}\n` +
+      `📍 Location: ${booking.location}\n💰 Amount: ${booking.amount}\n\n` +
+      `Our team will be there on time. Thank you for choosing Mudwash! 🙌`
+    );
+    window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+  };
+
+  const [isPartialModalOpen, setIsPartialModalOpen] = useState(false);
+  const [partialAmount, setPartialAmount] = useState("");
+  const [partialBooking, setPartialBooking] = useState<Booking | null>(null);
+
+  const openPartialModal = (booking: Booking) => {
+    setPartialBooking(booking);
+    const amt = parseInt((booking.amount || "0").replace(/[^\d]/g, ""));
+    setPartialAmount(String(Math.round(amt * 0.3))); // Default 30%
+    setIsPartialModalOpen(true);
+    setActiveDropdown(null);
+  };
+
+  const sendPartialPaymentLink = () => {
+    if (!partialBooking) return;
+    const phone = partialBooking.phone?.replace(/[^\d]/g, "");
+    if (!phone) { alert("No phone number for this booking."); return; }
+    const msg = encodeURIComponent(
+      `Hello ${partialBooking.customerName}! 🚗\n\n` +
+      `To confirm your Mudwash booking on *${partialBooking.date}* at *${partialBooking.time}*, ` +
+      `please pay a partial amount of *AED ${partialAmount}* as a deposit.\n\n` +
+      `Service: ${partialBooking.service}\nTotal: ${partialBooking.amount}\n\n` +
+      `Please reply to this message once you've made the payment. Thank you! 🙏`
+    );
+    window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    setIsPartialModalOpen(false);
+  };
+
+  const handleStatusUpdate = async (id: string, status: Booking["status"], booking?: Booking) => {
+    try {
+      await updateBookingStatus(id, status);
+      fetchBookings();
+      // Auto-send WhatsApp on Accepted
+      if (status === "Accepted" && booking) {
+        setTimeout(() => sendWhatsAppConfirmation(booking), 400);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
@@ -275,7 +328,7 @@ export default function BookingsPage() {
                       <td className="px-6 py-6 min-w-[280px]">
                         <div className="flex flex-col gap-2">
                            <a 
-                             href={`https://www.google.com/maps?q=${encodeURIComponent(booking.location)}`}
+                             href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.location)}`}
                              target="_blank"
                              rel="noopener noreferrer"
                              className="flex items-start gap-2 group/loc hover:bg-white/5 p-2 -m-2 rounded-xl transition-all"
@@ -313,6 +366,7 @@ export default function BookingsPage() {
                             className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border bg-transparent focus:outline-none cursor-pointer transition-all ${statusStyles[booking.status]}`}
                           >
                             <option value="Pending" className="bg-[#0A0A0A] text-amber-500">Pending</option>
+                            <option value="Accepted" className="bg-[#0A0A0A] text-blue-500">Accepted</option>
                             <option value="Completed" className="bg-[#0A0A0A] text-emerald-500">Completed</option>
                             <option value="Cancelled" className="bg-[#0A0A0A] text-red-500">Cancelled</option>
                           </select>
@@ -397,6 +451,7 @@ export default function BookingsPage() {
                       className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border bg-transparent focus:outline-none cursor-pointer transition-all ${statusStyles[booking.status]}`}
                     >
                       <option value="Pending" className="bg-[#0A0A0A] text-amber-500">Pending</option>
+                      <option value="Accepted" className="bg-[#0A0A0A] text-blue-500">Accepted</option>
                       <option value="Completed" className="bg-[#0A0A0A] text-emerald-500">Completed</option>
                       <option value="Cancelled" className="bg-[#0A0A0A] text-red-500">Cancelled</option>
                     </select>
@@ -415,7 +470,7 @@ export default function BookingsPage() {
 
                   <div className="flex items-center justify-between pt-1">
                     <a 
-                      href={`https://www.google.com/maps?q=${encodeURIComponent(booking.location)}`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.location)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-[10px] font-bold text-white/40 hover:text-brand-orange uppercase tracking-wide transition-colors"
@@ -781,6 +836,50 @@ export default function BookingsPage() {
                   className="px-8 py-4 bg-white/5 hover:bg-white text-white hover:text-black rounded-2xl font-black uppercase italic text-[10px] tracking-widest transition-all"
                 >
                   Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Partial Payment Modal */}
+      <AnimatePresence>
+        {isPartialModalOpen && partialBooking && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPartialModalOpen(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative w-full max-w-md bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-white/5 bg-blue-500/5">
+                <h2 className="text-xl font-black italic uppercase tracking-tight text-white">Partial Payment</h2>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Send deposit request via WhatsApp</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Customer</span>
+                    <span className="text-xs font-bold text-white">{partialBooking.customerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total</span>
+                    <span className="text-xs font-bold text-brand-orange">{partialBooking.amount}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Partial Amount (AED)</label>
+                  <input
+                    type="number"
+                    value={partialAmount}
+                    onChange={(e) => setPartialAmount(e.target.value)}
+                    className="w-full bg-[#111111] border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-brand-orange transition-all"
+                    placeholder="e.g. 150"
+                  />
+                  <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">Default is 30% of total. You can change this.</p>
+                </div>
+              </div>
+              <div className="p-6 border-t border-white/5 flex gap-3">
+                <button onClick={() => setIsPartialModalOpen(false)} className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl text-xs font-bold transition-all">Cancel</button>
+                <button onClick={sendPartialPaymentLink} className="flex-1 py-3 bg-green-500 hover:bg-green-400 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                  <MessageCircle size={16} /> Send via WhatsApp
                 </button>
               </div>
             </motion.div>

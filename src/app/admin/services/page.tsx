@@ -119,24 +119,15 @@ export default function ServicesPage() {
 
     setUploading(true);
     try {
-      const formDataUpload = new FormData();
-      formDataUpload.append("image", file);
+      const storageRef = ref(storage, `services/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
       
-      const response = await fetch(`https://api.imgbb.com/1/upload?key=da3add1fa6e71df983e8368086715c4d`, {
-        method: "POST",
-        body: formDataUpload,
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setFormData(prev => ({ 
-          ...prev, 
-          image: prev.image || data.data.url,
-          images: [...(prev.images || []), data.data.url]
-        }));
-      } else {
-        throw new Error(data.error?.message || "Upload failed");
-      }
+      setFormData(prev => ({ 
+        ...prev, 
+        image: prev.image || url,
+        images: [...(prev.images || []), url]
+      }));
     } catch (error) {
       console.error("Error uploading image to ImgBB:", error);
       alert("Failed to upload image.");

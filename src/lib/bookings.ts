@@ -16,11 +16,12 @@ export interface Booking {
   email: string;
   phone: string;
   service: string;
+  addons?: string;
   date: string;
   time: string;
   location: string;
   amount: string;
-  status: "Pending" | "Completed" | "Cancelled";
+  status: "Pending" | "Completed" | "Cancelled" | "Accepted";
   carDetails: string;
   createdAt?: any;
 }
