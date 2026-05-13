@@ -210,93 +210,10 @@ export default function PromoCodesPage() {
           </div>
         ) : (
           <>
-            {/* Desktop Table View */}
-            <div className="overflow-x-auto hidden md:block">
-
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
-                  <th className="px-6 py-5">Code</th>
-                  <th className="px-6 py-5">Type</th>
-                  <th className="px-6 py-5">Value</th>
-                  <th className="px-6 py-5">Usage</th>
-                  <th className="px-6 py-5">Status</th>
-                  <th className="px-6 py-5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {filteredCodes.map((code) => (
-                  <tr key={code.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-                          <Ticket size={18} />
-                        </div>
-                        <span className="font-black text-white italic uppercase tracking-tight text-lg">{code.code}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6">
-                      <span className={`text-xs font-bold uppercase tracking-widest ${code.type === 'percentage' ? 'text-cyan-500' : 'text-emerald-500'}`}>
-                        {code.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-6">
-                      <span className="font-black text-white text-lg italic">
-                        {code.type === 'percentage' ? `${code.value}%` : `AED ${code.value}`}
-                      </span>
-                    </td>
-                    <td className="px-6 py-6">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-white/70 font-bold">{code.usedCount} / {code.usageLimit}</span>
-                        <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-brand-orange rounded-full" 
-                            style={{ width: `${Math.min(100, (code.usedCount / code.usageLimit) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6">
-                      <button 
-                        onClick={() => toggleActive(code.id, code.active)}
-                        className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
-                          code.active 
-                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' 
-                            : 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20'
-                        }`}
-                      >
-                        {code.active ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => handleEdit(code)}
-                          className="p-2 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(code.id)}
-                          className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card Layout */}
-          <div className="grid grid-cols-1 gap-4 md:hidden p-4">
+            {/* Promo Codes Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCodes.map((code) => (
-              <div key={code.id} className="bg-[#0D0D0D] border border-white/5 rounded-2xl p-6 space-y-4">
+              <div key={code.id} className="bg-[#0D0D0D] border border-white/5 rounded-2xl p-6 space-y-4 hover:border-white/10 transition-all group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
@@ -319,18 +236,19 @@ export default function PromoCodesPage() {
                     <button 
                       onClick={() => handleEdit(code)}
                       className="p-2 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-colors"
+                      title="Edit"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button 
                       onClick={() => handleDelete(code.id)}
                       className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
+                      title="Delete"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
-
 
                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
                   <div className="flex flex-col gap-1">
@@ -363,6 +281,7 @@ export default function PromoCodesPage() {
           </div>
           </>
         )}
+
 
       </div>
 

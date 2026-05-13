@@ -68,6 +68,7 @@ export default function Hero() {
   const [locationSearchQuery, setLocationSearchQuery] = useState("");
 
   const [carHistory, setCarHistory] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const handleLocateMe = () => {
     if (navigator.geolocation) {
@@ -120,7 +121,25 @@ export default function Hero() {
     }
   }, []);
 
+  useEffect(() => {
+    if (locationSearchQuery.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationSearchQuery}&countrycodes=ae&limit=5`);
+        const data = await res.json();
+        setSuggestions(data.map((item: any) => item.display_name));
+      } catch (error) {
+        console.error(error);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [locationSearchQuery]);
+
   const handleSelectCar = (car: any) => {
+
     setSelectedCar(car.model);
     localStorage.setItem("mudwash_carDetails", JSON.stringify(car));
     window.dispatchEvent(new Event("carChanged"));
@@ -156,7 +175,9 @@ export default function Hero() {
   return (
     <section className="relative w-full px-0">
       {/* ═══ MOBILE APP HERO ═══ */}
-      <div className="md:hidden relative w-full h-[45svh] bg-[#050505] overflow-hidden">
+      <div className="relative w-full h-[45svh] md:h-screen bg-[#050505] overflow-hidden">
+
+
 
 
 
@@ -187,98 +208,135 @@ export default function Hero() {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
         </div>
 
-        {/* ── TOP BAR: Greeting + Location ── */}
+        {/* ── TOP BAR: Logo + Selectors ── */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="absolute top-0 left-0 right-0 z-30 pt-4 px-4 flex flex-col gap-3"
+          className="absolute top-0 left-0 right-0 z-30 pt-4 px-4 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6"
         >
-          {/* Top Row: Logo + WhatsApp */}
-          <div className="flex items-center justify-between w-full">
+          {/* Mobile: Top Row (Logo + WhatsApp) / Desktop: Just Logo */}
+          <div className="flex items-center justify-between w-full md:w-auto">
             <Link href="/" className="shrink-0">
-              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-6 w-auto object-contain" />
+              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-6 md:h-8 w-auto object-contain" />
             </Link>
             
-            {/* WhatsApp Icon */}
+            {/* WhatsApp Icon (Mobile only inside this div) */}
             <a 
               href="https://wa.me/971500000000" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform"
+              className="w-9 h-9 md:hidden rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform"
             >
               <svg viewBox="0 0 448 512" fill="currentColor" className="w-5 h-5 text-white">
-                <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l114.1-29.9c32.4 18.2 69 27.8 106.6 27.8 122.4 0 222-99.6 222-222 0-59.3-23.2-115.1-65.1-157.1zM223.9 446c-33.1 0-65.6-8.9-93.9-25.7l-6.7-4-69.7 18.3 18.6-68-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.5-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 54.1 81.2 54.1 130.4 0 101.7-82.8 184.5-184.5 184.5zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.4-8.6-44.5-27.5-16.4-14.6-27.5-32.7-30.7-38.2-3.2-5.6-.3-8.6 2.5-11.3 2.5-2.5 5.5-6.5 8.3-9.7 2.8-3.2 3.7-5.5 5.5-9.3 1.9-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.7 23.5 9.2 31.6 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+                <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l114.1-29.9c32.4 18.2 69 27.8 106.6 27.8 122.4 0 222-99.6 222-222 0-59.3-23.2-115.1-65.1-157.1zM223.9 446c-33.1 0-65.6-8.9-93.9-25.7l-6.7-4-69.7 18.3 18.6-68-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.5-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 54.1 81.2 54.1 130.4 0 101.7-82.8 184.5-184.5 184.5zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.4-8.6-44.5-27.5-16.4-14.6-27.5-32.7-30.7-38.2-3.2-5.6-.3-8.6 2.5-11.3 2.5-2.5 5.5-6.5 8.3-9.7 2.8-3.2 3.7-5.5-5.5-9.3 1.9-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.7 23.5 9.2 31.6 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
               </svg>
             </a>
-
           </div>
 
-          {/* Bottom Row: Unified Location & Car Bar */}
-          <div className="grid grid-cols-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl h-12">
+          {/* Desktop: Right side container (Bar + WhatsApp) / Mobile: Just Bar */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 w-full md:w-auto">
+            {/* Unified Location & Car Bar */}
+            <div className="grid grid-cols-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl h-12 md:h-14 md:w-[450px]">
 
-            {/* Location Selector */}
-            <div className="relative min-w-0 border-r border-white/10 flex items-center justify-between">
-              {/* Clickable Area for Navigation */}
-              <button
-                onClick={() => setShowLocationPopup(true)}
-                className="flex items-center gap-2 min-w-0 flex-grow hover:bg-white/5 transition-all rounded-l-xl h-full px-3"
-              >
-                <div className="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
-                  <MapPin size={14} />
-                </div>
-                <div className="min-w-0 text-left">
-                  <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Location</p>
-                  <span className="text-xs font-bold text-white truncate block">{selectedLocation}</span>
-                </div>
-              </button>
+              {/* Location Selector */}
+              <div className="relative min-w-0 border-r border-white/10 flex items-center justify-between">
+                <button
+                  onClick={() => setShowLocationPopup(true)}
+                  className="flex items-center gap-2 min-w-0 flex-grow hover:bg-white/5 transition-all rounded-l-xl h-full px-3"
+                >
+                  <div className="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
+                    <MapPin size={14} />
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Location</p>
+                    <span className="text-xs font-bold text-white truncate block">{selectedLocation}</span>
+                  </div>
+                </button>
 
-              {/* Tracking Button (Locate Me) */}
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleLocateMe();
-                }}
-                className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors shrink-0 mr-2"
-                title="Use current location"
-              >
-                <Crosshair size={12} />
-              </button>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLocateMe();
+                  }}
+                  className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-colors shrink-0 mr-2"
+                  title="Use current location"
+                >
+                  <Crosshair size={12} />
+                </button>
+              </div>
+
+              {/* Car Selector */}
+              <div className="relative min-w-0">
+                <button 
+                  onClick={() => setShowCarPopup(true)}
+                  className="w-full h-full px-3 flex items-center justify-center gap-2 hover:bg-white/5 transition-all rounded-r-xl"
+                >
+                  <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-brand-orange shrink-0">
+                    <Car size={12} />
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Car</p>
+                    <span className="text-xs font-bold text-white truncate block">{selectedCar}</span>
+                  </div>
+                </button>
+              </div>
             </div>
 
-            {/* Car Selector */}
-            <div className="relative min-w-0">
-              <button 
-                onClick={() => setShowCarPopup(true)}
-                className="w-full h-full px-3 flex items-center justify-center gap-2 hover:bg-white/5 transition-all rounded-r-xl"
-              >
-                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-brand-orange shrink-0">
-                  <Car size={12} />
-                </div>
-                <div className="min-w-0 text-left">
-                  <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Car</p>
-                  <span className="text-xs font-bold text-white truncate block">{selectedCar}</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </motion.div>
+
+
+
+
+
+
+          {/* WhatsApp Icon (Desktop only here) */}
+          <a 
+            href="https://wa.me/971500000000" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hidden md:flex w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform shrink-0"
+          >
+            <svg viewBox="0 0 448 512" fill="currentColor" className="w-5 h-5 text-white">
+              <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l114.1-29.9c32.4 18.2 69 27.8 106.6 27.8 122.4 0 222-99.6 222-222 0-59.3-23.2-115.1-65.1-157.1zM223.9 446c-33.1 0-65.6-8.9-93.9-25.7l-6.7-4-69.7 18.3 18.6-68-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.5-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 54.1 81.2 54.1 130.4 0 101.7-82.8 184.5-184.5 184.5zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.4-8.6-44.5-27.5-16.4-14.6-27.5-32.7-30.7-38.2-3.2-5.6-.3-8.6 2.5-11.3 2.5-2.5 5.5-6.5 8.3-9.7 2.8-3.2 3.7-5.5 5.5-9.3 1.9-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.7 23.5 9.2 31.6 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+            </svg>
+          </a>
+        </div>
+      </motion.div>
+
 
         {/* ── CENTRE: Hero Tagline ── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.35, duration: 0.7 }}
-          className="absolute inset-0 z-20 flex items-center justify-center px-6 pt-8"
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 pt-8"
         >
           <div className="text-center">
-
-            <h1 className="text-[1.5rem] font-black text-white uppercase italic leading-[1] tracking-tighter drop-shadow-lg">
+            <h1 className="text-[1.5rem] md:text-[4.5rem] font-black text-white uppercase italic leading-[1] tracking-tighter drop-shadow-lg">
               Mastering The Art Of<br />
               <span className="text-brand-orange">Detailing</span>
             </h1>
+            
+            {/* CTA Button */}
+            <div className="mt-8">
+              <button 
+                onClick={() => {
+                  const contactForm = document.getElementById('booking-contact-form');
+                  if (contactForm) {
+                    contactForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                className="group inline-flex items-center gap-4 bg-brand-orange text-black px-8 py-3.5 rounded-xl font-black uppercase italic text-xs md:text-sm tracking-[0.2em] transition-all duration-500 hover:scale-105 shadow-[0_15px_30px_rgba(246,150,33,0.25)]"
+              >
+                <span>Book Your Service</span>
+                <div className="bg-black/10 p-1 rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
+                  <ChevronRight size={16} />
+                </div>
+              </button>
+            </div>
           </div>
         </motion.div>
+
 
         {/* ── BOTTOM CARD: Quick Actions + CTA ── */}
         <motion.div
@@ -288,7 +346,8 @@ export default function Hero() {
           className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4"
         >
           {/* Quick service chips */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mb-3 pb-1">
+          <div className="flex md:hidden items-center gap-2 overflow-x-auto no-scrollbar mb-3 pb-1">
+
             {['Exterior Wash', 'Interior Clean', 'Ceramic Coat', 'Paint Correct', 'Full Detail'].map((service, i) => (
               <motion.div
                 key={service}
@@ -307,93 +366,7 @@ export default function Hero() {
       </div>
 
 
-      {/* Desktop Hero - Full viewport height, sits behind navbar */}
-      <div className="hidden md:block relative h-screen w-full overflow-hidden bg-[#050505]">
-        <div className="absolute inset-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              initial={{ opacity: 0.5 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0.5 }}
-              transition={{ duration: 1 }}
-              className="absolute inset-0 w-full h-full"
-            >
-              <Image
-                src={images[currentSlide]}
-                alt="Premium Car Detailing"
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                priority={currentSlide === 0}
-                className="object-cover grayscale-[0.2] brightness-[0.6]"
-              />
-            </motion.div>
-          </AnimatePresence>
-          
-          {/* Dynamic Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/40 to-transparent w-full z-10" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(246,150,33,0.05)_0%,transparent_50%)] z-10" />
-          
-          <div className="absolute inset-0 z-20 flex flex-col justify-center px-16 lg:px-24">
-            <div className="max-w-3xl">
-              <motion.div
-                initial={{ x: -40, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 1, ease: "circOut" }}
-              >
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-10 h-[2px] bg-brand-orange" />
-                  <span className="text-brand-orange text-[10px] font-black tracking-[0.6em] uppercase italic">
-                    {heroData[currentSlide].subtitle}
-                  </span>
-                </div>
-                
-                <h1 className="text-[3.5rem] lg:text-[5.5rem] font-black text-white uppercase italic leading-[0.88] mb-6 tracking-tighter">
-                  {heroData[currentSlide].title}<br/>
-                  <span className="relative inline-block mt-1">
-                    <span className="absolute inset-0 text-transparent pointer-events-none select-none" 
-                          style={{ WebkitTextStroke: '2px #f69621' }}>
-                      {heroData[currentSlide].titleAccent}
-                    </span>
-                    <span className="absolute inset-0 text-brand-orange mix-blend-overlay opacity-80 pointer-events-none select-none">
-                      {heroData[currentSlide].titleAccent}
-                    </span>
-                    <span className="relative text-brand-orange">
-                      {heroData[currentSlide].titleAccent}
-                    </span>
-                  </span>
-                </h1>
 
-                <p className="text-white/40 text-base max-w-md mb-8 font-medium leading-relaxed border-l-2 border-brand-orange/20 pl-6">
-                  {heroData[currentSlide].description}
-                </p>
-
-                <div className="flex items-center gap-6">
-                  <button 
-                    onClick={() => {
-                      const contactForm = document.getElementById('booking-contact-form');
-                      if (contactForm) {
-                        contactForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }}
-                    className="group inline-flex items-center gap-4 bg-brand-orange text-black px-8 py-4 rounded-xl font-black uppercase italic text-sm tracking-[0.2em] transition-all duration-500 hover:scale-105 shadow-[0_15px_30px_rgba(246,150,33,0.25)]"
-                  >
-                    <span>{heroData[currentSlide].cta}</span>
-                    <div className="bg-black/10 p-1 rounded-lg group-hover:bg-black group-hover:text-white transition-colors">
-                      <ChevronRight size={16} />
-                    </div>
-                  </button>
-
-                  <div className="flex flex-col">
-                    <span className="text-white font-black text-xl leading-none">4.9/5</span>
-                    <span className="text-white/30 text-[9px] font-bold uppercase tracking-widest mt-1">Customer Rating</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </div>
 
 
       {/* Popups */}
@@ -421,31 +394,85 @@ export default function Hero() {
               placeholder="Search area..." 
               value={locationSearchQuery}
               onChange={e => setLocationSearchQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && locationSearchQuery.trim() !== '') {
+                  setSelectedLocation(locationSearchQuery);
+                  localStorage.setItem("userLocation", locationSearchQuery);
+                  window.dispatchEvent(new Event("locationChanged"));
+                  setShowLocationPopup(false);
+                }
+              }}
               className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {DUBAI_LOCATIONS.filter(loc => loc.toLowerCase().includes(locationSearchQuery.toLowerCase())).map((loc) => (
+          {locationSearchQuery.trim() !== '' && (
+            <button
+              onClick={() => {
+                setSelectedLocation(locationSearchQuery);
+                localStorage.setItem("userLocation", locationSearchQuery);
+                window.dispatchEvent(new Event("locationChanged"));
+                setShowLocationPopup(false);
+              }}
+              className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between mb-2"
+            >
+              <div>
+                <p className="font-bold text-white text-sm">Use: "{locationSearchQuery}"</p>
+                <p className="text-xs text-white/40">Custom location</p>
+              </div>
+              <div className="text-brand-orange">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+            </button>
+          )}
 
-              <button
-                key={loc}
-                onClick={() => {
-                  setSelectedLocation(loc);
-                  localStorage.setItem("userLocation", loc);
-                  window.dispatchEvent(new Event("locationChanged"));
-                  setShowLocationPopup(false);
-                }}
-                className={`py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all ${
-                  selectedLocation === loc
-                    ? 'bg-brand-orange border-brand-orange text-black'
-                    : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {loc}
-              </button>
-            ))}
-          </div>
+          {suggestions.length > 0 ? (
+            <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
+              {suggestions.map((loc, index) => (
+                <button
+                  key={`${loc}-${index}`}
+                  onClick={() => {
+                    if (!loc.includes(',')) {
+                      setLocationSearchQuery(loc + ", ");
+                    } else {
+                      setSelectedLocation(loc);
+                      localStorage.setItem("userLocation", loc);
+                      window.dispatchEvent(new Event("locationChanged"));
+                      setShowLocationPopup(false);
+                    }
+                  }}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold text-left border transition-all ${
+                    selectedLocation === loc
+                      ? 'bg-brand-orange border-brand-orange text-black'
+                      : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {loc}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {DUBAI_LOCATIONS.filter(loc => loc.toLowerCase().includes(locationSearchQuery.toLowerCase())).map((loc) => (
+                <button
+                  key={loc}
+                  onClick={() => {
+                    setSelectedLocation(loc);
+                    localStorage.setItem("userLocation", loc);
+                    window.dispatchEvent(new Event("locationChanged"));
+                    setShowLocationPopup(false);
+                  }}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all ${
+                    selectedLocation === loc
+                      ? 'bg-brand-orange border-brand-orange text-black'
+                      : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {loc}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </BottomSheet>
 
