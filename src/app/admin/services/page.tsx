@@ -59,7 +59,7 @@ import {
   Upload
 } from "lucide-react";
 import { getServices, addService, updateService, deleteService, Service } from "@/lib/services";
-import { getCategories, addCategory, updateCategory, Category } from "@/lib/categories";
+import { getCategories, addCategory, updateCategory, deleteCategory, Category } from "@/lib/categories";
 import { getVehicleTypes, VehicleType } from "@/lib/vehicleTypes";
 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -276,6 +276,18 @@ export default function ServicesPage() {
       console.error(error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (confirm("Are you sure you want to delete this category? Services using this category will still exist but won't be grouped under it.")) {
+      try {
+        await deleteCategory(id);
+        const updatedCats = await getCategories();
+        setCategories(updatedCats);
+      } catch (error) {
+        console.error("Error deleting category:", error);
+      }
     }
   };
 
@@ -603,7 +615,8 @@ export default function ServicesPage() {
                                     <span className="text-[8px] font-black uppercase tracking-widest text-center leading-tight">{cat.name}</span>
                                     {on&&<Check size={10} strokeWidth={4} className="absolute top-2 right-2"/>}
                                   </button>
-                                  <button onClick={e=>{e.stopPropagation();handleEditCategory(cat);}} className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/30 opacity-0 group-hover/cat:opacity-100 flex items-center justify-center text-white/40 hover:text-white z-20"><Settings2 size={11}/></button>
+                                  <button onClick={e=>{e.stopPropagation();handleEditCategory(cat);}} className="absolute top-2 left-2 w-6 h-6 rounded-full bg-white flex items-center justify-center text-black hover:bg-[#F59E0B] z-20 transition-all shadow-lg" title="Edit Category"><Settings2 size={12}/></button>
+                                  <button onClick={e=>{e.stopPropagation();cat.id && handleDeleteCategory(cat.id);}} className="absolute top-9 left-2 w-6 h-6 rounded-full bg-white flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white z-20 transition-all shadow-lg" title="Delete Category"><Trash2 size={12}/></button>
                                 </div>
                               );
                             })}

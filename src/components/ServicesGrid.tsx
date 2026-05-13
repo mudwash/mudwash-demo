@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getServices, Service } from "@/lib/services";
+import { getCategories, Category } from "@/lib/categories";
 import {
   Loader2, ArrowRight, Check, X, ChevronRight,
   Waves, Sparkles, Car, ShieldCheck, Paintbrush, Wrench, Droplets,
@@ -58,6 +59,7 @@ const getIconForService = (service: Service): { Icon: React.ElementType; color: 
 
 export default function ServicesGrid() {
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Service | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -66,10 +68,28 @@ export default function ServicesGrid() {
   useEffect(() => {
     let isMounted = true;
     const tid = setTimeout(() => { if (isMounted && loading) setLoading(false); }, 6000);
-    getServices(true)
-      .then(data => { if (isMounted) setServices(data ?? []); })
-      .catch(() => { if (isMounted) setServices([]); })
-      .finally(() => { if (isMounted) { setLoading(false); clearTimeout(tid); } });
+    
+    Promise.all([getServices(true), getCategories()])
+      .then(([srvData, catData]) => {
+        if (isMounted) {
+          setServices(srvData ?? []);
+          setCategories(catData ?? []);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching data in ServicesGrid:", err);
+        if (isMounted) {
+          setServices([]);
+          setCategories([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+          clearTimeout(tid);
+        }
+      });
+      
     return () => { isMounted = false; clearTimeout(tid); };
   }, []);
 
@@ -111,14 +131,17 @@ export default function ServicesGrid() {
             {/* Service icon grid */}
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-5">
               {(() => {
-                const categories = Array.from(new Set(services.map(s => s.category).filter(Boolean)));
-                return categories.slice(0, 8).map((catName, index) => {
-                  const service = services.find(s => s.category === catName);
-                  if (!service) return null;
-                  const { Icon, color } = getIconForService(service);
-                  const isActive = selected?.category === catName;
-                  
-                  return (
+                return categories
+                  .filter(cat => services.some(s => s.category === cat.name))
+                  .slice(0, 8)
+                  .map((cat, index) => {
+                    const catName = cat.name;
+                    const service = services.find(s => s.category === catName);
+                    const Icon = ICON_MAP[cat.icon] || Package;
+                    const color = ICON_COLORS[cat.icon] || "#f69621";
+                    const isActive = selected?.category === catName;
+                    
+                    return (
                     <motion.button
                       key={catName}
                       initial={{ opacity: 0, y: 12 }}

@@ -7,6 +7,9 @@ import Image from "next/image";
 import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair, Plus, Check, MessageCircle } from "lucide-react";
 
 import BottomSheet from "@/components/BottomSheet";
+import dynamic from "next/dynamic";
+
+const InteractiveMapModal = dynamic(() => import("@/components/InteractiveMapModal"), { ssr: false });
 
 const DUBAI_LOCATIONS = [
   "Downtown Dubai",
@@ -69,6 +72,8 @@ export default function Hero() {
 
   const [carHistory, setCarHistory] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [mapCoords, setMapCoords] = useState({ lat: 25.2048, lng: 55.2708 }); // Dubai
 
   const handleLocateMe = () => {
     if (navigator.geolocation) {
@@ -413,7 +418,7 @@ export default function Hero() {
         <div className="space-y-4">
           <button
             onClick={() => {
-              handleLocateMe();
+              setIsMapOpen(true);
               setShowLocationPopup(false);
             }}
             className="w-full bg-brand-orange text-black font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
@@ -572,6 +577,27 @@ export default function Hero() {
           </Link>
         </div>
       </BottomSheet>
+
+      <AnimatePresence>
+        {isMapOpen && (
+          <InteractiveMapModal
+            isOpen={isMapOpen}
+            onClose={() => setIsMapOpen(false)}
+            onConfirm={(address) => {
+              setSelectedLocation(address);
+              localStorage.setItem("userLocation", address);
+              window.dispatchEvent(new Event("locationChanged"));
+              setIsMapOpen(false);
+              
+              const savedCar = localStorage.getItem("mudwash_carDetails");
+              if (!savedCar) {
+                setShowCarPopup(true);
+              }
+            }}
+            initialCoords={mapCoords}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

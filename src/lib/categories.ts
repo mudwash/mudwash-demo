@@ -58,3 +58,8 @@ export const updateCategory = async (id: string, data: Partial<Category>) => {
   const docRef = doc(db, COLLECTION_NAME, id);
   await updateDoc(docRef, data);
 };
+
+export const deleteCategory = async (id: string) => {
+  const docRef = doc(db, COLLECTION_NAME, id);
+  await deleteDoc(docRef);
+};

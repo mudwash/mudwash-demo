@@ -1204,7 +1204,8 @@ export function BookingPageInner() {
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory">
                     {(() => {
-                      const derivedCats = Array.from(new Set(services.map(s => s.category).filter(Boolean)));
+                      const derivedCats = Array.from(new Set(services.map(s => s.category).filter(Boolean)))
+                        .filter(cat => cat.toUpperCase() !== "NEW CATEGORY");
                       return derivedCats.map(catName => {
                         const catObj = categories.find(c => c.name === catName);
                         const isActive = selectedCategory === catName;

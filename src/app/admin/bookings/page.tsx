@@ -414,10 +414,15 @@ export default function BookingsPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wide">
+                    <a 
+                      href={`https://www.google.com/maps?q=${encodeURIComponent(booking.location)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-[10px] font-bold text-white/40 hover:text-brand-orange uppercase tracking-wide transition-colors"
+                    >
                       <MapPin size={12} className="text-brand-orange shrink-0" />
-                      <span className="line-clamp-1">{booking.location}</span>
-                    </div>
+                      <span className="line-clamp-1 underline decoration-brand-orange/30 decoration-1 underline-offset-2">{booking.location}</span>
+                    </a>
                     <div className="flex gap-2 relative">
                       <button className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/30">
                         <Phone size={14} />

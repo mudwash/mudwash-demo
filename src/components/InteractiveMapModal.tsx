@@ -72,7 +72,7 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
   }, [mapCoords]);
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-10">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center">
       <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
@@ -81,10 +81,10 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
         className="absolute inset-0 bg-black/95 backdrop-blur-xl" 
       />
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+        initial={{ scale: 0.95, opacity: 0, y: 20 }} 
         animate={{ scale: 1, opacity: 1, y: 0 }} 
-        exit={{ scale: 0.9, opacity: 0, y: 20 }} 
-        className="relative w-full max-w-4xl bg-[#051005] rounded-[2.5rem] border border-white/5 overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh]"
+        exit={{ scale: 0.95, opacity: 0, y: 20 }} 
+        className="relative w-full h-full bg-[#051005] overflow-hidden flex flex-col"
       >
         <div className="p-8 sm:p-10 pb-6 flex items-center justify-between relative z-20">
           <div className="space-y-1">
@@ -98,8 +98,8 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
           </button>
         </div>
         
-        <div className="flex-grow relative px-8 pb-8">
-          <div className="w-full h-[400px] sm:h-[500px] relative rounded-[2rem] overflow-hidden border border-white/10 bg-black/40 shadow-inner z-10">
+        <div className="flex-grow relative">
+          <div className="w-full h-full relative overflow-hidden bg-black/40 shadow-inner z-10">
             {typeof window !== 'undefined' && (
               <MapContainer 
                 center={[mapCoords.lat, mapCoords.lng]} 
