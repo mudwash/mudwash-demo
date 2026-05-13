@@ -169,7 +169,10 @@ export default function PromoCodesPage() {
             <p className="font-bold uppercase tracking-widest text-xs">No promo codes found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Desktop Table View */}
+            <div className="overflow-x-auto hidden md:block">
+
             <table className="w-full text-left">
               <thead>
                 <tr className="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
@@ -238,7 +241,69 @@ export default function PromoCodesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card Layout */}
+          <div className="grid grid-cols-1 gap-4 md:hidden p-4">
+            {filteredCodes.map((code) => (
+              <div key={code.id} className="bg-[#0D0D0D] border border-white/5 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                      <Ticket size={18} />
+                    </div>
+                    <div>
+                      <span className="font-black text-white italic uppercase tracking-tight text-lg">{code.code}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${code.type === 'percentage' ? 'text-cyan-500' : 'text-emerald-500'}`}>
+                          {code.type}
+                        </span>
+                        <span className="text-white/20">•</span>
+                        <span className="font-black text-white text-xs italic">
+                          {code.type === 'percentage' ? `${code.value}%` : `AED ${code.value}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleDelete(code.id)}
+                    className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Usage</span>
+                    <span className="text-white/70 font-bold text-sm">{code.usedCount} / {code.usageLimit}</span>
+                    <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden mt-1">
+                      <div 
+                        className="h-full bg-brand-orange rounded-full" 
+                        style={{ width: `${Math.min(100, (code.usedCount / code.usageLimit) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Status</span>
+                    <button 
+                      onClick={() => toggleActive(code.id, code.active)}
+                      className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                        code.active 
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' 
+                          : 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20'
+                      }`}
+                    >
+                      {code.active ? 'Active' : 'Inactive'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          </>
         )}
+
       </div>
 
       {/* Create Modal */}
