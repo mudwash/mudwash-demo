@@ -1203,25 +1203,29 @@ export function BookingPageInner() {
                 
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory">
-                    {categories.map(cat => {
-                      const isActive = selectedCategory === cat.name;
-                      const IC = ICON_MAP[cat.icon] || Package;
-                      const serviceCount = services.filter(s => s.category === cat.name).length;
-                      return (
-                        <button 
-                          key={cat.id} 
-                          onClick={() => setSelectedCategory(cat.name)} 
-                          className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
-                        >
+                    {(() => {
+                      const derivedCats = Array.from(new Set(services.map(s => s.category).filter(Boolean)));
+                      return derivedCats.map(catName => {
+                        const catObj = categories.find(c => c.name === catName);
+                        const isActive = selectedCategory === catName;
+                        const IC = (catObj && ICON_MAP[catObj.icon]) || Package;
+                        const serviceCount = services.filter(s => s.category === catName).length;
+                        return (
+                          <button 
+                            key={catName} 
+                            onClick={() => setSelectedCategory(catName)} 
+                            className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
+                          >
                           <IC size={24} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
-                          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{cat.name}</span>
+                          <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{catName}</span>
                           {/* Badge with service count */}
                           <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${isActive ? 'bg-black text-brand-orange border border-brand-orange/20' : 'bg-[#1A1A1A] text-white/40 border border-white/10'}`}>
                             {serviceCount}
                           </div>
                         </button>
                       );
-                    })}
+                    });
+                  })()}
                   </div>
                 </div>
               </div>
