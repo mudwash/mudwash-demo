@@ -60,6 +60,8 @@ import {
 } from "lucide-react";
 import { getServices, addService, updateService, deleteService, Service } from "@/lib/services";
 import { getCategories, addCategory, updateCategory, Category } from "@/lib/categories";
+import { getVehicleTypes, VehicleType } from "@/lib/vehicleTypes";
+
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
@@ -100,6 +102,8 @@ function InlineFacilityInput({ serviceId, currentItems, onSave }: { serviceId: s
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -177,11 +181,13 @@ export default function ServicesPage() {
 
   const initData = async () => {
     try {
-      const [srvData, catData] = await Promise.all([getServices(), getCategories()]);
+      const [srvData, catData, vData] = await Promise.all([getServices(), getCategories(), getVehicleTypes()]);
       if (isMountedRef.current) {
         setServices(srvData);
         setCategories(catData);
+        setVehicleTypes(vData);
       }
+
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -534,7 +540,7 @@ export default function ServicesPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Price</label>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Default Price</label>
                           <input type="text" placeholder="450" value={formData.price} onChange={e=>setFormData({...formData,price:e.target.value})} className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-lg font-black italic focus:outline-none focus:border-[#F59E0B]"/>
                         </div>
                         <div className="space-y-2">
@@ -542,6 +548,33 @@ export default function ServicesPage() {
                           <input type="text" placeholder="2-3 Hours" value={formData.duration} onChange={e=>setFormData({...formData,duration:e.target.value})} className="w-full bg-[#111111] border border-white/10 rounded-2xl px-6 py-4 text-lg font-black italic focus:outline-none focus:border-[#F59E0B]"/>
                         </div>
                       </div>
+
+                      {/* Vehicle Pricing Section */}
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Vehicle Pricing (Overrides)</label>
+                        <p className="text-[10px] text-white/40 mt-1">Set specific prices for each vehicle type. If empty, the default price will be used.</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          {vehicleTypes.map(v => (
+                            <div key={v.id} className="space-y-1">
+                              <label className="text-[9px] font-black uppercase tracking-widest text-white/40">{v.name}</label>
+                              <input 
+                                type="text" 
+                                placeholder={`e.g. ${formData.price || '450'}`} 
+                                value={formData.vehiclePricing?.[v.name] || ""} 
+                                onChange={e => setFormData({
+                                  ...formData, 
+                                  vehiclePricing: {
+                                    ...(formData.vehiclePricing || {}),
+                                    [v.name]: e.target.value
+                                  }
+                                })} 
+                                className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-[#F59E0B] text-white"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <label className="text-[9px] font-black uppercase tracking-widest text-white/20">Category</label>

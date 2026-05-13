@@ -79,7 +79,8 @@ function SignUpContent() {
     <main className="h-screen w-full bg-[#050505] text-white flex overflow-hidden">
       
       {/* LEFT PANEL - FORM */}
-      <div className="w-full lg:w-[45%] h-full z-10 flex flex-col justify-start lg:justify-center py-10 px-6 sm:px-12 md:px-16 xl:px-24 bg-[#0A0A0A] relative border-r border-white/5 overflow-y-auto lg:overflow-hidden">
+      <div className="w-full lg:w-[45%] h-full z-10 flex flex-col justify-start lg:justify-center py-10 px-6 sm:px-12 md:px-16 xl:px-24 bg-[#0A0A0A] relative border-r border-white/5 overflow-y-auto overflow-x-hidden lg:overflow-hidden">
+
         
         {/* Subtle elegant ambient glow */}
         <div className="absolute top-1/4 -right-32 w-[400px] h-[400px] bg-brand-orange/10 blur-[120px] pointer-events-none rounded-full" />
@@ -98,7 +99,8 @@ function SignUpContent() {
               <span className="text-white italic">WASH</span>
               <div className="w-1 h-1 bg-brand-orange ml-1 rounded-full" />
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white mb-1 leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white mb-1 leading-tight break-words">
+
               Create an <br /> Account<span className="text-brand-orange">.</span>
             </h1>
             <p className="text-white/40 text-[11px] sm:text-sm mt-2">Unlock exclusive privileges and premium automotive detailing offers.</p>

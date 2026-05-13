@@ -4,7 +4,9 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair } from "lucide-react";
+import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair, Plus, Check, MessageCircle } from "lucide-react";
+
+import BottomSheet from "@/components/BottomSheet";
 
 const DUBAI_LOCATIONS = [
   "Downtown Dubai",
@@ -61,6 +63,10 @@ export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
+  const [showCarPopup, setShowCarPopup] = useState(false);
+  const [locationSearchQuery, setLocationSearchQuery] = useState("");
+
   const [carHistory, setCarHistory] = useState<any[]>([]);
 
   const handleLocateMe = () => {
@@ -69,9 +75,23 @@ export default function Hero() {
         (position) => {
           const { latitude, longitude } = position.coords;
           const locStr = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setSelectedLocation(locStr);
-          localStorage.setItem("userLocation", locStr);
-          window.dispatchEvent(new Event("locationChanged"));
+          setSelectedLocation("Locating...");
+          
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
+            .then(res => res.json())
+            .then(data => {
+              const address = data.address.suburb || data.address.neighbourhood || data.address.city || data.display_name || locStr;
+              setSelectedLocation(address);
+              localStorage.setItem("userLocation", address);
+              window.dispatchEvent(new Event("locationChanged"));
+            })
+            .catch(err => {
+              console.error("Geocoding error:", err);
+              setSelectedLocation(locStr);
+              localStorage.setItem("userLocation", locStr);
+              window.dispatchEvent(new Event("locationChanged"));
+            });
+
         },
         (error) => {
           console.error("Error getting location:", error);
@@ -136,7 +156,9 @@ export default function Hero() {
   return (
     <section className="relative w-full px-0">
       {/* ═══ MOBILE APP HERO ═══ */}
-      <div className="md:hidden relative w-full h-[35svh] bg-[#050505] overflow-hidden">
+      <div className="md:hidden relative w-full h-[45svh] bg-[#050505] overflow-hidden">
+
+
 
         {/* Full-bleed image carousel background */}
         <div className="absolute inset-0 z-0">
@@ -170,20 +192,38 @@ export default function Hero() {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="absolute top-0 left-0 right-0 z-30 pt-4 px-4 flex items-center gap-2"
+          className="absolute top-0 left-0 right-0 z-30 pt-4 px-4 flex flex-col gap-3"
         >
-          {/* Logo (Left) */}
-          <Link href="/" className="shrink-0">
-            <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-6 w-auto object-contain" />
-          </Link>
+          {/* Top Row: Logo + WhatsApp */}
+          <div className="flex items-center justify-between w-full">
+            <Link href="/" className="shrink-0">
+              <img src="/mudwash-logo-final.png" alt="MUDWASH" className="h-6 w-auto object-contain" />
+            </Link>
+            
+            {/* WhatsApp Icon */}
+            <a 
+              href="https://wa.me/971500000000" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform"
+            >
+              <svg viewBox="0 0 448 512" fill="currentColor" className="w-5 h-5 text-white">
+                <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l114.1-29.9c32.4 18.2 69 27.8 106.6 27.8 122.4 0 222-99.6 222-222 0-59.3-23.2-115.1-65.1-157.1zM223.9 446c-33.1 0-65.6-8.9-93.9-25.7l-6.7-4-69.7 18.3 18.6-68-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.5-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 54.1 81.2 54.1 130.4 0 101.7-82.8 184.5-184.5 184.5zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.4-8.6-44.5-27.5-16.4-14.6-27.5-32.7-30.7-38.2-3.2-5.6-.3-8.6 2.5-11.3 2.5-2.5 5.5-6.5 8.3-9.7 2.8-3.2 3.7-5.5 5.5-9.3 1.9-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.7 23.5 9.2 31.6 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+              </svg>
+            </a>
 
-          {/* Unified Location & Car Bar (Center) */}
-          {/* Unified Location & Car Bar (Center) */}
-          <div className="flex-grow grid grid-cols-[7fr_3fr] bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl h-12">
+          </div>
+
+          {/* Bottom Row: Unified Location & Car Bar */}
+          <div className="grid grid-cols-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl h-12">
+
             {/* Location Selector */}
             <div className="relative min-w-0 border-r border-white/10 flex items-center justify-between">
               {/* Clickable Area for Navigation */}
-              <Link href="/location" className="flex items-center gap-2 min-w-0 flex-grow hover:bg-white/5 transition-all rounded-l-xl h-full px-3">
+              <button
+                onClick={() => setShowLocationPopup(true)}
+                className="flex items-center gap-2 min-w-0 flex-grow hover:bg-white/5 transition-all rounded-l-xl h-full px-3"
+              >
                 <div className="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
                   <MapPin size={14} />
                 </div>
@@ -191,7 +231,7 @@ export default function Hero() {
                   <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Location</p>
                   <span className="text-xs font-bold text-white truncate block">{selectedLocation}</span>
                 </div>
-              </Link>
+              </button>
 
               {/* Tracking Button (Locate Me) */}
               <button 
@@ -209,7 +249,7 @@ export default function Hero() {
             {/* Car Selector */}
             <div className="relative min-w-0">
               <button 
-                onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
+                onClick={() => setShowCarPopup(true)}
                 className="w-full h-full px-3 flex items-center justify-center gap-2 hover:bg-white/5 transition-all rounded-r-xl"
               >
                 <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-brand-orange shrink-0">
@@ -220,42 +260,6 @@ export default function Hero() {
                   <span className="text-xs font-bold text-white truncate block">{selectedCar}</span>
                 </div>
               </button>
-
-              {/* Dropdown */}
-              {showVehicleDropdown && carHistory.length > 0 && (
-                <div className="absolute top-full right-0 mt-1 w-[200px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
-                  {carHistory.map((car, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSelectCar(car)}
-                      className="w-full text-left px-3 py-2 text-[9px] text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
-                    >
-                      <p className="font-bold truncate">{car.model}</p>
-                      <p className="text-white/40 text-[8px] truncate">{car.type}</p>
-                    </button>
-                  ))}
-                  <Link 
-                    href="/bookings?step=1"
-                    className="w-full text-left px-3 py-2 text-[9px] text-brand-orange hover:bg-white/5 transition-colors flex items-center justify-between"
-                    onClick={() => setShowVehicleDropdown(false)}
-                  >
-                    <span>Add New Car</span>
-                    <ChevronRight size={10} />
-                  </Link>
-                </div>
-              )}
-              {showVehicleDropdown && carHistory.length === 0 && (
-                <div className="absolute top-full right-0 mt-1 w-[200px] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden p-3 text-center">
-                  <p className="text-white/40 text-[9px]">No history yet</p>
-                  <Link 
-                    href="/bookings?step=1"
-                    className="mt-2 inline-block text-[9px] text-brand-orange hover:underline"
-                    onClick={() => setShowVehicleDropdown(false)}
-                  >
-                    Select a Car
-                  </Link>
-                </div>
-              )}
             </div>
           </div>
         </motion.div>
@@ -392,7 +396,105 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+
+      {/* Popups */}
+      <BottomSheet
+        isOpen={showLocationPopup}
+        onClose={() => setShowLocationPopup(false)}
+        title="Choose Location"
+      >
+        <div className="space-y-4">
+          <button
+            onClick={() => {
+              handleLocateMe();
+              setShowLocationPopup(false);
+            }}
+            className="w-full bg-brand-orange text-black font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
+          >
+            <Crosshair size={16} />
+            Use Current Location
+          </button>
+
+          {/* Search Input */}
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Search area..." 
+              value={locationSearchQuery}
+              onChange={e => setLocationSearchQuery(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {DUBAI_LOCATIONS.filter(loc => loc.toLowerCase().includes(locationSearchQuery.toLowerCase())).map((loc) => (
+
+              <button
+                key={loc}
+                onClick={() => {
+                  setSelectedLocation(loc);
+                  localStorage.setItem("userLocation", loc);
+                  window.dispatchEvent(new Event("locationChanged"));
+                  setShowLocationPopup(false);
+                }}
+                className={`py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all ${
+                  selectedLocation === loc
+                    ? 'bg-brand-orange border-brand-orange text-black'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {loc}
+              </button>
+            ))}
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        isOpen={showCarPopup}
+        onClose={() => setShowCarPopup(false)}
+        title="Select Vehicle"
+      >
+        <div className="space-y-4">
+          {carHistory.length > 0 ? (
+            <div className="space-y-2">
+              {carHistory.map((car, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectCar(car)}
+                  className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
+                >
+                  <div>
+                    <p className="font-bold text-white text-sm">{car.model}</p>
+                    <p className="text-white/40 text-xs">{car.type}</p>
+                  </div>
+                  {selectedCar === car.model && (
+                    <div className="w-5 h-5 rounded-full bg-brand-orange flex items-center justify-center text-black">
+                      <Check size={12} strokeWidth={3} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-white/40 text-sm mb-4">No car history found</p>
+            </div>
+          )}
+          
+          <Link
+            href="/bookings?step=1"
+            className="w-full bg-brand-orange/10 border border-brand-orange/20 text-brand-orange font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-brand-orange/20"
+            onClick={() => setShowCarPopup(false)}
+          >
+            <Plus size={16} />
+            Add New Car
+          </Link>
+        </div>
+      </BottomSheet>
     </section>
   );
-};
+}
+
 

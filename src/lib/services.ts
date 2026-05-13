@@ -18,7 +18,9 @@ export interface Service {
   category: string;
   description: string;
   includedItems?: string[];
+  vehiclePricing?: Record<string, string>;
   image: string;
+
   images?: string[];
   icon?: string;
   active: boolean;

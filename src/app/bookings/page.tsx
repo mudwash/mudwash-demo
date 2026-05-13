@@ -72,6 +72,7 @@ import { getVehicleTypes, VehicleType } from '@/lib/vehicleTypes';
 import { getGarages, Garage } from '@/lib/garages';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import AuthPopup from '@/components/AuthPopup';
 
 const InteractiveMapModal = dynamic(() => import('@/components/InteractiveMapModal'), { 
   ssr: false,
@@ -287,12 +288,9 @@ export function BookingPageInner() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace("/sign-up?redirect=/bookings");
-    }
-  }, [user, authLoading, router]);
+  // Removed force redirect to allow guest browsing up to step 5
 
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -460,6 +458,11 @@ export function BookingPageInner() {
           if (data.savedAddress) {
             setFormData(prev => ({ ...prev, address: data.savedAddress }));
           }
+          const savedLocation = localStorage.getItem("userLocation");
+          if (savedLocation) {
+            setFormData(prev => ({ ...prev, address: savedLocation }));
+          }
+
           if (data.addressType) {
             setAddressDetails(prev => ({ ...prev, type: data.addressType }));
           }
@@ -506,14 +509,26 @@ export function BookingPageInner() {
   }, [formData.phone]);
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stepParam = urlParams.get('step');
+    
     const savedCar = localStorage.getItem("mudwash_carDetails");
+    let hasCar = false;
     if (savedCar) {
       try {
         const parsed = JSON.parse(savedCar);
         setCarDetails(prev => ({ ...prev, ...parsed }));
+        if (parsed.type) hasCar = true;
       } catch (e) {}
     }
+
+    if (stepParam) {
+      setCurrentStep(parseInt(stepParam));
+    } else if (hasCar) {
+      setCurrentStep(2);
+    }
   }, []);
+
 
   useEffect(() => {
     if (carDetails.type || carDetails.model) {
@@ -713,8 +728,12 @@ export function BookingPageInner() {
 
     selectedServices.forEach(sel => {
       const service = services.find(s => s.id === sel.id);
-      if (service) total += parseInt(service.price.replace(/[^\d]/g, '')) * sel.quantity;
+      if (service) {
+        const priceForVehicle = service.vehiclePricing?.[carDetails.type] || service.price;
+        total += parseInt(priceForVehicle.replace(/[^\d]/g, '')) * sel.quantity;
+      }
     });
+
     selectedAddOns.forEach(id => {
       const addon = services.find(s => s.id === id);
       if (addon) total += parseInt(addon.price.replace(/[^\d]/g, ''));
@@ -780,8 +799,12 @@ export function BookingPageInner() {
       }
       selectedServices.forEach(sel => {
         const service = services.find(s => s.id === sel.id);
-        if (service) baseTotal += parseInt(service.price.replace(/[^\d]/g, '')) * sel.quantity;
+        if (service) {
+          const priceForVehicle = service.vehiclePricing?.[carDetails.type] || service.price;
+          baseTotal += parseInt(priceForVehicle.replace(/[^\d]/g, '')) * sel.quantity;
+        }
       });
+
       selectedAddOns.forEach(id => {
         const addon = services.find(s => s.id === id);
         if (addon) baseTotal += parseInt(addon.price.replace(/[^\d]/g, ''));
@@ -881,7 +904,8 @@ export function BookingPageInner() {
           amount: calculateTotal(),
           currency: "AED",
           name: serviceSummary || "Mudwash Service",
-          description: `Booking #${tempBookingId}`,
+          description: `Booking #${tempBookingId}${promoDiscount > 0 ? ` (Discount applied: AED ${promoDiscount})` : ''}`,
+
           email: formData.email || "guest@mudwash.com",
           phone: formData.phone || "",
           success_url: `${window.location.origin}/bookings?success=true`,
@@ -939,7 +963,7 @@ export function BookingPageInner() {
     );
   }
 
-  if (!user) return null;
+  // Removed restriction to allow guest view
 
   if (isSuccess) {
     return (
@@ -1282,12 +1306,20 @@ export function BookingPageInner() {
                             
                             <div className="flex items-end justify-between pt-3 border-t border-white/10">
                                <div className="flex flex-col">
-                                  <span className="text-[7px] font-black uppercase tracking-widest text-white/40 mb-0.5">Starting from</span>
+                                  <span className="text-[7px] font-black uppercase tracking-widest text-white/40 mb-0.5">Price</span>
                                   <div className="flex items-baseline gap-2">
-                                    <span className="text-xl font-black text-brand-orange italic tracking-tighter leading-none">AED {service.price}</span>
-                                    <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(service.price.replace(/[^\d]/g, '')) * 1.4)}</span>
+                                    {(() => {
+                                      const priceForVehicle = service.vehiclePricing?.[carDetails.type] || service.price;
+                                      return (
+                                        <>
+                                          <span className="text-xl font-black text-brand-orange italic tracking-tighter leading-none">AED {priceForVehicle}</span>
+                                          <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(priceForVehicle.replace(/[^\d]/g, '')) * 1.4)}</span>
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                </div>
+
                                {service.duration && (
                                  <div className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 flex items-center gap-1.5 flex-shrink-0">
                                     <Clock size={10} className="text-brand-orange" />
@@ -1326,27 +1358,27 @@ export function BookingPageInner() {
                         onClick={() => { setDetailService(addon); setIsDrawerOpen(true); }}
                         className={`relative rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden p-6 ${isSelected ? 'bg-brand-orange/10 border-brand-orange/40' : 'bg-[#0F0F0F] border-white/5'}`}
                       >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30'}`}>
-                              <IconComp size={20}/>
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
-                              <p className="text-[10px] text-white/40 mt-0.5 line-clamp-2">{addon.description || "Premium add-on service."}</p>
-                              <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-brand-orange font-bold text-sm">AED {addon.price}</span>
-                                <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(addon.price.replace(/[^\d]/g, '')) * 1.4)}</span>
-                              </div>
+                        <div className="flex flex-col gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30'}`}>
+                            <IconComp size={20}/>
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
+                            <p className="text-[10px] text-white/40 mt-0.5 line-clamp-2">{addon.description || "Premium add-on service."}</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                              <span className="text-brand-orange font-bold text-sm">AED {addon.price}</span>
+                              <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(addon.price.replace(/[^\d]/g, '')) * 1.4)}</span>
                             </div>
                           </div>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); toggleAddOn(addon.id!); }} 
-                            className={`w-8 h-8 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-500 overflow-hidden ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30 hover:bg-brand-orange hover:text-black'}`}
-                          >
-                            {isSelected ? <Check size={14} strokeWidth={4} /> : <Plus size={14} strokeWidth={3} />}
-                          </button>
                         </div>
+
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleAddOn(addon.id!); }} 
+                          className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-500 overflow-hidden z-10 ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30 hover:bg-brand-orange hover:text-black'}`}
+                        >
+                          {isSelected ? <Check size={14} strokeWidth={4} /> : <Plus size={14} strokeWidth={3} />}
+                        </button>
+
                       </motion.div>
                     );
                   })}
@@ -1471,7 +1503,13 @@ export function BookingPageInner() {
                           placeholder="Enter Building, Street, or Area Name" 
                           className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-5 pr-16 text-sm font-bold focus:border-brand-orange outline-none transition-all group-hover:bg-white/[0.07]" 
                           value={formData.address} 
-                          onChange={e => setFormData({...formData, address: e.target.value})} 
+                          onChange={e => {
+                            const newAddr = e.target.value;
+                            setFormData({...formData, address: newAddr});
+                            localStorage.setItem("userLocation", newAddr);
+                            window.dispatchEvent(new Event("locationChanged"));
+                          }} 
+
                         />
                         <button 
                           onClick={() => setIsMapModalOpen(true)}
@@ -1542,20 +1580,7 @@ export function BookingPageInner() {
                 
 
 
-                  {!user && (
-                    <div className="bg-white/5 border border-white/5 rounded-2xl p-5 flex items-center justify-between mb-2">
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-white">Guest Booking</p>
-                        <p className="text-xs text-white/40">Sign in to save history & earn rewards</p>
-                      </div>
-                      <Link 
-                        href="/sign-in" 
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black uppercase text-white transition-all"
-                      >
-                        Sign In
-                      </Link>
-                    </div>
-                  )}
+
                   <div className="flex items-center gap-3">
                     <input 
                       type="checkbox" 
@@ -1576,6 +1601,8 @@ export function BookingPageInner() {
 
       <ServiceDetailDrawer service={detailService} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onAdd={addService} onRemove={removeService} quantity={selectedServices.find(s => s.id === detailService?.id)?.quantity || 0} />
 
+      <AuthPopup isOpen={showAuthPopup} onClose={() => setShowAuthPopup(false)} onSuccess={() => {}} />
+
       <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-4xl z-[9999] bg-black/60 backdrop-blur-2xl border border-white/10 h-20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
         <div className="h-full px-6 sm:px-10 flex items-center justify-between gap-4">
           <button onClick={() => setSummaryExpanded(!summaryExpanded)} className="flex flex-col items-start group min-w-0">
@@ -1589,7 +1616,7 @@ export function BookingPageInner() {
           </button>
           
           <button 
-            onClick={currentStep === 5 ? handleSubmit : handleNext} 
+            onClick={currentStep === 5 ? (user ? handleSubmit : () => setShowAuthPopup(true)) : handleNext} 
             disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && !agreedToTerms)} 
             className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-10 sm:h-12 px-4 sm:px-6 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
@@ -1685,7 +1712,13 @@ export function BookingPageInner() {
                               {sel.quantity > 1 && <p className="text-[10px] text-white/30 mt-0.5">{sel.quantity}× quantity</p>}
                             </div>
                           </div>
-                          <span className="text-sm font-black text-white italic shrink-0">AED {parseInt(s.price.replace(/[^\d]/g,'') || '0') * sel.quantity}</span>
+                          {(() => {
+                            const priceForVehicle = s.vehiclePricing?.[carDetails.type] || s.price;
+                            return (
+                              <span className="text-sm font-black text-white italic shrink-0">AED {parseInt(priceForVehicle.replace(/[^\d]/g,'') || '0') * sel.quantity}</span>
+                            );
+                          })()}
+
                         </div>
                       );
                     })}
@@ -1763,7 +1796,10 @@ export function BookingPageInner() {
             onClose={() => setIsMapModalOpen(false)}
             onConfirm={(addr) => {
               setFormData(prev => ({ ...prev, address: addr }));
+              localStorage.setItem("userLocation", addr);
+              window.dispatchEvent(new Event("locationChanged"));
               setShowMap(true);
+
               setIsMapModalOpen(false);
               setIsAddressDetailsOpen(true);
             }}
