@@ -85,12 +85,22 @@ export default function Hero() {
               setSelectedLocation(address);
               localStorage.setItem("userLocation", address);
               window.dispatchEvent(new Event("locationChanged"));
+              
+              const savedCar = localStorage.getItem("mudwash_carDetails");
+              if (!savedCar) {
+                setShowCarPopup(true);
+              }
             })
             .catch(err => {
               console.error("Geocoding error:", err);
               setSelectedLocation(locStr);
               localStorage.setItem("userLocation", locStr);
               window.dispatchEvent(new Event("locationChanged"));
+              
+              const savedCar = localStorage.getItem("mudwash_carDetails");
+              if (!savedCar) {
+                setShowCarPopup(true);
+              }
             });
 
         },
@@ -118,6 +128,27 @@ export default function Hero() {
       try {
         setCarHistory(JSON.parse(history));
       } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedLoc = localStorage.getItem("userLocation");
+    const savedCar = localStorage.getItem("mudwash_carDetails");
+    
+    if (savedLoc) {
+      setSelectedLocation(savedLoc);
+    }
+    if (savedCar) {
+      try {
+        const car = JSON.parse(savedCar);
+        setSelectedCar(car.model);
+      } catch (e) {}
+    }
+
+    if (!savedLoc || savedLoc === "Choose Location") {
+      setShowLocationPopup(true);
+    } else if (!savedCar || savedCar === "Select Vehicle") {
+      setShowCarPopup(true);
     }
   }, []);
 
@@ -372,7 +403,11 @@ export default function Hero() {
       {/* Popups */}
       <BottomSheet
         isOpen={showLocationPopup}
-        onClose={() => setShowLocationPopup(false)}
+        onClose={() => {
+          if (selectedLocation !== "Choose Location") {
+            setShowLocationPopup(false);
+          }
+        }}
         title="Choose Location"
       >
         <div className="space-y-4">
@@ -400,6 +435,11 @@ export default function Hero() {
                   localStorage.setItem("userLocation", locationSearchQuery);
                   window.dispatchEvent(new Event("locationChanged"));
                   setShowLocationPopup(false);
+                  
+                  const savedCar = localStorage.getItem("mudwash_carDetails");
+                  if (!savedCar) {
+                    setShowCarPopup(true);
+                  }
                 }
               }}
               className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
@@ -413,6 +453,11 @@ export default function Hero() {
                 localStorage.setItem("userLocation", locationSearchQuery);
                 window.dispatchEvent(new Event("locationChanged"));
                 setShowLocationPopup(false);
+                
+                const savedCar = localStorage.getItem("mudwash_carDetails");
+                if (!savedCar) {
+                  setShowCarPopup(true);
+                }
               }}
               className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between mb-2"
             >
@@ -439,6 +484,11 @@ export default function Hero() {
                       localStorage.setItem("userLocation", loc);
                       window.dispatchEvent(new Event("locationChanged"));
                       setShowLocationPopup(false);
+                      
+                      const savedCar = localStorage.getItem("mudwash_carDetails");
+                      if (!savedCar) {
+                        setShowCarPopup(true);
+                      }
                     }
                   }}
                   className={`py-3 px-4 rounded-xl text-xs font-bold text-left border transition-all ${
@@ -478,7 +528,11 @@ export default function Hero() {
 
       <BottomSheet
         isOpen={showCarPopup}
-        onClose={() => setShowCarPopup(false)}
+        onClose={() => {
+          if (selectedCar !== "Select Vehicle") {
+            setShowCarPopup(false);
+          }
+        }}
         title="Select Vehicle"
       >
         <div className="space-y-4">

@@ -110,46 +110,46 @@ export default function ServicesGrid() {
           <>
             {/* Service icon grid */}
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-5">
-              {services.slice(0, 8).map((service, index) => {
-                const { Icon, color } = getIconForService(service);
-                const isActive = selected?.id === service.id;
-                return (
-                  <motion.button
-                    key={service.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                    whileTap={{ scale: 0.93 }}
-                    onClick={() => handleCardClick(service)}
-                    className="flex flex-col items-center gap-2.5 group cursor-pointer w-full focus:outline-none"
-                    aria-label={`View ${service.name}`}
-                  >
-                    {/* Icon box */}
-                    <div className={`w-full aspect-square rounded-2xl flex items-center justify-center transition-all duration-300 border relative overflow-hidden
-                      ${isActive
-                        ? 'bg-brand-orange border-brand-orange shadow-[0_0_28px_rgba(246,150,33,0.35)] scale-105'
-                        : 'bg-[#1C1C1E] border-white/5 group-hover:bg-[#252525] group-hover:border-brand-orange/30 group-hover:shadow-[0_0_20px_rgba(246,150,33,0.1)]'
-                      }`}
+              {(() => {
+                const categories = Array.from(new Set(services.map(s => s.category).filter(Boolean)));
+                return categories.slice(0, 8).map((catName, index) => {
+                  const service = services.find(s => s.category === catName);
+                  if (!service) return null;
+                  const { Icon, color } = getIconForService(service);
+                  const isActive = selected?.category === catName;
+                  
+                  return (
+                    <motion.button
+                      key={catName}
+                      initial={{ opacity: 0, y: 12 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => handleCardClick(service)}
+                      className="flex flex-col items-center gap-2.5 group cursor-pointer w-full focus:outline-none"
+                      aria-label={`View ${catName}`}
                     >
-                      <div className={`absolute inset-0 bg-gradient-to-br from-brand-orange/8 to-transparent transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}/>
-                      <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                        <Icon size={28} style={{ color: isActive ? '#000' : color }}/>
-                      </div>
-                      {/* Active chevron hint */}
-                      {isActive && (
-                        <div className="absolute bottom-1 right-1">
-                          <ChevronRight size={10} className="text-black/60 rotate-90"/>
+                      {/* Icon box */}
+                      <div className={`w-full aspect-square rounded-2xl flex items-center justify-center transition-all duration-300 border relative overflow-hidden
+                        ${isActive
+                          ? 'bg-brand-orange border-brand-orange shadow-[0_0_28px_rgba(246,150,33,0.35)] scale-105'
+                          : 'bg-[#1C1C1E] border-white/5 group-hover:bg-[#252525] group-hover:border-brand-orange/30 group-hover:shadow-[0_0_20px_rgba(246,150,33,0.1)]'
+                        }`}
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br from-brand-orange/8 to-transparent transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}/>
+                        <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                          <Icon size={28} style={{ color: isActive ? '#000' : color }}/>
                         </div>
-                      )}
-                    </div>
-                    <span className={`text-[10px] md:text-xs font-medium text-center truncate w-full px-1 leading-tight transition-colors
-                      ${isActive ? 'text-brand-orange font-bold' : 'text-white/60 group-hover:text-white'}`}>
-                      {service.name}
-                    </span>
-                  </motion.button>
-                );
-              })}
+                      </div>
+                      <span className={`text-[10px] md:text-xs font-medium text-center truncate w-full px-1 leading-tight transition-colors
+                        ${isActive ? 'text-brand-orange font-bold' : 'text-white/60 group-hover:text-white'}`}>
+                        {catName}
+                      </span>
+                    </motion.button>
+                  );
+                });
+              })()}
             </div>
 
             {/* Sub-services / Facilities panel */}
