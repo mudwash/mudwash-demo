@@ -1202,7 +1202,7 @@ export function BookingPageInner() {
                 </div>
                 
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
-                  <div className="flex gap-1 no-scrollbar w-full">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3">
                     {categories.map(cat => {
                       const isActive = selectedCategory === cat.name;
                       const IC = ICON_MAP[cat.icon] || Package;

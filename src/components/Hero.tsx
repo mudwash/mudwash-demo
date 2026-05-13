@@ -223,7 +223,7 @@ export default function Hero() {
             
             {/* WhatsApp Icon (Mobile only inside this div) */}
             <a 
-              href="https://wa.me/971500000000" 
+              href="https://wa.me/971502374199" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="w-9 h-9 md:hidden rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform"
@@ -291,7 +291,7 @@ export default function Hero() {
 
           {/* WhatsApp Icon (Desktop only here) */}
           <a 
-            href="https://wa.me/971500000000" 
+            href="https://wa.me/971502374199" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="hidden md:flex w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform shrink-0"
