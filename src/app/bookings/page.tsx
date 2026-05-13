@@ -1202,7 +1202,7 @@ export function BookingPageInner() {
                 </div>
                 
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory">
                     {categories.map(cat => {
                       const isActive = selectedCategory === cat.name;
                       const IC = ICON_MAP[cat.icon] || Package;
@@ -1211,7 +1211,7 @@ export function BookingPageInner() {
                         <button 
                           key={cat.id} 
                           onClick={() => setSelectedCategory(cat.name)} 
-                          className={`flex-1 h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
+                          className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
                         >
                           <IC size={24} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
                           <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{cat.name}</span>
