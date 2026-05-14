@@ -44,6 +44,14 @@ export const getServices = async (onlyActive = false) => {
       id: doc.id,
       ...doc.data()
     })) as Service[];
+    
+    // Sort by createdAt descending (newest first)
+    serviceList.sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
     return serviceList;
   } catch (error) {
     console.error("Error in getServices:", error);
