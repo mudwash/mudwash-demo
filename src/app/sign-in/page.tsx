@@ -81,21 +81,19 @@ function SignInContent() {
         const { getUserProfile, saveUserToFirestore } = await import("@/lib/users");
         let profile = await getUserProfile(user.uid);
         
-        const isAdminEmail = user.email === "wazeert13@gmail.com";
-        
         if (!profile) {
           // Create profile for new Google user
           await saveUserToFirestore({
             uid: user.uid,
             name: user.displayName || "Google User",
             email: user.email || "",
-            role: isAdminEmail ? 'admin' : 'user',
+            role: 'user', // Default to user role
             createdAt: new Date().toISOString(),
           });
-          profile = { role: isAdminEmail ? 'admin' : 'user' } as any;
+          profile = { role: 'user' } as any;
         }
         
-        const isAdmin = profile?.role === 'admin' || isAdminEmail;
+        const isAdmin = profile?.role === 'admin';
         
         if (isAdmin) {
           localStorage.setItem("admin_token", "mudwash_session_active");
@@ -106,7 +104,7 @@ function SignInContent() {
       }
     } catch (err: any) {
       console.error("Google sign in error:", err);
-      setError("Failed to sign in with Google. Please try again.");
+      setError(`Failed to sign in with Google: ${err.message || "Please try again."}`);
     } finally {
       setIsSubmitting(false);
     }

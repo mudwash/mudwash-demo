@@ -83,16 +83,24 @@ function SignUpContent() {
       const user = result.user;
       
       if (user) {
-        const isAdminEmail = user.email === "wazeert13@gmail.com";
-        await saveUserToFirestore({
-          uid: user.uid,
-          name: user.displayName || "Google User",
-          email: user.email || "",
-          role: isAdminEmail ? 'admin' : 'user',
-          createdAt: new Date().toISOString(),
-        });
+        const { getUserProfile, saveUserToFirestore } = await import("@/lib/users");
+        let profile = await getUserProfile(user.uid);
         
-        if (isAdminEmail) {
+        if (!profile) {
+          // Create profile for new Google user
+          await saveUserToFirestore({
+            uid: user.uid,
+            name: user.displayName || "Google User",
+            email: user.email || "",
+            role: 'user', // Default to user role
+            createdAt: new Date().toISOString(),
+          });
+          profile = { role: 'user' } as any;
+        }
+        
+        const isAdmin = profile?.role === 'admin';
+        
+        if (isAdmin) {
           localStorage.setItem("admin_token", "mudwash_session_active");
           router.push(returnTo || "/admin");
         } else {

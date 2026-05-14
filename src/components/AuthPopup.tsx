@@ -106,15 +106,13 @@ export default function AuthPopup({ isOpen, onClose, onSuccess }: AuthPopupProps
         const { getUserProfile, saveUserToFirestore } = await import("@/lib/users");
         let profile = await getUserProfile(user.uid);
         
-        const isAdminEmail = user.email === "wazeert13@gmail.com";
-        
         if (!profile) {
           // Create profile for new Google user
           await saveUserToFirestore({
             uid: user.uid,
             name: user.displayName || "Google User",
             email: user.email || "",
-            role: isAdminEmail ? 'admin' : 'user',
+            role: 'user', // Default to user role
             createdAt: new Date().toISOString(),
           });
         }
@@ -124,7 +122,7 @@ export default function AuthPopup({ isOpen, onClose, onSuccess }: AuthPopupProps
       }
     } catch (err: any) {
       console.error("Google sign in error:", err);
-      setError("Failed to sign in with Google. Please try again.");
+      setError(`Failed to sign in with Google: ${err.message || "Please try again."}`);
     } finally {
       setIsSubmitting(false);
     }

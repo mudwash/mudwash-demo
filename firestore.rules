@@ -69,13 +69,13 @@ service cloud.firestore {
 
     // Users: Users can read/write their own profiles, Admin can read all
     match /users/{userId} {
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow read: if (request.auth != null && request.auth.uid == userId) || isAdmin();
       allow create: if request.auth != null && request.auth.uid == userId && request.resource.data.role == 'user';
-      allow update: if isAdmin() || (
+      allow update: if (
         request.auth != null && 
         request.auth.uid == userId && 
         request.resource.data.role == resource.data.role
-      );
+      ) || isAdmin();
       allow delete: if isAdmin();
     }
   }
