@@ -16,9 +16,7 @@ export async function POST(request: Request) {
         items: [
           {
             name: name || "Mudwash Service",
-            // Workaround: Nomod adds a ~17.5% markup and 7% service fee in account settings.
-            // Divide by 1.257616 to ensure the final total on Nomod matches the website total.
-            amount: (parseFloat(amount) / 1.257616).toFixed(2),
+            amount: parseFloat(amount).toFixed(2),
             quantity: 1
           }
         ],
