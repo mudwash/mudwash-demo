@@ -48,7 +48,7 @@ function SignInContent() {
       const { getUserProfile } = await import("@/lib/users");
       const profile = await getUserProfile(user.uid);
       
-      const isAdmin = profile?.role === 'admin' || user.email === "wazeert13@gmail.com";
+      const isAdmin = profile?.role === 'admin';
       
       if (isAdmin) {
         localStorage.setItem("admin_token", "mudwash_session_active");
@@ -57,11 +57,13 @@ function SignInContent() {
         router.push(returnTo || "/");
       }
     } catch (err: any) {
-      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+      if (err.code === "auth/user-disabled") {
+        setError("This account has been disabled by the administrator.");
+      } else if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
         setError("Invalid email or password. Please check your credentials.");
       } else {
         console.error(err);
-        setError("An error occurred. Please try again.");
+        setError(`An error occurred: ${err.message || "Please try again."}`);
       }
     } finally {
       setIsSubmitting(false);
