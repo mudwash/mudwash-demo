@@ -372,13 +372,32 @@ export default function BookingsPage() {
                           </select>
                         </div>
                       </td>
-                      <td className="px-6 py-6">
-                        <input 
-                          type="text"
-                          value={booking.amount}
-                          onChange={(e) => booking.id && handleAmountUpdate(booking.id, e.target.value)}
-                          className="bg-transparent border-none p-0 focus:outline-none font-black text-brand-orange italic tracking-tighter text-lg w-24 hover:bg-white/5 rounded px-2"
-                        />
+                      <td className="px-6 py-6 min-w-[150px]">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Total:</span>
+                            <input 
+                              type="text"
+                              value={booking.amount}
+                              onChange={(e) => booking.id && handleAmountUpdate(booking.id, e.target.value)}
+                              className="bg-transparent border-none p-0 focus:outline-none font-black text-brand-orange italic tracking-tighter text-base w-20 hover:bg-white/5 rounded px-1 text-right"
+                            />
+                          </div>
+                          {booking.paymentStatus === 'Partial' && (
+                            <>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Paid:</span>
+                                <span className="font-black text-emerald-500 italic text-sm">AED {booking.paidAmount}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-1 mt-0.5">
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Balance:</span>
+                                <span className="font-black text-red-500 italic text-sm">
+                                  AED {(parseFloat(booking.amount.replace(/[^0-9.]/g, '')) - parseFloat(booking.paidAmount?.toString() || "0")).toFixed(2)}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-6 text-right overflow-visible">
                         <div className="relative">
@@ -465,6 +484,12 @@ export default function BookingsPage() {
                     <div className="space-y-1">
                       <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Amount</p>
                       <p className="text-sm font-black text-brand-orange italic">{booking.amount}</p>
+                      {booking.paymentStatus === 'Partial' && (
+                        <>
+                          <p className="text-[10px] text-emerald-500 font-bold">Paid: AED {booking.paidAmount}</p>
+                          <p className="text-[10px] text-red-500 font-bold">Bal: AED {(parseFloat(booking.amount.replace(/[^0-9.]/g, '')) - parseFloat(booking.paidAmount?.toString() || "0")).toFixed(2)}</p>
+                        </>
+                      )}
                     </div>
                   </div>
 

@@ -21,6 +21,8 @@ export interface Booking {
   time: string;
   location: string;
   amount: string;
+  paidAmount?: string | number;
+  paymentStatus?: string;
   status: "Pending" | "Completed" | "Cancelled" | "Accepted";
   carDetails: string;
   createdAt?: any;

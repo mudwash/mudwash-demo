@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function PWAInstall() {
+    return null; // Disabled popup as requested by user
+    
     const pathname = usePathname();
     const isHomePage = pathname === '/';
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
