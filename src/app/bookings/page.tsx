@@ -284,6 +284,7 @@ export function BookingPageInner() {
   const { user, loading: authLoading, profile } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [paymentOption, setPaymentOption] = useState<'full' | 'partial'>('full');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
 
@@ -920,6 +921,8 @@ export function BookingPageInner() {
         location: locationParts || "Location not specified",
         addressType: addressDetails.type,
         amount: `AED ${calculateTotal()}`, 
+        paidAmount: paymentOption === 'partial' ? calculateTotal() / 2 : calculateTotal(),
+        paymentStatus: paymentOption === 'partial' ? 'Partial' : 'Full',
         status: "Pending",
         carDetails: `${carDetails.type || 'Standard'} - ${carDetails.model || 'Unknown'}`
       };
@@ -940,10 +943,10 @@ export function BookingPageInner() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount: calculateTotal(),
+          amount: paymentOption === 'partial' ? calculateTotal() / 2 : calculateTotal(),
           currency: "AED",
           name: serviceSummary || "Mudwash Service",
-          description: `Booking #${tempBookingId}${promoDiscount > 0 ? ` (Discount applied: AED ${promoDiscount})` : ''}`,
+          description: `${paymentOption === 'partial' ? 'Partial Payment ' : ''}Booking #${tempBookingId}${promoDiscount > 0 ? ` (Discount applied: AED ${promoDiscount})` : ''}`,
 
           email: formData.email || "guest@mudwash.com",
           phone: formData.phone || "",
@@ -1491,15 +1494,15 @@ export function BookingPageInner() {
           {/* STEP 5: REVIEW */}
           {currentStep === 5 && (
             <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
-              <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-4">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Contact Info</h3>
-                <input type="text" placeholder="Full Name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange outline-none transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Contact Info</h3>
+                <input type="text" placeholder="Full Name" className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative group">
                     <input 
                       type="email" 
                       placeholder="Email Address" 
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange outline-none transition-all" 
+                      className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" 
                       value={formData.email} 
                       onChange={e => setFormData({...formData, email: e.target.value})} 
                     />
@@ -1513,7 +1516,7 @@ export function BookingPageInner() {
                       type="tel" 
                       placeholder="Phone Number" 
                       autoComplete="off"
-                      className="w-full bg-white/5 border border-white/5 rounded-2xl pl-20 pr-6 py-4 text-sm font-bold focus:border-brand-orange outline-none transition-all" 
+                      className="w-full bg-black/40 border border-white/[0.05] rounded-2xl pl-20 pr-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" 
                       value={formData.phone} 
                       onChange={e => setFormData({...formData, phone: e.target.value})} 
                     />
@@ -1522,7 +1525,7 @@ export function BookingPageInner() {
                 <button 
                   type="button"
                   onClick={() => alert("OTP sent via WhatsApp!")}
-                  className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl border border-emerald-500/20 mt-4 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-emerald-500/10 hover:border-emerald-500/20 mt-2 transition-all flex items-center justify-center gap-2"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.67-1.614-.917-2.21-.242-.58-.487-.502-.67-.512-.174-.01-.373-.01-.572-.01-.199 0-.523.074-.797.373-.273.3-.1.74-.1.74s-.27 1.054.42 2.6c.69 1.547 2.06 2.519 2.208 2.717.149.198 3.036 4.637 7.356 6.508 1.028.444 1.832.709 2.457.908 1.033.328 1.974.282 2.717.172.828-.123 2.544-.694 2.905-1.362.36-.668.36-1.24.252-1.362-.108-.124-.397-.198-.694-.347z" fill="currentColor"/>
@@ -1532,15 +1535,15 @@ export function BookingPageInner() {
                 </button>
               </div>
 
-              <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-6">
+              <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Service Location</h3>
-                    <p className="text-[10px] text-white/40 font-medium italic">Pin your exact spot for onsite detailing</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Service Location</h3>
+                    <p className="text-[10px] text-white/30 font-medium italic">Pin your exact spot for onsite detailing</p>
                   </div>
                   <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
-                    <button onClick={() => setShowMap(false)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!showMap ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Text</button>
-                    <button onClick={() => setShowMap(true)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${showMap ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Map</button>
+                    <button onClick={() => setShowMap(false)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!showMap ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Text</button>
+                    <button onClick={() => setShowMap(true)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${showMap ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Map</button>
                   </div>
                 </div>
 
@@ -1615,11 +1618,11 @@ export function BookingPageInner() {
                 </AnimatePresence>
                 
                 {/* Promo Code Card */}
-                <div className="bg-[#0F0F0F] border border-white/5 rounded-[2rem] p-8 space-y-4 mt-6">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Promo Code</h3>
+                <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 mt-6 shadow-2xl">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Promo Code</h3>
                   <div>
                     <select 
-                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white" 
+                      className="w-full bg-black/40 border border-white/[0.05] rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange/50 outline-none transition-all text-white" 
                       value={promoCode} 
                       onChange={e => setPromoCode(e.target.value)} 
                     >
@@ -1638,6 +1641,30 @@ export function BookingPageInner() {
                       <span>-AED {promoDiscount}</span>
                     </div>
                   )}
+                </div>
+
+                {/* Payment Option Card */}
+                <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 mt-6 shadow-2xl">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Payment Option</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentOption('full')}
+                      className={`p-6 rounded-2xl border transition-all flex flex-col items-center justify-center gap-2 ${paymentOption === 'full' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20' : 'bg-white/[0.03] border-white/[0.05] text-white/30 hover:bg-white/[0.05]'}`}
+                    >
+                      <span className="text-xs font-black uppercase tracking-widest">Full Payment</span>
+                      <span className="text-[10px] font-bold">AED {calculateTotal()}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentOption('partial')}
+                      className={`p-6 rounded-2xl border transition-all flex flex-col items-center justify-center gap-2 ${paymentOption === 'partial' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20' : 'bg-white/[0.03] border-white/[0.05] text-white/30 hover:bg-white/[0.05]'}`}
+                    >
+                      <span className="text-xs font-black uppercase tracking-widest">Partial Payment</span>
+                      <span className="text-[10px] font-bold">AED {(calculateTotal() / 2).toFixed(2)}</span>
+                      <span className="text-[8px] opacity-60">Pay 50% now</span>
+                    </button>
+                  </div>
                 </div>
                 
 
