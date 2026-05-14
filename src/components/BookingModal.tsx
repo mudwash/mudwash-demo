@@ -101,6 +101,7 @@ export default function BookingModal({ isOpen, onClose, serviceName }: BookingMo
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       await createBooking({

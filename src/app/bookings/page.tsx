@@ -400,6 +400,7 @@ export function BookingPageInner() {
       processingSuccessRef.current = true;
       const pendingBookingStr = localStorage.getItem("mudwash_pendingBooking");
       if (pendingBookingStr) {
+        localStorage.removeItem("mudwash_pendingBooking"); // Remove immediately to prevent duplicate calls
         const pendingBooking = JSON.parse(pendingBookingStr);
         
         const saveBooking = async () => {
@@ -886,6 +887,7 @@ export function BookingPageInner() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       const serviceSummary = selectedServices.map(sel => {

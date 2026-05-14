@@ -53,6 +53,7 @@ export default function BookingContactForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.terms) return;
 
     const { auth } = await import("@/lib/firebase");
