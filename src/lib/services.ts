@@ -25,6 +25,7 @@ export interface Service {
   icon?: string;
   active: boolean;
   createdAt?: any;
+  order?: number;
 }
 
 const COLLECTION_NAME = "services";
@@ -45,8 +46,12 @@ export const getServices = async (onlyActive = false) => {
       ...doc.data()
     })) as Service[];
     
-    // Sort by createdAt descending (newest first)
+    // Sort by order ascending, then by createdAt descending
     serviceList.sort((a, b) => {
+      const orderA = a.order !== undefined ? a.order : 9999;
+      const orderB = b.order !== undefined ? b.order : 9999;
+      if (orderA !== orderB) return orderA - orderB;
+      
       const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
       const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
       return dateB.getTime() - dateA.getTime();

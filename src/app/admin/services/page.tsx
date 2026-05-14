@@ -6,6 +6,8 @@ import {
   Plus, 
   Edit2, 
   Trash2, 
+  ArrowUp,
+  ArrowDown,
   Sparkles, 
   MoreVertical,
   X,
@@ -310,6 +312,46 @@ export default function ServicesPage() {
     }
   };
 
+  const handleMoveUp = async (service: Service, idx: number, catServices: Service[]) => {
+    if (idx === 0) return;
+    setIsSubmitting(true);
+    try {
+      const prevService = catServices[idx - 1];
+      const currentOrder = service.order !== undefined ? service.order : idx;
+      const prevOrder = prevService.order !== undefined ? prevService.order : idx - 1;
+      
+      await Promise.all([
+        updateService(service.id!, { order: prevOrder }),
+        updateService(prevService.id!, { order: currentOrder })
+      ]);
+      initData();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMoveDown = async (service: Service, idx: number, catServices: Service[]) => {
+    if (idx === catServices.length - 1) return;
+    setIsSubmitting(true);
+    try {
+      const nextService = catServices[idx + 1];
+      const currentOrder = service.order !== undefined ? service.order : idx;
+      const nextOrder = nextService.order !== undefined ? nextService.order : idx + 1;
+      
+      await Promise.all([
+        updateService(service.id!, { order: nextOrder }),
+        updateService(nextService.id!, { order: currentOrder })
+      ]);
+      initData();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const addIncludedItem = () => {
     if (!newItem.trim()) return;
     setFormData({
@@ -445,6 +487,12 @@ export default function ServicesPage() {
                               </div>
                               {/* Actions */}
                               <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={() => handleMoveUp(service, idx, catServices)} disabled={idx === 0} title="Move Up" className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${idx === 0 ? 'opacity-30 cursor-not-allowed' : 'bg-white/5 text-white/30 hover:bg-white hover:text-black'}`}>
+                                  <ArrowUp size={14}/>
+                                </button>
+                                <button onClick={() => handleMoveDown(service, idx, catServices)} disabled={idx === catServices.length - 1} title="Move Down" className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${idx === catServices.length - 1 ? 'opacity-30 cursor-not-allowed' : 'bg-white/5 text-white/30 hover:bg-white hover:text-black'}`}>
+                                  <ArrowDown size={14}/>
+                                </button>
                                 <button onClick={() => setExpandedServiceId(isExpanded ? null : (service.id||null))} title="Manage facilities" className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isExpanded ? 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/20' : 'bg-white/5 text-white/30 hover:bg-white/10 hover:text-white'}`}>
                                   <ChevronRight size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}/>
                                 </button>
