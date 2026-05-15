@@ -1871,7 +1871,7 @@ export function BookingPageInner() {
           
           <button 
             onClick={currentStep === 5 ? (user ? handleSubmit : () => setShowAuthPopup(true)) : handleNext} 
-            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms || !isPhoneVerified || !carDetails.model))} 
+            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || carDetails.model.length < 4 || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms || !isPhoneVerified || carDetails.model.length < 4))} 
 className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-10 sm:h-12 px-4 sm:px-6 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
             {isSubmitting
