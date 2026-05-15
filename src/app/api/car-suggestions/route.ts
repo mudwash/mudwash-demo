@@ -4,7 +4,7 @@ export async function POST(request: Request) {
   try {
     const { term, category } = await request.json();
     
-    if (!term || term.length < 2) {
+    if (!term || term.length < 1) {
       return NextResponse.json([]);
     }
 

@@ -650,14 +650,6 @@ export function BookingPageInner() {
       return;
     }
     
-    if (term.length < 2) {
-      const matches = POPULAR_CARS.filter(c => 
-        c.toLowerCase().includes(term.toLowerCase())
-      );
-      setApiSuggestions(matches);
-      return;
-    }
-
     // Check cache first for instant results
     const cacheKey = `${term}-${carDetails.type}`;
     if (suggestionCache.current[cacheKey]) {
