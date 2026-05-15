@@ -77,6 +77,10 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
         setMapCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       }, (error) => {
         console.error("Error getting location:", error);
+      }, {
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 60000
       });
     }
   }, []);
