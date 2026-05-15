@@ -12,6 +12,8 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ isOpen, onClose, title, children }: BottomSheetProps) {
+  const [bottomOffset, setBottomOffset] = React.useState(0);
+
   // Prevent scrolling when the sheet is open
   React.useEffect(() => {
     if (isOpen) {
@@ -21,6 +23,28 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
     }
     return () => {
       document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Handle keyboard visibility on mobile
+  React.useEffect(() => {
+    const handleVisualViewportResize = () => {
+      if (window.visualViewport) {
+        const offset = window.innerHeight - window.visualViewport.height;
+        // If offset is significant, assume it's the keyboard
+        setBottomOffset(offset > 150 ? offset : 0);
+      }
+    };
+
+    window.visualViewport?.addEventListener('resize', handleVisualViewportResize);
+    window.visualViewport?.addEventListener('scroll', handleVisualViewportResize);
+    
+    // Initial check
+    handleVisualViewportResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleVisualViewportResize);
+      window.visualViewport?.removeEventListener('scroll', handleVisualViewportResize);
     };
   }, [isOpen]);
 
@@ -43,7 +67,11 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[1001] bg-[#0A0A0A] border-t border-white/10 rounded-t-[2rem] max-h-[85vh] overflow-hidden flex flex-col"
+            style={{ 
+              bottom: bottomOffset,
+              maxHeight: bottomOffset ? `calc(85vh - ${bottomOffset}px)` : '85vh'
+            }}
+            className="fixed left-0 right-0 z-[1001] bg-[#0A0A0A] border-t border-white/10 rounded-t-[2rem] overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/5">
