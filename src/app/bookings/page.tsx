@@ -1118,41 +1118,16 @@ export function BookingPageInner() {
                    </div>
                 </div>
 
-                <div className="flex lg:grid lg:grid-cols-4 overflow-x-auto lg:overflow-visible gap-4 sm:gap-6 pb-2 lg:pb-0 snap-x snap-mandatory">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {vehicleTypes.map(v => {
                     const isVSelected = carDetails.type === v.name;
-                    const overrides = (v as any).locationOverrides || {};
-                    const price = selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : v.surcharge;
-                    const imgSrc = v.image || VEHICLE_IMAGES[v.name] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
-
                     return (
                       <button 
                         key={v.id}
                         onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
-                        className={`flex-shrink-0 lg:flex-shrink w-48 sm:w-56 lg:w-full h-28 sm:h-32 rounded-2xl border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
+                        className={`py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all ${isVSelected ? 'bg-brand-orange border-brand-orange text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'}`}
                       >
-                        <img 
-                          src={imgSrc} 
-                          alt={v.name}
-                          className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isVSelected ? 'scale-110 opacity-100' : 'opacity-30 grayscale group-hover:grayscale-0 group-hover:opacity-60'}`} 
-                        />
-                        <div className={`absolute inset-0 bg-gradient-to-t ${isVSelected ? 'from-brand-orange via-brand-orange/20' : 'from-black via-black/60'} to-transparent transition-colors duration-500`} />
-                        
-                        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
-                          <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-1 transition-colors ${isVSelected ? 'text-black' : 'text-white/60'}`}>Category</p>
-                          <h4 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tighter transition-colors ${isVSelected ? 'text-black' : 'text-white'}`}>{v.name}</h4>
-
-                        </div>
-                        
-                        {isVSelected && (
-                          <motion.div 
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-6 right-6 w-10 h-10 bg-black text-brand-orange rounded-2xl flex items-center justify-center shadow-xl border border-white/10"
-                          >
-                            <Check size={20} strokeWidth={4} />
-                          </motion.div>
-                        )}
+                        {v.name}
                       </button>
                     );
                   })}
