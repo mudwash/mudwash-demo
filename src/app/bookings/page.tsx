@@ -1517,7 +1517,22 @@ export function BookingPageInner() {
                       onChange={e => setCarDetails({...carDetails, model: e.target.value})}
                       placeholder="Enter car model"
                     />
-                    <p className="text-[10px] text-white/50 uppercase tracking-widest">{carDetails.type || 'Sedan'}</p>
+                    <div className="relative inline-block">
+                      <select
+                        className="bg-transparent border-none text-[10px] font-black text-brand-orange uppercase tracking-widest focus:outline-none cursor-pointer pr-4 appearance-none"
+                        value={carDetails.type || 'Sedan'}
+                        onChange={e => setCarDetails({...carDetails, type: e.target.value})}
+                      >
+                        {Object.keys(VEHICLE_IMAGES).map(type => (
+                          <option key={type} value={type} className="bg-[#0A0A0A] text-white text-xs">
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-brand-orange/50">
+                        <ChevronDown size={10} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
