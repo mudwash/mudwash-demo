@@ -345,7 +345,9 @@ export function BookingPageInner() {
         const counts: Record<string, number> = {};
         snapshot.docs.forEach(doc => {
           const b = doc.data();
-          counts[b.time] = (counts[b.time] || 0) + 1;
+          if (b.status !== "Cancelled" && b.status !== "Cancelled (System)") {
+            counts[b.time] = (counts[b.time] || 0) + 1;
+          }
         });
         setSlotCounts(counts);
       }, (error) => {
@@ -594,6 +596,8 @@ export function BookingPageInner() {
     directions: ""
   });
   const searchParams = useSearchParams();
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [addressSearchTimeout, setAddressSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Car Suggestions API State
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
@@ -690,6 +694,9 @@ export function BookingPageInner() {
         setVehicleTypes(vData);
         setGarages(gData);
         if (gData.length > 0) setSelectedGarageId(gData[0].id!);
+        if (vData.length > 0) {
+          setCarDetails(prev => prev.type ? prev : { ...prev, type: vData[0].name });
+        }
         if (catData.length > 0) setSelectedCategory(catData[0].name);
 
         const preselectedId = searchParams.get('service');
@@ -1259,7 +1266,7 @@ export function BookingPageInner() {
                 
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory">
-                    {categories.map(catObj => {
+                    {categories.slice(0, 8).map(catObj => {
                       const catName = catObj.name;
                       const isActive = selectedCategory === catName;
                       const IC = ICON_MAP[catObj.icon] || Package;
@@ -1399,7 +1406,15 @@ export function BookingPageInner() {
 
           {/* STEP 3: ENHANCEMENTS */}
           {currentStep === 3 && (() => {
-            const recommended = addons.filter(a => a.active !== false);
+            const recommended = addons.filter(a => {
+              if (a.active === false) return false;
+              if (a.applicableCategories && a.applicableCategories.length > 0) {
+                const selectedServiceObjs = services.filter(s => selectedServices.some(sel => sel.id === s.id));
+                const selectedCats = selectedServiceObjs.map(s => s.category);
+                return a.applicableCategories.some(cat => selectedCats.includes(cat));
+              }
+              return true;
+            });
             return (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                 <div className="space-y-2">
@@ -1423,6 +1438,7 @@ export function BookingPageInner() {
                           <div className="min-w-0">
                             <h3 className="text-sm font-black uppercase italic tracking-tight">{addon.name}</h3>
                             <p className="text-[10px] text-white/40 mt-0.5 line-clamp-2">{addon.description || "Premium add-on service."}</p>
+                            {addon.duration && <p className="text-[9px] text-white/30 mt-0.5 font-bold"><Clock size={10} className="inline mr-1" />{addon.duration}</p>}
                             <div className="flex items-baseline gap-2 mt-1">
                               <span className="text-brand-orange font-bold text-sm">AED {addon.price}</span>
                               <span className="text-xs font-bold text-white/30 line-through italic">AED {Math.round(parseInt(addon.price.replace(/[^\d]/g, '')) * 1.4)}</span>
@@ -1461,8 +1477,10 @@ export function BookingPageInner() {
                   const count = slotCounts[slot] || 0;
                   const clicks = activeSelections[slot] || 0;
                   const totalCount = count + clicks;
-                  const isFull = count >= maxBookings;
                   const isSelected = selectedTime === slot;
+                  // If this user has selected the slot, subtract 1 from clicks for the fullness check
+                  const otherClicks = isSelected ? Math.max(0, clicks - 1) : clicks;
+                  const isFull = (count + otherClicks) >= maxBookings;
                   
                   return (
                     <button 
@@ -1487,6 +1505,17 @@ export function BookingPageInner() {
           {/* STEP 5: REVIEW */}
           {currentStep === 5 && (
             <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
+              <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Vehicle Info</h3>
+                <div className="flex items-center gap-4 bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-white">
+                  <Car size={24} className="text-brand-orange" />
+                  <div>
+                    <p className="text-sm font-bold">{carDetails.model || 'Not specified'}</p>
+                    <p className="text-[10px] text-white/50 uppercase tracking-widest">{carDetails.type || 'Sedan'}</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Contact Info</h3>
                 <input type="text" placeholder="Full Name" className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
@@ -1566,9 +1595,33 @@ export function BookingPageInner() {
                             setFormData({...formData, address: newAddr});
                             localStorage.setItem("userLocation", newAddr);
                             window.dispatchEvent(new Event("locationChanged"));
+                            
+                            if (addressSearchTimeout) clearTimeout(addressSearchTimeout);
+                            if (newAddr.length > 3) {
+                              setAddressSearchTimeout(setTimeout(async () => {
+                                try {
+                                  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(newAddr)}&format=json&addressdetails=1&limit=5`);
+                                  const data = await res.json();
+                                  setAddressSuggestions(data);
+                                } catch (err) {}
+                              }, 500));
+                            } else {
+                              setAddressSuggestions([]);
+                            }
                           }} 
-
                         />
+                        {addressSuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-[#111] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                            {addressSuggestions.map((s, i) => (
+                              <button key={i} type="button" onClick={() => {
+                                setFormData({...formData, address: s.display_name});
+                                setAddressSuggestions([]);
+                              }} className="w-full text-left px-6 py-4 text-xs font-bold text-white/70 hover:text-white hover:bg-white/5 border-b border-white/5 last:border-0 truncate">
+                                {s.display_name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                         <button 
                           onClick={() => setIsMapModalOpen(true)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-brand-orange text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-90 transition-all z-10"

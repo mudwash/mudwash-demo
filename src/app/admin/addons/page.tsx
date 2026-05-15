@@ -34,7 +34,9 @@ export default function AddonsPage() {
     description: "",
     image: "",
     active: true,
-    order: 0
+    order: 0,
+    duration: "",
+    applicableCategories: [] as string[]
   });
 
   const isMountedRef = useRef(true);
@@ -101,7 +103,9 @@ export default function AddonsPage() {
       description: "",
       image: "",
       active: true,
-      order: addons.length
+      order: addons.length,
+      duration: "",
+      applicableCategories: []
     });
     setSelectedAddon(null);
   };
@@ -114,7 +118,9 @@ export default function AddonsPage() {
       description: addon.description || "",
       image: addon.image || "",
       active: addon.active !== false,
-      order: addon.order || 0
+      order: addon.order || 0,
+      duration: addon.duration || "",
+      applicableCategories: addon.applicableCategories || []
     });
     setIsModalOpen(true);
     setActiveDropdown(null);
@@ -345,6 +351,32 @@ export default function AddonsPage() {
                     className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all h-24"
                     placeholder="Describe the add-on service..."
                   />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Duration */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Duration</label>
+                    <input 
+                      type="text" 
+                      value={formData.duration}
+                      onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
+                      placeholder="e.g. 30 mins"
+                    />
+                  </div>
+
+                  {/* Applicable Categories */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Applicable Categories</label>
+                    <input 
+                      type="text" 
+                      value={formData.applicableCategories.join(", ")}
+                      onChange={(e) => setFormData(prev => ({ ...prev, applicableCategories: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))}
+                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
+                      placeholder="e.g. Ceramic Coating, Polish (leave empty for all)"
+                    />
+                  </div>
                 </div>
 
                 {/* Image Upload */}

@@ -20,6 +20,8 @@ export interface Addon {
   active?: boolean;
   order?: number;
   icon?: string;
+  duration?: string;
+  applicableCategories?: string[];
 }
 
 const COLLECTION_NAME = "addons";
