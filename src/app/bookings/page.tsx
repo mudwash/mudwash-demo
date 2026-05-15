@@ -1477,7 +1477,7 @@ export function BookingPageInner() {
           {/* STEP 5: REVIEW */}
           {currentStep === 5 && (
             <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-2xl mx-auto space-y-8">
-              <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 shadow-2xl relative z-[100]">
+              <div className="bg-[#0F0F0F]/80 backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 shadow-2xl relative z-[100]">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Vehicle Info</h3>
                 <div className="flex items-center gap-4 bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-white">
                   <CarIcon size={24} className="text-brand-orange" />
@@ -1551,7 +1551,7 @@ export function BookingPageInner() {
                 </div>
               </div>
 
-              <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl relative z-[1]">
+              <div className="bg-[#0F0F0F]/80 backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl relative z-[1]">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-brand-orange/10 flex items-center justify-center text-brand-orange">
                     <span className="text-xs font-black">01</span>
