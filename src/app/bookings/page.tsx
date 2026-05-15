@@ -1820,23 +1820,28 @@ export function BookingPageInner() {
                     </div>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Payment Option</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-3">
                     <button 
                       type="button"
                       onClick={() => setPaymentOption('full')}
-                      className={`p-6 rounded-2xl border transition-all flex flex-col items-center justify-center gap-2 ${paymentOption === 'full' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20' : 'bg-white/[0.03] border-white/[0.05] text-white/30 hover:bg-white/[0.05]'}`}
+                      className={`p-4 rounded-xl border transition-all flex items-center justify-between ${paymentOption === 'full' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20 border-transparent' : 'bg-white/[0.02] border-white/[0.05] text-white/70 hover:bg-white/[0.05]'}`}
                     >
-                      <span className="text-xs font-black uppercase tracking-widest">Full Payment</span>
-                      <span className="text-[10px] font-bold">AED {calculateTotal()}</span>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-black uppercase tracking-widest">Full Payment</span>
+                        <span className="text-[10px] opacity-60">Pay the full amount now</span>
+                      </div>
+                      <span className="text-sm font-black">AED {calculateTotal()}</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => setPaymentOption('partial')}
-                      className={`p-6 rounded-2xl border transition-all flex flex-col items-center justify-center gap-2 ${paymentOption === 'partial' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20' : 'bg-white/[0.03] border-white/[0.05] text-white/30 hover:bg-white/[0.05]'}`}
+                      className={`p-4 rounded-xl border transition-all flex items-center justify-between ${paymentOption === 'partial' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20 border-transparent' : 'bg-white/[0.02] border-white/[0.05] text-white/70 hover:bg-white/[0.05]'}`}
                     >
-                      <span className="text-xs font-black uppercase tracking-widest">Partial Payment</span>
-                      <span className="text-[10px] font-bold">AED {(calculateTotal() / 2).toFixed(2)}</span>
-                      <span className="text-[8px] opacity-60">Pay 50% now</span>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-black uppercase tracking-widest">Partial Payment</span>
+                        <span className="text-[10px] opacity-60">Pay 50% now, rest later</span>
+                      </div>
+                      <span className="text-sm font-black">AED {(calculateTotal() / 2).toFixed(2)}</span>
                     </button>
                   </div>
                 </div>
