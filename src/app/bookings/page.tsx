@@ -1099,7 +1099,7 @@ export function BookingPageInner() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-20 pb-24">
+      <main className="max-w-7xl mx-auto px-6 pt-20 pb-40">
         <AnimatePresence mode="wait">
           
           {/* STEP 1: LOCATION & VEHICLE SELECTION */}
@@ -1206,7 +1206,7 @@ export function BookingPageInner() {
                 </div>
 
                 <div className="max-w-2xl relative">
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mb-6 px-4">Car Model Name</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mb-3 px-4">Car Model Name</p>
                   <div className="relative group">
                     <input 
                       type="text" 
@@ -1215,7 +1215,7 @@ export function BookingPageInner() {
                       onChange={e => setCarDetails(prev => ({ ...prev, model: e.target.value }))}
                       onFocus={() => setIsFocused(true)}
                       onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-                      className="w-full bg-white/5 border border-white/5 rounded-[2rem] px-10 py-6 text-lg font-bold italic focus:outline-none focus:border-brand-orange/50 focus:bg-white/[0.08] transition-all placeholder:text-white/10"
+                      className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-sm sm:text-lg font-bold italic focus:outline-none focus:border-brand-orange/50 focus:bg-white/[0.08] transition-all placeholder:text-white/10"
                     />
                     <div className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-orange/10 flex items-center justify-center text-brand-orange/40 group-focus-within:text-brand-orange transition-colors">
                       <CarIcon size={20} />
