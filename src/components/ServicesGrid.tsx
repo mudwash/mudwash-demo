@@ -162,6 +162,12 @@ export default function ServicesGrid() {
                         }`}
                       >
                         <div className={`absolute inset-0 bg-gradient-to-br from-brand-orange/8 to-transparent transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}/>
+                        {index === 0 && (
+                          <div className="absolute top-1.5 left-1.5 bg-red-500 border border-red-600 text-white text-[6px] font-black uppercase px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-[0_5px_15px_rgba(239,68,68,0.3)] z-20">
+                            <Flame size={6} fill="currentColor" />
+                            <span>30% OFF</span>
+                          </div>
+                        )}
                         <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
                           <Icon size={28} style={{ color: isActive ? '#000' : color }}/>
                         </div>

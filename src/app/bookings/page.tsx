@@ -1306,15 +1306,9 @@ export function BookingPageInner() {
                           <div className="flex justify-between items-start mb-auto">
                             <div className="flex gap-2">
                               {index === 0 && (
-                                <div className="bg-brand-orange/20 backdrop-blur-md border border-brand-orange/30 text-brand-orange text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(246,150,33,0.2)]">
+                                <div className="bg-brand-orange/20 backdrop-blur-md border border-brand-orange/30 text-brand-orange text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(246,150,33,0.25)]">
                                   <Star size={8} fill="currentColor" />
                                   <span>Recommended</span>
-                                </div>
-                              )}
-                              {index === 1 && (
-                                <div className="bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-400 text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(239,68,68,0.2)]">
-                                  <Flame size={8} fill="currentColor" />
-                                  <span>30% OFF</span>
                                 </div>
                               )}
                             </div>
