@@ -1107,7 +1107,7 @@ export function BookingPageInner() {
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
               
               {/* Vehicle Selection */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
                       <CarIcon size={20} />
@@ -1118,7 +1118,7 @@ export function BookingPageInner() {
                    </div>
                 </div>
 
-                <div className="flex lg:grid lg:grid-cols-4 overflow-x-auto lg:overflow-visible gap-4 sm:gap-6 pb-6 lg:pb-0 snap-x snap-mandatory">
+                <div className="flex lg:grid lg:grid-cols-4 overflow-x-auto lg:overflow-visible gap-4 sm:gap-6 pb-2 lg:pb-0 snap-x snap-mandatory">
                   {vehicleTypes.map(v => {
                     const isVSelected = carDetails.type === v.name;
                     const overrides = (v as any).locationOverrides || {};
