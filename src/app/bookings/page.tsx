@@ -1567,14 +1567,31 @@ export function BookingPageInner() {
                 </div>
                 <button 
                   type="button"
-                  onClick={() => alert("OTP sent via WhatsApp!")}
-                  className="w-full bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-emerald-500/10 hover:border-emerald-500/20 mt-2 transition-all flex items-center justify-center gap-2"
+                  onClick={async () => {
+                    if (!formData.phone) {
+                      alert("Please enter a phone number first!");
+                      return;
+                    }
+                    try {
+                      const res = await fetch('/api/send-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: formData.phone })
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        alert("OTP sent successfully!");
+                      } else {
+                        alert("Failed to send OTP: " + (data.error || "Unknown error"));
+                      }
+                    } catch (e) {
+                      alert("Error sending OTP");
+                    }
+                  }}
+                  className="w-full bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-brand-orange/10 hover:border-brand-orange/20 mt-2 transition-all flex items-center justify-center gap-2"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.67-1.614-.917-2.21-.242-.58-.487-.502-.67-.512-.174-.01-.373-.01-.572-.01-.199 0-.523.074-.797.373-.273.3-.1.74-.1.74s-.27 1.054.42 2.6c.69 1.547 2.06 2.519 2.208 2.717.149.198 3.036 4.637 7.356 6.508 1.028.444 1.832.709 2.457.908 1.033.328 1.974.282 2.717.172.828-.123 2.544-.694 2.905-1.362.36-.668.36-1.24.252-1.362-.108-.124-.397-.198-.694-.347z" fill="currentColor"/>
-                    <path d="M12.004 2c-5.518 0-10 4.482-10 10 0 1.758.455 3.411 1.25 4.86L1.5 22.5l5.854-1.535A9.957 9.957 0 0012.004 22c5.518 0 10-4.482 10-10s-4.482-10-10-10zm0 18a7.963 7.963 0 01-4.084-1.12l-.293-.174-3.483.913.93-3.398-.192-.306A7.962 7.962 0 014.004 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z" fill="currentColor"/>
-                  </svg>
-                  Verify via WhatsApp
+                  <Check size={14} />
+                  Verify
                 </button>
               </div>
 
