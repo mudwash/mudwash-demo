@@ -474,21 +474,22 @@ export default function Hero() {
               />
             </div>
 
-            {locationSearchQuery.trim() !== '' && (
-              <button
-                onClick={() => saveLocationDetails(locationSearchQuery)}
-                className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-bold text-white text-sm">Use: "{locationSearchQuery}"</p>
-                  <p className="text-xs text-white/40">Custom location</p>
-                </div>
-                <div className="text-brand-orange">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-              </button>
-            )}
           </div>
+
+          {locationSearchQuery.trim() !== '' && (
+            <button
+              onClick={() => saveLocationDetails(locationSearchQuery)}
+              className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
+            >
+              <div>
+                <p className="font-bold text-white text-sm">Use: "{locationSearchQuery}"</p>
+                <p className="text-xs text-white/40">Custom location</p>
+              </div>
+              <div className="text-brand-orange">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+            </button>
+          )}
 
           {suggestions.length > 0 ? (
             <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
