@@ -287,6 +287,9 @@ export function BookingPageInner() {
   const [paymentOption, setPaymentOption] = useState<'full' | 'partial'>('full');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   // Removed force redirect to allow guest browsing up to step 5
 
@@ -1581,6 +1584,7 @@ export function BookingPageInner() {
                       const data = await res.json();
                       if (data.success) {
                         alert("OTP sent successfully!");
+                        setIsOtpSent(true);
                       } else {
                         alert("Failed to send OTP: " + (data.error || "Unknown error"));
                       }
@@ -1593,6 +1597,49 @@ export function BookingPageInner() {
                   <Check size={14} />
                   Verify
                 </button>
+
+                {isOtpSent && !isPhoneVerified && (
+                  <div className="space-y-4 mt-4">
+                    <input 
+                      type="text" 
+                      placeholder="Enter OTP" 
+                      className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" 
+                      value={otp} 
+                      onChange={e => setOtp(e.target.value)} 
+                    />
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/verify-otp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone: formData.phone, otp })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            alert("Phone verified successfully!");
+                            setIsPhoneVerified(true);
+                          } else {
+                            alert("Verification failed: " + (data.error || "Unknown error"));
+                          }
+                        } catch (e) {
+                          alert("Error verifying OTP");
+                        }
+                      }}
+                      className="w-full bg-brand-orange text-black font-black uppercase tracking-widest py-4 rounded-xl hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      Verify OTP
+                    </button>
+                  </div>
+                )}
+
+                {isPhoneVerified && (
+                  <div className="mt-4 flex items-center gap-2 text-emerald-500 text-sm font-bold">
+                    <Check size={16} />
+                    <span>Phone number verified</span>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
@@ -1790,7 +1837,7 @@ export function BookingPageInner() {
           
           <button 
             onClick={currentStep === 5 ? (user ? handleSubmit : () => setShowAuthPopup(true)) : handleNext} 
-            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms))} 
+            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms || !isPhoneVerified))} 
             className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-10 sm:h-12 px-4 sm:px-6 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
             {isSubmitting
