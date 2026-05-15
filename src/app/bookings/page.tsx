@@ -1690,18 +1690,7 @@ export function BookingPageInner() {
                 <AnimatePresence mode="wait">
                   {!showMap ? (
                     <motion.div key="textInput" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
-                      <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
-                        {["Home", "Work", "Other"].map(type => (
-                          <button 
-                            key={type} 
-                            type="button"
-                            onClick={() => setAddressDetails({...addressDetails, type: type as any})} 
-                            className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${addressDetails.type === type ? 'bg-brand-orange text-black shadow-lg' : 'text-white/30 hover:text-white'}`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
+
                       <div className="relative group">
                         <input 
                           type="text" 
