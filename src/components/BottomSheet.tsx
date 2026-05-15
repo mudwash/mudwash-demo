@@ -59,7 +59,7 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
             </div>
 
             {/* Content */}
-            <div className="flex-grow overflow-y-auto p-6">
+            <div className="flex-grow overflow-y-auto">
               {children}
             </div>
           </motion.div>

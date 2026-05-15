@@ -436,57 +436,59 @@ export default function Hero() {
         title={locationStep === "area" ? "Choose Location" : "Add Address Details"}
       >
         {locationStep === "area" ? (
-        <div className="space-y-4">
-          {/* Type tabs */}
-          <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
-            {(["Home", "Work", "Other"] as const).map(t => (
-              <button key={t} onClick={() => setLocationType(t)}
-                className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locationType === t ? 'bg-brand-orange text-black' : 'text-white/30 hover:text-white'}`}
-              >{t}</button>
-            ))}
-          </div>
+        <div className="space-y-4 p-6">
+          <div className="sticky top-0 bg-[#0A0A0A] z-10 -mx-6 px-6 -mt-6 pt-6 space-y-4 pb-4 border-b border-white/5">
+            {/* Type tabs */}
+            <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
+              {(["Home", "Work", "Other"] as const).map(t => (
+                <button key={t} onClick={() => setLocationType(t)}
+                  className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${locationType === t ? 'bg-brand-orange text-black' : 'text-white/30 hover:text-white'}`}
+                >{t}</button>
+              ))}
+            </div>
 
-          <button
-            onClick={() => {
-              setIsMapOpen(true);
-              setShowLocationPopup(false);
-            }}
-            className="w-full bg-brand-orange text-black font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
-          >
-            <Crosshair size={16} />
-            Use Current Location
-          </button>
-
-          {/* Search Input */}
-          <div className="relative">
-            <input 
-              type="text" 
-              placeholder="Search area..." 
-              value={locationSearchQuery}
-              onChange={e => setLocationSearchQuery(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && locationSearchQuery.trim() !== '') {
-                  saveLocationDetails(locationSearchQuery);
-                }
-              }}
-              className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
-            />
-          </div>
-
-          {locationSearchQuery.trim() !== '' && (
             <button
-              onClick={() => saveLocationDetails(locationSearchQuery)}
-              className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between mb-2"
+              onClick={() => {
+                setIsMapOpen(true);
+                setShowLocationPopup(false);
+              }}
+              className="w-full bg-brand-orange text-black font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
             >
-              <div>
-                <p className="font-bold text-white text-sm">Use: "{locationSearchQuery}"</p>
-                <p className="text-xs text-white/40">Custom location</p>
-              </div>
-              <div className="text-brand-orange">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
+              <Crosshair size={16} />
+              Use Current Location
             </button>
-          )}
+
+            {/* Search Input */}
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="Search area..." 
+                value={locationSearchQuery}
+                onChange={e => setLocationSearchQuery(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && locationSearchQuery.trim() !== '') {
+                    saveLocationDetails(locationSearchQuery);
+                  }
+                }}
+                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
+              />
+            </div>
+
+            {locationSearchQuery.trim() !== '' && (
+              <button
+                onClick={() => saveLocationDetails(locationSearchQuery)}
+                className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
+              >
+                <div>
+                  <p className="font-bold text-white text-sm">Use: "{locationSearchQuery}"</p>
+                  <p className="text-xs text-white/40">Custom location</p>
+                </div>
+                <div className="text-brand-orange">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              </button>
+            )}
+          </div>
 
           {suggestions.length > 0 ? (
             <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
@@ -529,7 +531,7 @@ export default function Hero() {
           )}
         </div>
         ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
           <div className="bg-brand-orange/10 border border-brand-orange/20 rounded-xl px-4 py-3 flex items-center gap-3">
             <MapPin size={16} className="text-brand-orange shrink-0" />
             <p className="text-xs font-bold text-white">{selectedLocation}</p>
@@ -573,7 +575,7 @@ export default function Hero() {
         }}
         title="Select Vehicle"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
           {carHistory.length > 0 ? (
             <div className="space-y-2">
               {carHistory.map((car, index) => (
