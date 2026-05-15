@@ -290,8 +290,18 @@ export function BookingPageInner() {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [otpAttempts, setOtpAttempts] = useState(0);
 
-  // Removed force redirect to allow guest browsing up to step 5
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -1571,6 +1581,7 @@ export function BookingPageInner() {
                 {!isPhoneVerified && (
                   <button 
                     type="button"
+                    disabled={resendTimer > 0}
                     onClick={async () => {
                       if (!formData.phone) {
                         alert("Please enter a phone number first!");
@@ -1591,12 +1602,29 @@ export function BookingPageInner() {
                       } catch (e) {
                         alert("Error calling API. Showing OTP field for testing anyway.");
                       }
+                      
                       setIsOtpSent(true); // Always show for testing
+                      
+                      // Set timer based on attempts
+                      if (otpAttempts === 0) {
+                        setResendTimer(60); // 1 minute for first resend
+                      } else if (otpAttempts === 1) {
+                        setResendTimer(180); // 3 minutes for second resend (available for 3rd time)
+                      } else {
+                        setResendTimer(180); // Keep it at 3 mins for subsequent attempts
+                      }
+                      setOtpAttempts(prev => prev + 1);
                     }}
-                    className="w-full bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-brand-orange/10 hover:border-brand-orange/20 mt-2 transition-all flex items-center justify-center gap-2"
+                    className={`w-full text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border mt-2 transition-all flex items-center justify-center gap-2 ${
+                      resendTimer > 0 
+                        ? 'bg-white/5 border-white/5 text-white/20 cursor-not-allowed' 
+                        : 'bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange border-brand-orange/10 hover:border-brand-orange/20'
+                    }`}
                   >
-                    <Check size={14} />
-                    VERIFY
+                    {resendTimer > 0 ? <Clock size={14} /> : <Check size={14} />}
+                    {resendTimer > 0 
+                      ? `Resend in ${Math.floor(resendTimer / 60)}:${(resendTimer % 60).toString().padStart(2, '0')}` 
+                      : (otpAttempts > 0 ? 'RESEND OTP' : 'VERIFY')}
                   </button>
                 )}
 
