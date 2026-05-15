@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { term, category } = await request.json();
+    console.log("API Request term:", term, "category:", category);
     
     if (!term || term.length < 1) {
       return NextResponse.json([]);
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
         messages: [
           { 
             role: "system", 
-            content: `You are a car database. Return ONLY a valid JSON array of strings containing up to 5 vehicle models that match or are similar to the user's search term. The user has selected the vehicle category "${category || 'Car'}". Try to prioritize vehicles that belong to this category. However, if no vehicles of this category match the search term, return matching vehicles from other categories as well so the user gets results. Do not include markdown formatting, backticks, or any text other than the JSON array.` 
+            content: `You are a car database. Return ONLY a valid JSON array of strings containing up to 5 vehicle models that match or are similar to the user's search term. CRITICAL: You MUST include the brand name in each string (e.g., return "Nissan Altima" instead of just "Altima", or "Toyota Prado" instead of just "Prado"). The user has selected the vehicle category "${category || 'Car'}". Try to prioritize vehicles that belong to this category. However, if no vehicles of this category match the search term, return matching vehicles from other categories as well so the user gets results. Do not include markdown formatting, backticks, or any text other than the JSON array.` 
           },
           { role: "user", content: term }
         ],
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
+    console.log("AI Response Content:", content);
     
     if (content) {
       try {
