@@ -1130,7 +1130,7 @@ export function BookingPageInner() {
                         <button 
                           key={v.id}
                           onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
-                          className={`flex-shrink-0 lg:flex-shrink w-64 sm:w-72 lg:w-full h-36 sm:h-40 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
+                          className={`flex-shrink-0 lg:flex-shrink w-48 sm:w-56 lg:w-full h-28 sm:h-32 rounded-2xl border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
                         >
                           <img 
                             src={imgSrc} 
