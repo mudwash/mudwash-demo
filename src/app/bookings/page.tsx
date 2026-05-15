@@ -1568,35 +1568,37 @@ export function BookingPageInner() {
                     />
                   </div>
                 </div>
-                <button 
-                  type="button"
-                  onClick={async () => {
-                    if (!formData.phone) {
-                      alert("Please enter a phone number first!");
-                      return;
-                    }
-                    try {
-                      const res = await fetch('/api/send-otp', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone: formData.phone })
-                      });
-                      const data = await res.json();
-                      if (data.success) {
-                        alert("OTP sent successfully!");
-                      } else {
-                        alert("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
+                {!isPhoneVerified && (
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      if (!formData.phone) {
+                        alert("Please enter a phone number first!");
+                        return;
                       }
-                    } catch (e) {
-                      alert("Error calling API. Showing OTP field for testing anyway.");
-                    }
-                    setIsOtpSent(true); // Always show for testing
-                  }}
-                  className="w-full bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-brand-orange/10 hover:border-brand-orange/20 mt-2 transition-all flex items-center justify-center gap-2"
-                >
-                  <Check size={14} />
-                  VERIFY
-                </button>
+                      try {
+                        const res = await fetch('/api/send-otp', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ phone: formData.phone })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert("OTP sent successfully!");
+                        } else {
+                          alert("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
+                        }
+                      } catch (e) {
+                        alert("Error calling API. Showing OTP field for testing anyway.");
+                      }
+                      setIsOtpSent(true); // Always show for testing
+                    }}
+                    className="w-full bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-brand-orange/10 hover:border-brand-orange/20 mt-2 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Check size={14} />
+                    VERIFY
+                  </button>
+                )}
 
                 {isOtpSent && !isPhoneVerified && (
                   <div className="space-y-4 mt-4">
