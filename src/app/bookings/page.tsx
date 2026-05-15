@@ -1584,18 +1584,18 @@ export function BookingPageInner() {
                       const data = await res.json();
                       if (data.success) {
                         alert("OTP sent successfully!");
-                        setIsOtpSent(true);
                       } else {
-                        alert("Failed to send OTP: " + (data.error || "Unknown error"));
+                        alert("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
                       }
                     } catch (e) {
-                      alert("Error sending OTP");
+                      alert("Error calling API. Showing OTP field for testing anyway.");
                     }
+                    setIsOtpSent(true); // Always show for testing
                   }}
                   className="w-full bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border border-brand-orange/10 hover:border-brand-orange/20 mt-2 transition-all flex items-center justify-center gap-2"
                 >
                   <Check size={14} />
-                  Verify
+                  VERIFY
                 </button>
 
                 {isOtpSent && !isPhoneVerified && (
