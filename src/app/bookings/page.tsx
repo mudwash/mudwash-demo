@@ -1060,8 +1060,12 @@ export function BookingPageInner() {
     <div className="min-h-screen bg-[#0A0A0A] text-white selection:bg-brand-orange/30 font-sans overflow-x-hidden">
       <ProgressBar progress={(currentStep / 5) * 100} />
 
-      <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-5xl z-50 bg-white/10 backdrop-blur-2xl border border-white/10 h-20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        <div className="h-full px-8 flex items-center justify-between">
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-5xl z-50 bg-black/60 backdrop-blur-2xl border border-white/10 h-20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img src={VEHICLE_IMAGES[carDetails.type || "Sedan"]} className="w-full h-full object-cover opacity-30" />
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="h-full px-8 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-2">
             <button onClick={handleBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
               <ChevronLeft size={20} />
