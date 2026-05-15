@@ -1175,7 +1175,7 @@ export function BookingPageInner() {
 
                   {/* Suggestions via OpenDataSoft API */}
                   <AnimatePresence>
-                    {isFocused && (apiSuggestions.length > 0 || isApiLoading) && (
+                    {isFocused && carDetails.model.trim().length >= 1 && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10, scale: 0.95 }} 
                         animate={{ opacity: 1, y: 0, scale: 1 }} 
@@ -1187,6 +1187,11 @@ export function BookingPageInner() {
                             <div className="px-10 py-6 flex items-center gap-3 text-brand-orange/50 italic text-xs">
                               <Loader2 className="animate-spin" size={14}/>
                               <span className="font-black uppercase tracking-widest">Searching Catalog...</span>
+                            </div>
+                          )}
+                          {!isApiLoading && apiSuggestions.length === 0 && (
+                            <div className="px-10 py-6 text-white/30 italic text-xs">
+                              <span className="font-black uppercase tracking-widest">No exact match found. You can type any name!</span>
                             </div>
                           )}
                           {apiSuggestions.map((car, idx) => (
@@ -1484,7 +1489,7 @@ export function BookingPageInner() {
                     
                     {/* Suggestions in Review Step */}
                     <AnimatePresence>
-                      {isFocused && (apiSuggestions.length > 0 || isApiLoading) && (
+                      {isFocused && carDetails.model.trim().length >= 1 && (
                         <motion.div 
                           initial={{ opacity: 0, y: 10, scale: 0.95 }} 
                           animate={{ opacity: 1, y: 0, scale: 1 }} 
