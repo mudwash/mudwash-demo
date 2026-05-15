@@ -1185,10 +1185,10 @@ export function BookingPageInner() {
                   <AnimatePresence>
                     {isFocused && (apiSuggestions.length > 0 || isApiLoading) && (
                       <motion.div 
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }} 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }} 
                         animate={{ opacity: 1, y: 0, scale: 1 }} 
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }} 
-                        className="absolute left-0 right-0 bottom-full mb-4 bg-[#111111] border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10001] overflow-hidden backdrop-blur-xl"
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }} 
+                        className="absolute left-0 right-0 top-full mt-4 bg-[#111111] border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10001] overflow-hidden backdrop-blur-xl"
                       >
                         <div className="max-h-72 overflow-y-auto custom-scrollbar py-4">
                           {isApiLoading && (
