@@ -491,8 +491,9 @@ export default function Hero() {
             </button>
           )}
 
-          {suggestions.length > 0 ? (
-            <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto no-scrollbar">
+          {suggestions.length > 0 && (
+            <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto no-scrollbar mb-4">
+              <p className="text-[10px] font-black uppercase text-white/30 mb-1">Search Results</p>
               {suggestions.map((loc, index) => (
                 <button
                   key={`${loc}-${index}`}
@@ -513,9 +514,12 @@ export default function Hero() {
                 </button>
               ))}
             </div>
-          ) : (
+          )}
+
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase text-white/30 mb-1">Popular Locations</p>
             <div className="grid grid-cols-2 gap-2">
-              {DUBAI_LOCATIONS.filter(loc => loc.toLowerCase().includes(locationSearchQuery.toLowerCase())).map((loc) => (
+              {DUBAI_LOCATIONS.map((loc) => (
                 <button
                   key={loc}
                   onClick={() => saveLocationDetails(loc)}
@@ -529,7 +533,7 @@ export default function Hero() {
                 </button>
               ))}
             </div>
-          )}
+          </div>
         </div>
         ) : (
         <div className="space-y-4 p-6">
