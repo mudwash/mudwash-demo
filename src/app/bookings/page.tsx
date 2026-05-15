@@ -1208,7 +1208,7 @@ export function BookingPageInner() {
                             >
                               <div className="flex flex-col">
                                 <span className="text-sm uppercase tracking-tight">{car}</span>
-                                <span className="text-[9px] text-brand-orange/70 font-black uppercase tracking-widest group-hover/item:text-brand-orange transition-colors">
+                                <span className="text-[9px] opacity-40 uppercase tracking-widest group-hover/item:opacity-70 transition-opacity">
                                   {KNOWN_SUVS.includes(car) ? 'SUV CLASS' : carDetails.type ? `${carDetails.type} CLASS` : 'WORLDWIDE DATABASE'}
                                 </span>
                               </div>

@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         messages: [
           { 
             role: "system", 
-            content: `You are a car database. Return ONLY a valid JSON array of strings containing up to 5 vehicle models that match or are similar to the user's search term. CRITICAL: The user has selected the vehicle category "${category || 'Car'}". You MUST ONLY return vehicles that strictly belong to this category. For example, if category is 'VAN', return only vans (e.g., Honda Odyssey). DO NOT return motorcycles, sedans, or other types if they do not fit the category "${category || 'Car'}". If no matching vehicles of this category exist for the search term, return an empty array []. Do not include markdown formatting, backticks, or any text other than the JSON array.` 
+            content: `You are a car database. Return ONLY a valid JSON array of strings containing up to 5 vehicle models that match or are similar to the user's search term. The user has selected the vehicle category "${category || 'Car'}". Try to prioritize vehicles that belong to this category. However, if no vehicles of this category match the search term, return matching vehicles from other categories as well so the user gets results. Do not include markdown formatting, backticks, or any text other than the JSON array.` 
           },
           { role: "user", content: term }
         ],
