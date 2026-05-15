@@ -1209,7 +1209,7 @@ export function BookingPageInner() {
                               <div className="flex flex-col">
                                 <span className="text-sm uppercase tracking-tight">{car}</span>
                                 <span className="text-[9px] opacity-40 uppercase tracking-widest group-hover/item:opacity-70 transition-opacity">
-                                  {carDetails.type ? `${carDetails.type} CLASS` : 'WORLDWIDE DATABASE'}
+                                  {KNOWN_SUVS.includes(car) ? 'SUV CLASS' : carDetails.type ? `${carDetails.type} CLASS` : 'WORLDWIDE DATABASE'}
                                 </span>
                               </div>
                               <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover/item:bg-black/20 transition-colors">
