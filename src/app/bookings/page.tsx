@@ -1,5 +1,5 @@
 'use client';
-
+// Trigger recompile to fix ChunkLoadError
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -979,13 +979,7 @@ export function BookingPageInner() {
   const filteredServices = services.filter(s => {
     const sCat = (s.category || "").toLowerCase().trim();
     const activeCat = (selectedCategory || "").toLowerCase().trim();
-    if (sCat === activeCat) return true;
-    if (activeCat === "exterior wash" && (sCat.includes("exterior") || sCat.includes("wash") || sCat === "general")) return true;
-    if (activeCat === "interior cleaning" && (sCat.includes("interior") || sCat.includes("clean"))) return true;
-    if (activeCat === "full detailing" && (sCat.includes("detail") || sCat.includes("full"))) return true;
-    if (activeCat === "ceramic coating" && (sCat.includes("ceramic") || sCat.includes("coat"))) return true;
-    if (activeCat === "paint protection" && (sCat.includes("paint") || sCat.includes("protect"))) return true;
-    return false;
+    return sCat === activeCat;
   });
 
   const timeSlots = scheduleSettings?.timeSlots || [
@@ -1265,20 +1259,20 @@ export function BookingPageInner() {
                 
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory">
-                    {(() => {
-                      const derivedCats = Array.from(new Set(services.map(s => s.category).filter(Boolean)))
-                        .filter(cat => cat.toUpperCase() !== "NEW CATEGORY");
-                      return derivedCats.map(catName => {
-                        const catObj = categories.find(c => c.name === catName);
-                        const isActive = selectedCategory === catName;
-                        const IC = (catObj && ICON_MAP[catObj.icon]) || Package;
-                        const serviceCount = services.filter(s => s.category === catName).length;
-                        return (
-                          <button 
-                            key={catName} 
-                            onClick={() => setSelectedCategory(catName)} 
-                            className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
-                          >
+                    {categories.map(catObj => {
+                      const catName = catObj.name;
+                      const isActive = selectedCategory === catName;
+                      const IC = ICON_MAP[catObj.icon] || Package;
+                      const serviceCount = services.filter(s => s.category === catName).length;
+                      
+                      if (serviceCount === 0) return null;
+                      
+                      return (
+                        <button 
+                          key={catObj.id || catName} 
+                          onClick={() => setSelectedCategory(catName)} 
+                          className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
+                        >
                           <IC size={24} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
                           <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{catName}</span>
                           {/* Badge with service count */}
@@ -1287,8 +1281,7 @@ export function BookingPageInner() {
                           </div>
                         </button>
                       );
-                    });
-                  })()}
+                    })}
                   </div>
                 </div>
               </div>
