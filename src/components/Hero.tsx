@@ -11,11 +11,17 @@ import dynamic from "next/dynamic";
 
 const InteractiveMapModal = dynamic(() => import("@/components/InteractiveMapModal"), { ssr: false });
 
-const DUBAI_LOCATIONS = [
+const UAE_LOCATIONS = [
   "Downtown Dubai",
   "Dubai Marina",
-  "Jumeirah Village Circle",
   "Palm Jumeirah",
+  "Abu Dhabi Corniche",
+  "Yas Island, Abu Dhabi",
+  "Al Majaz, Sharjah",
+  "Ajman Corniche",
+  "Al Hamra, Ras Al Khaimah",
+  "Fujairah City",
+  "Jumeirah Village Circle",
   "Business Bay",
   "JLT",
   "Al Barsha",
@@ -25,9 +31,8 @@ const DUBAI_LOCATIONS = [
   "Bur Dubai",
   "Silicon Oasis",
   "Jumeirah",
-  "Al Quoz",
-  "Discovery Gardens",
-  "International City",
+  "Al Quoz"
+];
 ];
 
 const heroData = [
@@ -518,7 +523,7 @@ export default function Hero() {
           <div className="space-y-2">
             <p className="text-[10px] font-black uppercase text-white/30 mb-1">Popular Locations</p>
             <div className="grid grid-cols-2 gap-2">
-              {DUBAI_LOCATIONS.map((loc) => (
+              {UAE_LOCATIONS.map((loc) => (
                 <button
                   key={loc}
                   onClick={() => saveLocationDetails(loc)}
