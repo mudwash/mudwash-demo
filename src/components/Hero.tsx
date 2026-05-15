@@ -205,7 +205,8 @@ export default function Hero() {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationSearchQuery}&countrycodes=ae&limit=5`);
         const data = await res.json();
-        setSuggestions(data.map((item: any) => item.display_name));
+        const uniqueNames = Array.from(new Set(data.map((item: any) => item.display_name))) as string[];
+        setSuggestions(uniqueNames);
       } catch (error) {
         console.error(error);
       }
