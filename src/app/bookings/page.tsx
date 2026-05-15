@@ -1621,7 +1621,6 @@ export function BookingPageInner() {
                         : 'bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange border-brand-orange/10 hover:border-brand-orange/20'
                     }`}
                   >
-                    {resendTimer > 0 ? <Clock size={14} /> : <Check size={14} />}
                     {resendTimer > 0 
                       ? `Resend in ${Math.floor(resendTimer / 60)}:${(resendTimer % 60).toString().padStart(2, '0')}` 
                       : (otpAttempts > 0 ? 'RESEND OTP' : 'VERIFY')}
