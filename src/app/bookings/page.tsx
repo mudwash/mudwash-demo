@@ -1545,7 +1545,12 @@ export function BookingPageInner() {
               </div>
 
               <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Contact Info</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                    <span className="text-xs font-black">01</span>
+                  </div>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Contact Info</h3>
+                </div>
                 <input type="text" placeholder="Full Name" className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative group">
@@ -1667,9 +1672,14 @@ export function BookingPageInner() {
 
               <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Service Location</h3>
-                    <p className="text-[10px] text-white/30 font-medium italic">Pin your exact spot for onsite detailing</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                      <span className="text-xs font-black">02</span>
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Service Location</h3>
+                      <p className="text-[10px] text-white/30 font-medium italic">Pin your exact spot for onsite detailing</p>
+                    </div>
                   </div>
                   <div className="flex bg-white/5 rounded-xl p-1 border border-white/5">
                     <button onClick={() => setShowMap(false)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!showMap ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black shadow-lg' : 'text-white/30 hover:text-white'}`}>Text</button>
@@ -1773,7 +1783,12 @@ export function BookingPageInner() {
                 
                 {/* Promo Code Card */}
                 <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 mt-6 shadow-2xl">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Promo Code</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                      <span className="text-xs font-black">03</span>
+                    </div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Promo Code</h3>
+                  </div>
                   <div>
                     <select 
                       className="w-full bg-black/40 border border-white/[0.05] rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange/50 outline-none transition-all text-white" 
@@ -1799,7 +1814,12 @@ export function BookingPageInner() {
 
                 {/* Payment Option Card */}
                 <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 mt-6 shadow-2xl">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Payment Option</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                      <span className="text-xs font-black">04</span>
+                    </div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Payment Option</h3>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       type="button"
