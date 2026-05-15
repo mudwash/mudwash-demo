@@ -26,35 +26,6 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
     };
   }, [isOpen]);
 
-  // Handle keyboard visibility on mobile
-  React.useEffect(() => {
-    const handleVisualViewportResize = () => {
-      if (window.visualViewport) {
-        const offset = window.innerHeight - window.visualViewport.height;
-        // If offset is significant, assume it's the keyboard
-        if (offset > 150) {
-          setBottomOffset(prev => {
-            // Only update if the difference is significant (>30px) to avoid jitter while typing
-            return Math.abs(prev - offset) > 30 ? offset : prev;
-          });
-        } else {
-          setBottomOffset(0);
-        }
-      }
-    };
-
-    window.visualViewport?.addEventListener('resize', handleVisualViewportResize);
-    window.visualViewport?.addEventListener('scroll', handleVisualViewportResize);
-    
-    // Initial check
-    handleVisualViewportResize();
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleVisualViewportResize);
-      window.visualViewport?.removeEventListener('scroll', handleVisualViewportResize);
-    };
-  }, [isOpen]);
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -74,11 +45,7 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            style={{ 
-              bottom: bottomOffset,
-              maxHeight: bottomOffset ? `calc(85vh - ${bottomOffset}px)` : '85vh'
-            }}
-            className="fixed left-0 right-0 z-[1001] bg-[#0A0A0A] border-t border-white/10 rounded-t-[2rem] overflow-hidden flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-[1001] bg-[#0A0A0A] border-t border-white/10 rounded-t-[2rem] max-h-[85vh] overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/5">
