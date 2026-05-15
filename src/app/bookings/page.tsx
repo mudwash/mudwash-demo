@@ -618,6 +618,8 @@ export function BookingPageInner() {
   const [isFocused, setIsFocused] = useState(false);
   const suggestionCache = React.useRef<Record<string, string[]>>({});
   
+  const KNOWN_SUVS = ["Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Lexus LX600", "Mercedes G63 AMG", "Range Rover", "Land Rover Defender", "Tesla Model Y", "Porsche Cayenne", "Rolls Royce Cullinan", "Lamborghini Urus", "Bentley Bentayga", "BMW X7", "Audi Q8", "Toyota RAV4", "Honda CR-V", "Jeep Wrangler", "Jeep Grand Cherokee", "Subaru Outback", "Mazda CX-5", "Hyundai Tucson", "Kia Sportage", "Nissan Rogue", "BMW X5", "BMW X6", "Audi Q5", "Audi Q7", "Lexus RX"];
+  
   const POPULAR_CARS = [
     // Dubai Favorites (First)
     "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Lexus LX600",
@@ -1515,7 +1517,12 @@ export function BookingPageInner() {
                                 }} 
                                 className="w-full px-6 py-3 text-left hover:bg-brand-orange text-white hover:text-black transition-all font-bold italic flex items-center justify-between group/item border-b border-white/[0.03] last:border-none"
                               >
-                                <span className="text-xs uppercase tracking-tight">{car}</span>
+                                <span className="text-xs uppercase tracking-tight">
+                                  {car} 
+                                  <span className="text-[10px] text-white/40 group-hover/item:text-black/50 ml-2 font-black uppercase">
+                                    ({KNOWN_SUVS.includes(car) ? 'SUV' : carDetails.type || 'Sedan'})
+                                  </span>
+                                </span>
                                 <Plus size={12} className="opacity-40 group-hover/item:opacity-100 transition-opacity" />
                               </button>
                             ))}
