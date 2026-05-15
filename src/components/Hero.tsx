@@ -452,6 +452,28 @@ export default function Hero() {
                 }}
                 className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
               />
+              
+              {suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#111] border border-white/10 rounded-xl shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-50 overflow-hidden backdrop-blur-xl max-h-48 overflow-y-auto no-scrollbar">
+                  <div className="flex flex-col">
+                    {suggestions.map((loc, index) => (
+                      <button
+                        key={`${loc}-${index}`}
+                        onClick={() => {
+                          if (!loc.includes(',')) {
+                            setLocationSearchQuery(loc + ", ");
+                          } else {
+                            saveLocationDetails(loc);
+                          }
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-white/5 text-xs font-bold text-white/70 hover:text-white border-b border-white/5 last:border-none transition-colors"
+                      >
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Type tabs */}
@@ -491,30 +513,7 @@ export default function Hero() {
             </button>
           )}
 
-          {suggestions.length > 0 && (
-            <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto no-scrollbar mb-4">
-              <p className="text-[10px] font-black uppercase text-white/30 mb-1">Search Results</p>
-              {suggestions.map((loc, index) => (
-                <button
-                  key={`${loc}-${index}`}
-                  onClick={() => {
-                    if (!loc.includes(',')) {
-                      setLocationSearchQuery(loc + ", ");
-                    } else {
-                      saveLocationDetails(loc);
-                    }
-                  }}
-                  className={`py-3 px-4 rounded-xl text-xs font-bold text-left border transition-all ${
-                    selectedLocation === loc
-                      ? 'bg-brand-orange border-brand-orange text-black'
-                      : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {loc}
-                </button>
-              ))}
-            </div>
-          )}
+
 
           <div className="space-y-2">
             <p className="text-[10px] font-black uppercase text-white/30 mb-1">Popular Locations</p>
