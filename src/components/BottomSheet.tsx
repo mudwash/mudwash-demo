@@ -32,7 +32,14 @@ export default function BottomSheet({ isOpen, onClose, title, children }: Bottom
       if (window.visualViewport) {
         const offset = window.innerHeight - window.visualViewport.height;
         // If offset is significant, assume it's the keyboard
-        setBottomOffset(offset > 150 ? offset : 0);
+        if (offset > 150) {
+          setBottomOffset(prev => {
+            // Only update if the difference is significant (>30px) to avoid jitter while typing
+            return Math.abs(prev - offset) > 30 ? offset : prev;
+          });
+        } else {
+          setBottomOffset(0);
+        }
       }
     };
 
