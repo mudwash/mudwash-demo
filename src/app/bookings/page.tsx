@@ -1099,15 +1099,15 @@ export function BookingPageInner() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-32 pb-48">
+      <main className="max-w-7xl mx-auto px-6 pt-20 pb-24">
         <AnimatePresence mode="wait">
           
           {/* STEP 1: LOCATION & VEHICLE SELECTION */}
           {currentStep === 1 && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-16">
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
               
               {/* Vehicle Selection */}
-              <div className="space-y-10">
+              <div className="space-y-6">
                 <div className="flex items-center gap-3">
                    <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
                       <CarIcon size={20} />
@@ -1129,7 +1129,7 @@ export function BookingPageInner() {
                       <button 
                         key={v.id}
                         onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
-                        className={`flex-shrink-0 w-64 sm:w-72 h-48 sm:h-56 rounded-[2.5rem] border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
+                        className={`flex-shrink-0 w-64 sm:w-72 h-36 sm:h-40 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
                       >
                         <img 
                           src={imgSrc} 
@@ -1166,7 +1166,7 @@ export function BookingPageInner() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="relative h-64 md:h-80 rounded-[3rem] overflow-hidden group shadow-2xl border border-white/5"
+                      className="relative h-44 md:h-52 rounded-[2rem] overflow-hidden group shadow-2xl border border-white/5"
                     >
                       {(() => {
                         const v = vehicleTypes.find(x => x.name === carDetails.type);
