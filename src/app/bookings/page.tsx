@@ -1509,8 +1509,14 @@ export function BookingPageInner() {
                 <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Vehicle Info</h3>
                 <div className="flex items-center gap-4 bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-white">
                   <CarIcon size={24} className="text-brand-orange" />
-                  <div>
-                    <p className="text-sm font-bold">{carDetails.model || 'Not specified'}</p>
+                  <div className="flex-grow">
+                    <input 
+                      type="text" 
+                      className="w-full bg-transparent border-none text-sm font-bold focus:outline-none text-white placeholder:text-white/20"
+                      value={carDetails.model} 
+                      onChange={e => setCarDetails({...carDetails, model: e.target.value})}
+                      placeholder="Enter car model"
+                    />
                     <p className="text-[10px] text-white/50 uppercase tracking-widest">{carDetails.type || 'Sedan'}</p>
                   </div>
                 </div>
