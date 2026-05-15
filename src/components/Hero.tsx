@@ -438,6 +438,22 @@ export default function Hero() {
         {locationStep === "area" ? (
         <div className="space-y-4 p-6">
           <div className="sticky top-0 bg-[#0A0A0A] z-10 -mx-6 px-6 -mt-6 pt-6 space-y-4 pb-4 border-b border-white/5">
+            {/* Search Input */}
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="Search area..." 
+                value={locationSearchQuery}
+                onChange={e => setLocationSearchQuery(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && locationSearchQuery.trim() !== '') {
+                    saveLocationDetails(locationSearchQuery);
+                  }
+                }}
+                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
+              />
+            </div>
+
             {/* Type tabs */}
             <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
               {(["Home", "Work", "Other"] as const).map(t => (
@@ -457,22 +473,6 @@ export default function Hero() {
               <Crosshair size={16} />
               Use Current Location
             </button>
-
-            {/* Search Input */}
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Search area..." 
-                value={locationSearchQuery}
-                onChange={e => setLocationSearchQuery(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && locationSearchQuery.trim() !== '') {
-                    saveLocationDetails(locationSearchQuery);
-                  }
-                }}
-                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none transition-all text-white placeholder:text-white/20"
-              />
-            </div>
 
           </div>
 
