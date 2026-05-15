@@ -1522,14 +1522,51 @@ export function BookingPageInner() {
                 <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Vehicle Info</h3>
                 <div className="flex items-center gap-4 bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-white">
                   <CarIcon size={24} className="text-brand-orange" />
-                  <div className="flex-grow">
+                  <div className="flex-grow relative">
                     <input 
                       type="text" 
                       className="w-full bg-transparent border-none text-sm font-bold focus:outline-none text-white placeholder:text-white/20"
                       value={carDetails.model} 
                       onChange={e => setCarDetails({...carDetails, model: e.target.value})}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                       placeholder="Enter car model"
                     />
+                    
+                    {/* Suggestions in Review Step */}
+                    <AnimatePresence>
+                      {isFocused && (apiSuggestions.length > 0 || isApiLoading) && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                          animate={{ opacity: 1, y: 0, scale: 1 }} 
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }} 
+                          className="absolute left-0 right-0 top-full mt-2 bg-[#111111] border border-white/10 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-[10001] overflow-hidden backdrop-blur-xl"
+                        >
+                          <div className="max-h-48 overflow-y-auto custom-scrollbar py-2">
+                            {isApiLoading && (
+                              <div className="px-6 py-3 flex items-center gap-3 text-brand-orange/50 italic text-xs">
+                                <div className="w-3 h-3 border-2 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin"/>
+                                <span className="font-black uppercase tracking-widest">Searching...</span>
+                              </div>
+                            )}
+                            {apiSuggestions.map((car, idx) => (
+                              <button 
+                                key={idx} 
+                                onClick={() => {
+                                  setCarDetails(prev => ({ ...prev, model: car }));
+                                  setApiSuggestions([]);
+                                }} 
+                                className="w-full px-6 py-3 text-left hover:bg-brand-orange text-white hover:text-black transition-all font-bold italic flex items-center justify-between group/item border-b border-white/[0.03] last:border-none"
+                              >
+                                <span className="text-xs uppercase tracking-tight">{car}</span>
+                                <Plus size={12} className="opacity-40 group-hover/item:opacity-100 transition-opacity" />
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <div className="relative inline-block">
                       <select
                         className="bg-transparent border-none text-[10px] font-black text-brand-orange uppercase tracking-widest focus:outline-none cursor-pointer pr-4 appearance-none"
