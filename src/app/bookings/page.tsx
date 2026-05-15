@@ -1118,88 +1118,92 @@ export function BookingPageInner() {
                    </div>
                 </div>
 
-                <div className="flex overflow-x-auto gap-4 sm:gap-6 pb-6 snap-x snap-mandatory">
-                  {vehicleTypes.map(v => {
-                    const isVSelected = carDetails.type === v.name;
-                    const overrides = (v as any).locationOverrides || {};
-                    const price = selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : v.surcharge;
-                    const imgSrc = v.image || VEHICLE_IMAGES[v.name] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                  <div className="flex lg:grid lg:grid-cols-2 overflow-x-auto lg:overflow-visible gap-4 sm:gap-6 pb-6 lg:pb-0 snap-x snap-mandatory">
+                    {vehicleTypes.map(v => {
+                      const isVSelected = carDetails.type === v.name;
+                      const overrides = (v as any).locationOverrides || {};
+                      const price = selectedGarageId && overrides[selectedGarageId] !== undefined ? overrides[selectedGarageId] : v.surcharge;
+                      const imgSrc = v.image || VEHICLE_IMAGES[v.name] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
 
-                    return (
-                      <button 
-                        key={v.id}
-                        onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
-                        className={`flex-shrink-0 w-64 sm:w-72 h-36 sm:h-40 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
-                      >
-                        <img 
-                          src={imgSrc} 
-                          alt={v.name}
-                          className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isVSelected ? 'scale-110 opacity-100' : 'opacity-30 grayscale group-hover:grayscale-0 group-hover:opacity-60'}`} 
-                        />
-                        <div className={`absolute inset-0 bg-gradient-to-t ${isVSelected ? 'from-brand-orange via-brand-orange/20' : 'from-black via-black/60'} to-transparent transition-colors duration-500`} />
-                        
-                        <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
-                          <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-1 transition-colors ${isVSelected ? 'text-black' : 'text-white/60'}`}>Category</p>
-                          <h4 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tighter transition-colors ${isVSelected ? 'text-black' : 'text-white'}`}>{v.name}</h4>
-
-                        </div>
-                        
-                        {isVSelected && (
-                          <motion.div 
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-6 right-6 w-10 h-10 bg-black text-brand-orange rounded-2xl flex items-center justify-center shadow-xl border border-white/10"
-                          >
-                            <Check size={20} strokeWidth={4} />
-                          </motion.div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Selected Vehicle Preview */}
-                <AnimatePresence mode="wait">
-                  {carDetails.type && (
-                    <motion.div 
-                      key={carDetails.type}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="relative h-44 md:h-52 rounded-[2rem] overflow-hidden group shadow-2xl border border-white/5"
-                    >
-                      {(() => {
-                        const v = vehicleTypes.find(x => x.name === carDetails.type);
-                        const imgSrc = v?.image || VEHICLE_IMAGES[carDetails.type] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
-                        return (
+                      return (
+                        <button 
+                          key={v.id}
+                          onClick={() => setCarDetails(prev => ({ ...prev, type: v.name }))}
+                          className={`flex-shrink-0 lg:flex-shrink w-64 sm:w-72 lg:w-full h-36 sm:h-40 rounded-[2rem] border transition-all duration-500 group relative overflow-hidden snap-center ${isVSelected ? 'border-brand-orange shadow-[0_20px_50px_rgba(246,150,33,0.3)] ring-2 ring-brand-orange/20' : 'border-white/5 hover:border-white/20'}`}
+                        >
                           <img 
                             src={imgSrc} 
-                            alt={carDetails.type}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            alt={v.name}
+                            className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isVSelected ? 'scale-110 opacity-100' : 'opacity-30 grayscale group-hover:grayscale-0 group-hover:opacity-60'}`} 
                           />
-                        );
-                      })()}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                      <div className="absolute bottom-10 left-10">
+                          <div className={`absolute inset-0 bg-gradient-to-t ${isVSelected ? 'from-brand-orange via-brand-orange/20' : 'from-black via-black/60'} to-transparent transition-colors duration-500`} />
+                          
+                          <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
+                            <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-1 transition-colors ${isVSelected ? 'text-black' : 'text-white/60'}`}>Category</p>
+                            <h4 className={`text-xl sm:text-2xl font-black italic uppercase tracking-tighter transition-colors ${isVSelected ? 'text-black' : 'text-white'}`}>{v.name}</h4>
+
+                          </div>
+                          
+                          {isVSelected && (
+                            <motion.div 
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className="absolute top-6 right-6 w-10 h-10 bg-black text-brand-orange rounded-2xl flex items-center justify-center shadow-xl border border-white/10"
+                            >
+                              <Check size={20} strokeWidth={4} />
+                            </motion.div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Selected Vehicle Preview */}
+                  <div className="lg:sticky lg:top-24">
+                    <AnimatePresence mode="wait">
+                      {carDetails.type && (
                         <motion.div 
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="space-y-1"
+                          key={carDetails.type}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="relative h-44 md:h-52 rounded-[2rem] overflow-hidden group shadow-2xl border border-white/5"
                         >
-                          <span className="text-brand-orange text-[10px] font-black uppercase tracking-[0.4em]">Selected Class</span>
-                          <h3 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">{carDetails.type}</h3>
+                          {(() => {
+                            const v = vehicleTypes.find(x => x.name === carDetails.type);
+                            const imgSrc = v?.image || VEHICLE_IMAGES[carDetails.type] || "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
+                            return (
+                              <img 
+                                src={imgSrc} 
+                                alt={carDetails.type}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                            );
+                          })()}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                          <div className="absolute bottom-10 left-10">
+                            <motion.div 
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="space-y-1"
+                            >
+                              <span className="text-brand-orange text-[10px] font-black uppercase tracking-[0.4em]">Selected Class</span>
+                              <h3 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">{carDetails.type}</h3>
+                            </motion.div>
+                          </div>
+                          <div className="absolute top-8 right-8 w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white/50 border border-white/10">
+                            {(() => {
+                               const v = vehicleTypes.find(x => x.name === carDetails.type);
+                               const Icon = (v?.icon && ICON_MAP[v.icon]) || CarIcon;
+                               return <Icon size={32} />;
+                            })()}
+                          </div>
                         </motion.div>
-                      </div>
-                      <div className="absolute top-8 right-8 w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white/50 border border-white/10">
-                        {(() => {
-                           const v = vehicleTypes.find(x => x.name === carDetails.type);
-                           const Icon = (v?.icon && ICON_MAP[v.icon]) || CarIcon;
-                           return <Icon size={32} />;
-                        })()}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
 
                 <div className="max-w-2xl relative">
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mb-6 px-4">Car Model Name</p>
