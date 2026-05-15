@@ -1314,7 +1314,7 @@ export function BookingPageInner() {
                             </div>
                             <button 
                               onClick={() => isSelected ? removeService(service.id!) : addService(service.id!)} 
-                              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-500 overflow-hidden ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/5 text-white/30 hover:bg-brand-orange hover:text-black'}`}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all duration-500 overflow-hidden ${isSelected ? 'bg-brand-orange text-black' : 'bg-white/10 text-white/70 hover:bg-brand-orange hover:text-black'}`}
                             >
                               <AnimatePresence mode="wait">
                                 <motion.div
