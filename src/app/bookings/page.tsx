@@ -1898,17 +1898,6 @@ export function BookingPageInner() {
                   <Sparkles size={12}/> Booking Summary
                 </h3>
                 <div className="flex items-center gap-2">
-                  {(selectedServices.length > 0 || selectedAddOns.length > 0) && (
-                    <button
-                      onClick={() => {
-                        setSelectedServices([]);
-                        setSelectedAddOns([]);
-                      }}
-                      className="text-[9px] font-black uppercase text-white/40 hover:text-white transition-colors border border-white/10 px-3 py-1 rounded-full"
-                    >
-                      Clear Cart
-                    </button>
-                  )}
                   <button
                     onClick={() => setSummaryExpanded(false)}
                     className="w-8 h-8 rounded-full bg-white/5 border border-white/8 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"
