@@ -1865,7 +1865,7 @@ export function BookingPageInner() {
           >
             {isSubmitting
               ? <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"/>
-              : <>{currentStep === 5 ? "Confirm" : "Next Phase"}<ChevronRight size={14} strokeWidth={3}/></>
+              : <>{currentStep === 5 ? "Confirm" : "Next"}<ChevronRight size={14} strokeWidth={3}/></>
             }
           </button>
         </div>
