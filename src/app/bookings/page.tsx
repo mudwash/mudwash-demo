@@ -1508,7 +1508,7 @@ export function BookingPageInner() {
               <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
                 <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Vehicle Info</h3>
                 <div className="flex items-center gap-4 bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-white">
-                  <Car size={24} className="text-brand-orange" />
+                  <CarIcon size={24} className="text-brand-orange" />
                   <div>
                     <p className="text-sm font-bold">{carDetails.model || 'Not specified'}</p>
                     <p className="text-[10px] text-white/50 uppercase tracking-widest">{carDetails.type || 'Sedan'}</p>
