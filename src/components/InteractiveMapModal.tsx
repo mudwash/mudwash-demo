@@ -71,6 +71,16 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
     return () => clearTimeout(timer);
   }, [mapCoords]);
 
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setMapCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      }, (error) => {
+        console.error("Error getting location:", error);
+      });
+    }
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center">
       <motion.div 
