@@ -33,7 +33,6 @@ const UAE_LOCATIONS = [
   "Jumeirah",
   "Al Quoz"
 ];
-];
 
 const heroData = [
   {
