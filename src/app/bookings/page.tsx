@@ -147,6 +147,13 @@ const ServiceDetailDrawer = ({
   quantity: number
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [localQty, setLocalQty] = useState(1);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalQty(quantity > 0 ? quantity : 1);
+    }
+  }, [isOpen, quantity]);
 
   useEffect(() => {
     setCurrentImageIndex(0);
@@ -264,12 +271,19 @@ const ServiceDetailDrawer = ({
             <div className="p-6 border-t border-white/5 bg-[#0A0A0A]">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-10">
                 <div className="flex items-center justify-between md:justify-start gap-8 bg-white/5 px-8 md:px-10 py-5 rounded-[2rem] border border-white/5">
-                  <button onClick={() => onRemove(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Minus size={20} strokeWidth={3} /></button>
-                  <span className="text-2xl font-black min-w-[40px] text-center italic">{quantity}</span>
-                  <button onClick={() => onAdd(service.id!)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
+                  <button onClick={() => quantity > 0 ? onRemove(service.id!) : setLocalQty(prev => Math.max(1, prev - 1))} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Minus size={20} strokeWidth={3} /></button>
+                  <span className="text-2xl font-black min-w-[40px] text-center italic">{quantity > 0 ? quantity : localQty}</span>
+                  <button onClick={() => quantity > 0 ? onAdd(service.id!) : setLocalQty(prev => prev + 1)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
                 </div>
-                <button onClick={onClose} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
-                  {quantity > 0 ? `Update Booking Selection` : `Add Package for AED ${service.price}`}
+                <button onClick={() => {
+                  if (quantity === 0) {
+                    for (let i = 0; i < localQty; i++) {
+                      onAdd(service.id!);
+                    }
+                  }
+                  onClose();
+                }} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
+                  {quantity > 0 ? `Update Booking Selection` : `Add Package for AED ${parseInt(service.price.replace(/[^\d]/g, '') || '0') * localQty}`}
                 </button>
               </div>
             </div>
@@ -1282,7 +1296,7 @@ export function BookingPageInner() {
                 </div>
                 
                 <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory relative">
                     {categories.slice(0, 8).map(catObj => {
                       const catName = catObj.name;
                       const isActive = selectedCategory === catName;
@@ -1294,13 +1308,19 @@ export function BookingPageInner() {
                       return (
                         <button 
                           key={catObj.id || catName} 
-                          onClick={() => setSelectedCategory(catName)} 
-                          className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_10px_25px_rgba(246,150,33,0.4)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
+                          onClick={(e) => {
+                            setSelectedCategory(catName);
+                            const container = e.currentTarget.parentElement;
+                            if (container) {
+                              container.scrollTo({ left: e.currentTarget.offsetLeft - 16, behavior: 'smooth' });
+                            }
+                          }} 
+                          className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.3)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
                         >
                           <IC size={24} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
                           <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{catName}</span>
                           {/* Badge with service count */}
-                          <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${isActive ? 'bg-black text-brand-orange border border-brand-orange/20' : 'bg-[#1A1A1A] text-white/40 border border-white/10'}`}>
+                          <div className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black transition-colors ${isActive ? 'bg-black text-brand-orange' : 'bg-white/10 text-white/50'}`}>
                             {serviceCount}
                           </div>
                         </button>
