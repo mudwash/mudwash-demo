@@ -270,20 +270,13 @@ const ServiceDetailDrawer = ({
             </div>
             <div className="p-6 border-t border-white/5 bg-[#0A0A0A]">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6 md:gap-10">
-                <div className="flex items-center justify-between md:justify-start gap-8 bg-white/5 px-8 md:px-10 py-5 rounded-[2rem] border border-white/5">
-                  <button onClick={() => quantity > 0 ? onRemove(service.id!) : setLocalQty(prev => Math.max(1, prev - 1))} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Minus size={20} strokeWidth={3} /></button>
-                  <span className="text-2xl font-black min-w-[40px] text-center italic">{quantity > 0 ? quantity : localQty}</span>
-                  <button onClick={() => quantity > 0 ? onAdd(service.id!) : setLocalQty(prev => prev + 1)} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-brand-orange hover:bg-brand-orange hover:text-black transition-all active:scale-90"><Plus size={20} strokeWidth={3} /></button>
-                </div>
                 <button onClick={() => {
                   if (quantity === 0) {
-                    for (let i = 0; i < localQty; i++) {
-                      onAdd(service.id!);
-                    }
+                    onAdd(service.id!);
                   }
                   onClose();
                 }} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
-                  {quantity > 0 ? `Update Booking Selection` : `Add Package for AED ${parseInt(service.price.replace(/[^\d]/g, '') || '0') * localQty}`}
+                  {quantity > 0 ? `Package Selected` : `Select Package for AED ${parseInt(service.price.replace(/[^\d]/g, '') || '0')}`}
                 </button>
               </div>
             </div>
@@ -780,19 +773,12 @@ export function BookingPageInner() {
   }, [profile]);
 
   const addService = (id: string) => {
-    setSelectedServices(prev => {
-      const exists = prev.find(s => s.id === id);
-      if (exists) return prev.map(s => s.id === id ? { ...s, quantity: s.quantity + 1 } : s);
-      return [...prev, { id, quantity: 1 }];
-    });
+    // Only one service allowed at a time, quantity always 1
+    setSelectedServices([{ id, quantity: 1 }]);
   };
 
   const removeService = (id: string) => {
-    setSelectedServices(prev => {
-      const exists = prev.find(s => s.id === id);
-      if (exists && exists.quantity > 1) return prev.map(s => s.id === id ? { ...s, quantity: s.quantity - 1 } : s);
-      return prev.filter(s => s.id !== id);
-    });
+    setSelectedServices([]);
   };
 
   const toggleAddOn = (id: string) => {
@@ -950,7 +936,7 @@ export function BookingPageInner() {
     try {
       const serviceSummary = selectedServices.map(sel => {
         const s = services.find(x => x.id === sel.id);
-        return s ? `${sel.quantity}x ${s.name}` : `${sel.quantity}x Service`;
+        return s ? s.name : "Service";
       }).join(", ");
 
       const addonSummary = selectedAddOns.map(id => {
@@ -1973,7 +1959,6 @@ className="shrink-0 bg-brand-orange hover:bg-white text-black font-black upperca
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-black italic uppercase tracking-tight text-white leading-none truncate">{s.name}</p>
-                              {sel.quantity > 1 && <p className="text-[10px] text-white/30 mt-0.5">{sel.quantity}× quantity</p>}
                             </div>
                           </div>
                           {(() => {
