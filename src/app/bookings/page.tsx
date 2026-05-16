@@ -1363,20 +1363,6 @@ export function BookingPageInner() {
                                   <span>Recommended</span>
                                 </motion.div>
                               )}
-                              {addons.some(a => 
-                                (a.applicableServices?.includes(service.id!) || 
-                                 a.applicableCategories?.some(cat => cat.toLowerCase().trim() === (service.category || "").toLowerCase().trim()))
-                              ) && (
-                                <motion.div 
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: 0.1 }}
-                                  className="bg-white/5 backdrop-blur-xl border border-white/10 text-white/80 text-[7px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl"
-                                >
-                                  <Sparkles size={8} className="text-brand-orange" />
-                                  <span>Add-ons Available</span>
-                                </motion.div>
-                              )}
                             </div>
                             <button 
                               onClick={() => isSelected ? removeService(service.id!) : addService(service.id!)} 
