@@ -1357,6 +1357,15 @@ export function BookingPageInner() {
                                   <span>Recommended</span>
                                 </div>
                               )}
+                              {addons.some(a => 
+                                (a.applicableServices?.includes(service.id!) || 
+                                 a.applicableCategories?.some(cat => cat.toLowerCase().trim() === (service.category || "").toLowerCase().trim()))
+                              ) && (
+                                <div className="bg-blue-500/20 backdrop-blur-md border border-blue-500/30 text-blue-400 text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(59,130,246,0.25)]">
+                                  <Sparkles size={8} fill="currentColor" />
+                                  <span>Add-ons Available</span>
+                                </div>
+                              )}
                             </div>
                             <button 
                               onClick={() => isSelected ? removeService(service.id!) : addService(service.id!)} 
@@ -1888,7 +1897,18 @@ className="shrink-0 bg-brand-orange hover:bg-white text-black font-black upperca
           >
             {isSubmitting
               ? <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"/>
-              : <>{currentStep === 5 ? "Confirm" : "Next"}<ChevronRight size={14} strokeWidth={3}/></>
+              : (
+                <div className="flex items-center gap-2">
+                  {currentStep === 2 && selectedServices.length > 0 && addons.some(a => 
+                    (a.applicableServices?.includes(selectedServices[0].id) || 
+                     a.applicableCategories?.some(cat => {
+                       const s = services.find(x => x.id === selectedServices[0].id);
+                       return cat.toLowerCase().trim() === (s?.category || "").toLowerCase().trim();
+                     }))
+                  ) ? "Enhancements" : currentStep === 5 ? "Confirm" : "Next"}
+                  <ChevronRight size={14} strokeWidth={3}/>
+                </div>
+              )
             }
           </button>
         </div>
