@@ -60,7 +60,8 @@ import {
   Truck,
   Bike,
   Loader2,
-  MapPin
+  MapPin,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { createBooking, getBookingsByDate } from '@/lib/bookings';
@@ -102,7 +103,7 @@ const ICON_MAP: any = {
   Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
   Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
   Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
-  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike, Layers
 };
 
 const VEHICLE_IMAGES: Record<string, string> = {
