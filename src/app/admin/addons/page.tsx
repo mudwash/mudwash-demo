@@ -11,18 +11,34 @@ import {
   Eye, 
   X, 
   Upload, 
-  Image as ImageIcon,
-  Zap
+  ImageIcon,
+  Zap,
+  Waves, Sparkles, Car as CarIcon, ShieldCheck, Paintbrush, Wrench, Droplets, 
+  Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
+  Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
+  Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
 } from "lucide-react";
+
+const ICON_MAP: any = { 
+  Waves, Sparkles, Car: CarIcon, ShieldCheck, Paintbrush, Zap, Wrench, Droplets, 
+  Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
+  Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
+  Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
+};
 import { getAddons, createAddon, updateAddon, deleteAddon, Addon } from "@/lib/addons";
 import { getServices, Service } from "@/lib/services";
+import { getCategories, Category } from "@/lib/categories";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function AddonsPage() {
   const [addons, setAddons] = useState<Addon[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
@@ -49,8 +65,18 @@ export default function AddonsPage() {
     isMountedRef.current = true;
     fetchAddons();
     fetchServices();
+    fetchCategories();
     return () => { isMountedRef.current = false; };
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await getCategories();
+      if (isMountedRef.current) setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -329,7 +355,7 @@ export default function AddonsPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+              className="relative w-full max-w-2xl bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div>
@@ -344,194 +370,168 @@ export default function AddonsPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Name */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Name</label>
-                    <input 
-                      type="text" 
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                      placeholder="e.g. Engine Bay Detailing"
-                      required
-                    />
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                <div className="p-8 space-y-8 overflow-y-auto no-scrollbar">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Name */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Name</label>
+                      <input 
+                        type="text" 
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
+                        placeholder="e.g. Engine Bay Detailing"
+                        required
+                      />
+                    </div>
+
+                    {/* Price */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Price (AED)</label>
+                      <input 
+                        type="text" 
+                        value={formData.price}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                        className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
+                        placeholder="e.g. 150"
+                        required
+                      />
+                    </div>
                   </div>
 
-                  {/* Price */}
+                  {/* Description */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Price (AED)</label>
-                    <input 
-                      type="text" 
-                      value={formData.price}
-                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                      placeholder="e.g. 150"
-                      required
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Description</label>
+                    <textarea 
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all h-24"
+                      placeholder="Describe the add-on service..."
                     />
                   </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Description</label>
-                  <textarea 
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all h-24"
-                    placeholder="Describe the add-on service..."
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Duration */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Duration</label>
-                    <input 
-                      type="text" 
-                      value={formData.duration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
-                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                      placeholder="e.g. 30 mins"
-                    />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Duration */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Duration</label>
+                      <input 
+                        type="text" 
+                        value={formData.duration}
+                        onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                        className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
+                        placeholder="e.g. 30 mins"
+                      />
+                    </div>
                   </div>
 
-                  {/* Applicable Categories */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Applicable Categories</label>
-                    <input 
-                      type="text" 
-                      value={formData.applicableCategories.join(", ")}
-                      onChange={(e) => setFormData(prev => ({ ...prev, applicableCategories: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))}
-                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
-                      placeholder="e.g. Ceramic Coating, Polish (leave empty for all)"
-                    />
-                  </div>
-                </div>
-
-                {/* Applicable Services */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Applicable Main Services</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-4 bg-white/[0.02] border border-white/10 rounded-2xl no-scrollbar">
-                    {services.map(service => {
-                      const isSelected = formData.applicableServices.includes(service.id!);
-                      return (
-                        <button
-                          key={service.id}
-                          type="button"
-                          onClick={() => {
-                            setFormData(prev => ({
-                              ...prev,
-                              applicableServices: isSelected 
-                                ? prev.applicableServices.filter(id => id !== service.id)
-                                : [...prev.applicableServices, service.id!]
-                            }));
-                          }}
-                          className={`group relative flex flex-col items-start gap-2 p-4 rounded-2xl border transition-all duration-300 text-left ${
-                            isSelected
-                              ? "bg-brand-orange border-brand-orange shadow-[0_10px_20px_rgba(246,150,33,0.2)]"
-                              : "bg-[#111111] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span className={`text-[10px] font-black uppercase tracking-widest italic transition-colors ${
+                  {/* Applicable Categories Selector */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Select Applicable Categories</label>
+                    <div className="flex flex-wrap gap-3 p-5 bg-white/[0.02] border border-white/10 rounded-3xl">
+                      {categories.map(category => {
+                        const isSelected = formData.applicableCategories.includes(category.name);
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                applicableCategories: isSelected 
+                                  ? prev.applicableCategories.filter(name => name !== category.name)
+                                  : [...prev.applicableCategories, category.name]
+                              }));
+                            }}
+                            className={`group relative flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-500 min-w-[100px] flex-1 sm:flex-none ${
+                              isSelected
+                                ? "bg-brand-orange border-brand-orange shadow-[0_10px_20px_rgba(246,150,33,0.2)] scale-[1.05]"
+                                : "bg-[#0D0D0D] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
+                              isSelected ? "bg-black/10 text-black" : "bg-white/5 text-brand-orange"
+                            }`}>
+                              {(() => {
+                                const IC = ICON_MAP[category.icon as any] || Sparkles;
+                                return <IC size={20} strokeWidth={2.5} />;
+                              })()}
+                            </div>
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${
                               isSelected ? "text-black" : "text-white/60"
                             }`}>
-                              {service.name}
+                              {category.name}
                             </span>
-                            {isSelected && (
-                              <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center">
-                                <Plus size={10} className="text-brand-orange" strokeWidth={4} />
-                              </div>
-                            )}
-                          </div>
-                          <span className={`text-[8px] font-bold uppercase tracking-[0.1em] opacity-40 ${
-                            isSelected ? "text-black" : "text-white"
-                          }`}>
-                            {service.category}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[9px] text-white/20 mt-2 uppercase font-black tracking-widest italic text-center">Leave empty to show for all services in selected categories</p>
-                </div>
-
-                {/* Image Upload */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Image</label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl bg-[#111111] border border-white/5 flex items-center justify-center text-white/20 overflow-hidden">
-                      {formData.image ? (
-                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <ImageIcon size={24} />
-                      )}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="flex-1">
-                      <div className="relative">
-                        <input 
-                          type="file" 
-                          onChange={handleImageUpload}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          accept="image/*"
-                        />
-                        <button 
-                          type="button"
-                          className="bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"
-                        >
-                          {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                          {isUploading ? "Uploading..." : "Upload Image"}
-                        </button>
+                    <p className="text-[9px] text-white/20 mt-1 uppercase font-black tracking-widest italic text-center">Add-on will only show for services in these categories. Leave empty for all.</p>
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Image</label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-xl bg-[#111111] border border-white/5 flex items-center justify-center text-white/20 overflow-hidden">
+                        {formData.image ? (
+                          <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon size={24} />
+                        )}
                       </div>
-                      <p className="text-[9px] text-white/20 mt-1.5 uppercase font-bold tracking-wider">Recommended: Square image, max 2MB</p>
+                      <div className="flex-1">
+                        <div className="relative">
+                          <input 
+                            type="file" 
+                            onChange={handleImageUpload}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            accept="image/*"
+                          />
+                          <button 
+                            type="button"
+                            className="bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"
+                          >
+                            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                            {isUploading ? "Uploading..." : "Upload Image"}
+                          </button>
+                        </div>
+                        <p className="text-[9px] text-white/20 mt-1.5 uppercase font-bold tracking-wider">Recommended: Square image, max 2MB</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Active Toggle */}
-                <div className="flex items-center justify-between p-4 bg-[#111111] rounded-xl border border-white/5">
-                  <div>
-                    <p className="text-sm font-bold text-white">Active Status</p>
-                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider mt-0.5">Show this add-on to users</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
-                    className={`w-12 h-6 rounded-full p-1 transition-all ${formData.active ? 'bg-emerald-500' : 'bg-white/10'}`}
-                  >
-                    <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.active ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-
-                {/* Submit */}
-                <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                  {selectedAddon && (
+                  {/* Active Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-[#111111] rounded-xl border border-white/5">
+                    <div>
+                      <p className="text-sm font-bold text-white">Active Status</p>
+                      <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider mt-0.5">Show this add-on to users</p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => handleDelete(selectedAddon.id!)}
-                      className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-white transition-colors"
+                      onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
+                      className={`w-12 h-6 rounded-full p-1 transition-all ${formData.active ? 'bg-emerald-500' : 'bg-white/10'}`}
                     >
-                      Delete Add-on
-                    </button>
-                  )}
-                  <div className="flex gap-3 ml-auto">
-                    <button 
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all text-white/60 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit"
-                      disabled={isSubmitting || isUploading}
-                      className="bg-brand-orange hover:bg-white text-black px-6 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                    >
-                      {isSubmitting ? "Saving..." : selectedAddon ? "Update Add-on" : "Create Add-on"}
+                      <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.active ? 'translate-x-6' : 'translate-x-0'}`} />
                     </button>
                   </div>
+                </div>
+
+                <div className="p-8 border-t border-white/5 bg-white/[0.02] flex items-center justify-end gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || isUploading}
+                    className="flex items-center gap-2 px-8 py-3 rounded-xl bg-brand-orange text-black text-xs font-black uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-[0_10px_20px_rgba(246,150,33,0.3)]"
+                  >
+                    {isSubmitting ? "Saving..." : (selectedAddon ? "Update Add-on" : "Create Add-on")}
+                  </button>
                 </div>
               </form>
             </motion.div>
