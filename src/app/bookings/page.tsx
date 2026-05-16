@@ -747,7 +747,7 @@ export function BookingPageInner() {
         if (vData.length > 0) {
           setCarDetails(prev => prev.type ? prev : { ...prev, type: vData[0].name });
         }
-        if (catData.length > 0) setSelectedCategory(catData[0].name);
+        if (catData.length > 0) setSelectedCategory("All");
 
         const preselectedId = searchParams.get('service');
         if (preselectedId && srvData.length > 0) {
@@ -1020,6 +1020,7 @@ export function BookingPageInner() {
   };
 
   const filteredServices = services.filter(s => {
+    if (selectedCategory === "All") return true;
     const sCat = (s.category || "").toLowerCase().trim();
     const activeCat = (selectedCategory || "").toLowerCase().trim();
     return sCat === activeCat;
@@ -1283,6 +1284,18 @@ export function BookingPageInner() {
                 
                 <div className="bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-xl w-full overflow-hidden">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar w-full snap-x snap-mandatory" style={{ padding: '12px 16px' }}>
+                    {/* ALL Categories Option */}
+                    <button 
+                      onClick={() => setSelectedCategory("All")}
+                      className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${selectedCategory === "All" ? 'bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.3)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
+                    >
+                      <Layers size={24} strokeWidth={2} className={selectedCategory === "All" ? 'text-black' : 'text-brand-orange/60'} />
+                      <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${selectedCategory === "All" ? 'text-black' : 'text-white/60'}`}>All Treatments</span>
+                      <div className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black transition-colors ${selectedCategory === "All" ? 'bg-black text-brand-orange' : 'bg-white/10 text-white/50'}`}>
+                        {services.length}
+                      </div>
+                    </button>
+
                     {categories.slice(0, 8).map((catObj, catIdx, arr) => {
                       const catName = catObj.name;
                       const isActive = selectedCategory === catName;
