@@ -1352,21 +1352,30 @@ export function BookingPageInner() {
                         <div className="p-5 relative z-10 flex flex-col justify-between h-full flex-grow">
                           {/* Top Part: Badges and Action */}
                           <div className="flex justify-between items-start mb-auto">
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-1.5 items-center">
                               {index === 0 && (
-                                <div className="bg-brand-orange/20 backdrop-blur-md border border-brand-orange/30 text-brand-orange text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(246,150,33,0.25)]">
-                                  <Star size={8} fill="currentColor" />
+                                <motion.div 
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  className="bg-brand-orange/15 backdrop-blur-xl border border-brand-orange/20 text-brand-orange text-[7px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-[0_8px_20px_rgba(246,150,33,0.15)]"
+                                >
+                                  <Star size={8} fill="currentColor" className="animate-pulse" />
                                   <span>Recommended</span>
-                                </div>
+                                </motion.div>
                               )}
                               {addons.some(a => 
                                 (a.applicableServices?.includes(service.id!) || 
                                  a.applicableCategories?.some(cat => cat.toLowerCase().trim() === (service.category || "").toLowerCase().trim()))
                               ) && (
-                                <div className="bg-blue-500/20 backdrop-blur-md border border-blue-500/30 text-blue-400 text-[8px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_5px_15px_rgba(59,130,246,0.25)]">
-                                  <Sparkles size={8} fill="currentColor" />
+                                <motion.div 
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.1 }}
+                                  className="bg-white/5 backdrop-blur-xl border border-white/10 text-white/80 text-[7px] font-black uppercase tracking-[0.15em] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl"
+                                >
+                                  <Sparkles size={8} className="text-brand-orange" />
                                   <span>Add-ons Available</span>
-                                </div>
+                                </motion.div>
                               )}
                             </div>
                             <button 
