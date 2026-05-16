@@ -15,14 +15,17 @@ import {
   Zap
 } from "lucide-react";
 import { getAddons, createAddon, updateAddon, deleteAddon, Addon } from "@/lib/addons";
+import { getServices, Service } from "@/lib/services";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function AddonsPage() {
   const [addons, setAddons] = useState<Addon[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAddon, setSelectedAddon] = useState<Addon | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +39,8 @@ export default function AddonsPage() {
     active: true,
     order: 0,
     duration: "",
-    applicableCategories: [] as string[]
+    applicableCategories: [] as string[],
+    applicableServices: [] as string[]
   });
 
   const isMountedRef = useRef(true);
@@ -44,8 +48,18 @@ export default function AddonsPage() {
   useEffect(() => {
     isMountedRef.current = true;
     fetchAddons();
+    fetchServices();
     return () => { isMountedRef.current = false; };
   }, []);
+
+  const fetchServices = async () => {
+    try {
+      const data = await getServices();
+      if (isMountedRef.current) setServices(data);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    }
+  };
 
   const fetchAddons = async () => {
     try {
@@ -105,7 +119,8 @@ export default function AddonsPage() {
       active: true,
       order: addons.length,
       duration: "",
-      applicableCategories: []
+      applicableCategories: [],
+      applicableServices: []
     });
     setSelectedAddon(null);
   };
@@ -120,10 +135,20 @@ export default function AddonsPage() {
       active: addon.active !== false,
       order: addon.order || 0,
       duration: addon.duration || "",
-      applicableCategories: addon.applicableCategories || []
+      applicableCategories: addon.applicableCategories || [],
+      applicableServices: addon.applicableServices || []
     });
     setIsModalOpen(true);
     setActiveDropdown(null);
+  };
+
+  const handleDropdownToggle = (e: React.MouseEvent, id: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropdownPos({ 
+      top: rect.bottom + 8, 
+      left: rect.right - 160 
+    });
+    setActiveDropdown(activeDropdown === id ? null : id);
   };
 
   const handleDelete = async (id: string) => {
@@ -239,7 +264,7 @@ export default function AddonsPage() {
                     <td className="px-6 py-6 text-right">
                       <div className="relative inline-block">
                         <button 
-                          onClick={() => setActiveDropdown(activeDropdown === addon.id ? null : (addon.id || null))}
+                          onClick={(e) => addon.id && handleDropdownToggle(e, addon.id)}
                           className="p-2 hover:bg-white/5 rounded-xl text-white/20 hover:text-white transition-colors"
                         >
                           <MoreVertical size={18} />
@@ -248,12 +273,18 @@ export default function AddonsPage() {
                         <AnimatePresence>
                           {activeDropdown === addon.id && (
                             <>
-                              <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                              <div className="fixed inset-0 z-[60]" onClick={() => setActiveDropdown(null)} />
                               <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="absolute right-0 mt-2 w-40 bg-[#111111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
+                                style={{ 
+                                  position: 'fixed', 
+                                  top: dropdownPos.top, 
+                                  left: dropdownPos.left,
+                                  width: '160px'
+                                }}
+                                className="bg-[#111111] border border-white/10 rounded-xl shadow-2xl z-[70] overflow-hidden"
                               >
                                 <div className="p-2 flex flex-col">
                                   <button 
@@ -377,6 +408,43 @@ export default function AddonsPage() {
                       placeholder="e.g. Ceramic Coating, Polish (leave empty for all)"
                     />
                   </div>
+                </div>
+
+                {/* Applicable Services */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Applicable Main Services</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-40 overflow-y-auto p-4 bg-[#111111] border border-white/5 rounded-xl no-scrollbar">
+                    {services.map(service => (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => {
+                          const isSelected = formData.applicableServices.includes(service.id!);
+                          setFormData(prev => ({
+                            ...prev,
+                            applicableServices: isSelected 
+                              ? prev.applicableServices.filter(id => id !== service.id)
+                              : [...prev.applicableServices, service.id!]
+                          }));
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+                          formData.applicableServices.includes(service.id!)
+                            ? "bg-brand-orange/10 border-brand-orange text-white"
+                            : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
+                          formData.applicableServices.includes(service.id!)
+                            ? "bg-brand-orange border-brand-orange text-black"
+                            : "bg-transparent border-white/20"
+                        }`}>
+                          {formData.applicableServices.includes(service.id!) && <Plus size={12} strokeWidth={4} />}
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-tight truncate">{service.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-white/20 mt-1 uppercase font-bold tracking-wider">Leave empty to show for all services in selected categories</p>
                 </div>
 
                 {/* Image Upload */}

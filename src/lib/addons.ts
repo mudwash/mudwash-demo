@@ -22,6 +22,7 @@ export interface Addon {
   icon?: string;
   duration?: string;
   applicableCategories?: string[];
+  applicableServices?: string[];
 }
 
 const COLLECTION_NAME = "addons";

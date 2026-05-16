@@ -1430,11 +1430,25 @@ export function BookingPageInner() {
           {currentStep === 3 && (() => {
             const recommended = addons.filter(a => {
               if (a.active === false) return false;
-              if (a.applicableCategories && a.applicableCategories.length > 0) {
-                const selectedServiceObjs = services.filter(s => selectedServices.some(sel => sel.id === s.id));
-                const selectedCats = selectedServiceObjs.map(s => s.category);
-                return a.applicableCategories.some(cat => selectedCats.includes(cat));
+              
+              const selectedServiceIds = selectedServices.map(s => s.id);
+              const selectedServiceObjs = services.filter(s => selectedServiceIds.includes(s.id!));
+              const selectedCats = [...new Set(selectedServiceObjs.map(s => s.category))];
+
+              const hasSpecificServices = a.applicableServices && a.applicableServices.length > 0;
+              const hasSpecificCategories = a.applicableCategories && a.applicableCategories.length > 0;
+
+              // If specific services are listed, priority goes to that
+              if (hasSpecificServices) {
+                return a.applicableServices!.some(id => selectedServiceIds.includes(id));
               }
+
+              // Otherwise check categories
+              if (hasSpecificCategories) {
+                return a.applicableCategories!.some(cat => selectedCats.includes(cat));
+              }
+
+              // Default: show for all
               return true;
             });
             return (
