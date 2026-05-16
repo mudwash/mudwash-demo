@@ -411,40 +411,51 @@ export default function AddonsPage() {
                 </div>
 
                 {/* Applicable Services */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Applicable Main Services</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-40 overflow-y-auto p-4 bg-[#111111] border border-white/5 rounded-xl no-scrollbar">
-                    {services.map(service => (
-                      <button
-                        key={service.id}
-                        type="button"
-                        onClick={() => {
-                          const isSelected = formData.applicableServices.includes(service.id!);
-                          setFormData(prev => ({
-                            ...prev,
-                            applicableServices: isSelected 
-                              ? prev.applicableServices.filter(id => id !== service.id)
-                              : [...prev.applicableServices, service.id!]
-                          }));
-                        }}
-                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
-                          formData.applicableServices.includes(service.id!)
-                            ? "bg-brand-orange/10 border-brand-orange text-white"
-                            : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
-                        }`}
-                      >
-                        <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
-                          formData.applicableServices.includes(service.id!)
-                            ? "bg-brand-orange border-brand-orange text-black"
-                            : "bg-transparent border-white/20"
-                        }`}>
-                          {formData.applicableServices.includes(service.id!) && <Plus size={12} strokeWidth={4} />}
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-tight truncate">{service.name}</span>
-                      </button>
-                    ))}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Applicable Main Services</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-4 bg-white/[0.02] border border-white/10 rounded-2xl no-scrollbar">
+                    {services.map(service => {
+                      const isSelected = formData.applicableServices.includes(service.id!);
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              applicableServices: isSelected 
+                                ? prev.applicableServices.filter(id => id !== service.id)
+                                : [...prev.applicableServices, service.id!]
+                            }));
+                          }}
+                          className={`group relative flex flex-col items-start gap-2 p-4 rounded-2xl border transition-all duration-300 text-left ${
+                            isSelected
+                              ? "bg-brand-orange border-brand-orange shadow-[0_10px_20px_rgba(246,150,33,0.2)]"
+                              : "bg-[#111111] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className={`text-[10px] font-black uppercase tracking-widest italic transition-colors ${
+                              isSelected ? "text-black" : "text-white/60"
+                            }`}>
+                              {service.name}
+                            </span>
+                            {isSelected && (
+                              <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center">
+                                <Plus size={10} className="text-brand-orange" strokeWidth={4} />
+                              </div>
+                            )}
+                          </div>
+                          <span className={`text-[8px] font-bold uppercase tracking-[0.1em] opacity-40 ${
+                            isSelected ? "text-black" : "text-white"
+                          }`}>
+                            {service.category}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <p className="text-[9px] text-white/20 mt-1 uppercase font-bold tracking-wider">Leave empty to show for all services in selected categories</p>
+                  <p className="text-[9px] text-white/20 mt-2 uppercase font-black tracking-widest italic text-center">Leave empty to show for all services in selected categories</p>
                 </div>
 
                 {/* Image Upload */}
