@@ -303,7 +303,6 @@ export function BookingPageInner() {
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -1040,7 +1039,16 @@ export function BookingPageInner() {
     return sCat === activeCat;
   });
 
-  const timeSlots = scheduleSettings?.timeSlots || [
+  const timeSlots = (() => {
+    if (!selectedDate || !scheduleSettings) return scheduleSettings?.timeSlots || [];
+    
+    const dayIndex = new Date(selectedDate).getDay().toString();
+    const specificSlots = scheduleSettings.daySpecificSlots?.[dayIndex];
+    
+    return (specificSlots && specificSlots.length > 0) 
+      ? specificSlots 
+      : scheduleSettings.timeSlots;
+  })() || [
     "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM",
     "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM",
     "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM",
@@ -1655,122 +1663,6 @@ export function BookingPageInner() {
                     />
                   </div>
                 </div>
-                {!isPhoneVerified && (
-                  <button 
-                    type="button"
-                    disabled={resendTimer > 0 || isSendingOtp}
-                    onClick={async () => {
-                      if (!formData.phone) {
-                        console.log("Please enter a phone number first!");
-                        return;
-                      }
-                      if (isSendingOtp) return;
-                      setIsSendingOtp(true);
-                      try {
-                        const res = await fetch('/api/send-otp', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ phone: formData.phone })
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                          console.log("OTP sent successfully!");
-                        } else {
-                          if (data.error && data.error.includes("10 seconds")) {
-                            console.log("Please wait a few seconds before requesting another OTP.");
-                          } else {
-                            console.log("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
-                          }
-                        }
-                      } catch (e) {
-                        console.log("Error calling API. Showing OTP field for testing anyway.");
-                      } finally {
-                        setIsSendingOtp(false);
-                      }
-                      
-                      setIsOtpSent(true); // Always show for testing
-                      
-                      // Set timer based on attempts
-                      if (otpAttempts === 0) {
-                        setResendTimer(60); // 1 minute for first resend
-                      } else if (otpAttempts === 1) {
-                        setResendTimer(180); // 3 minutes for second resend (available for 3rd time)
-                      } else {
-                        setResendTimer(180); // Keep it at 3 mins for subsequent attempts
-                      }
-                      setOtpAttempts(prev => prev + 1);
-                    }}
-                    className={`w-full text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border mt-2 transition-all flex items-center justify-center gap-2 ${
-                      resendTimer > 0 || isSendingOtp
-                        ? 'bg-white/5 border-white/5 text-white/20 cursor-not-allowed' 
-                        : 'bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange border-brand-orange/10 hover:border-brand-orange/20'
-                    }`}
-                  >
-                    {isSendingOtp 
-                      ? <><Loader2 className="animate-spin" size={14} /> SENDING...</>
-                      : (resendTimer > 0 
-                        ? `Resend in ${Math.floor(resendTimer / 60)}:${(resendTimer % 60).toString().padStart(2, '0')}` 
-                        : (otpAttempts > 0 ? 'RESEND OTP' : 'VERIFY'))}
-                  </button>
-                )}
-
-                {isOtpSent && !isPhoneVerified && (
-                  <div className="space-y-4 mt-4">
-                    <div>
-                      <input 
-                        type="text" 
-                        placeholder="Enter OTP" 
-                        className={`w-full bg-black/40 border ${otpError ? 'border-red-500/50 focus:border-red-500/80' : 'border-white/[0.05] focus:border-brand-orange/50'} rounded-2xl px-6 py-4 text-sm font-bold focus:bg-black/60 outline-none transition-all text-white placeholder:text-white/40`}
-                        value={otp} 
-                        onChange={e => {
-                          setOtp(e.target.value);
-                          setOtpError("");
-                        }} 
-                      />
-                      {otpError && (
-                        <p className="text-red-500 text-[11px] font-bold mt-2 ml-2 tracking-wide uppercase">{otpError}</p>
-                      )}
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={async () => {
-                        setOtpError("");
-                        if (!otp.trim()) {
-                          setOtpError("Please enter the OTP.");
-                          return;
-                        }
-                        try {
-                          const res = await fetch('/api/verify-otp', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ phone: formData.phone, otp })
-                          });
-                          const data = await res.json();
-                          if (data.success) {
-                            console.log("Phone verified successfully!");
-                            setIsPhoneVerified(true);
-                          } else {
-                            console.log("Verification failed: " + (data.error || "Unknown error"));
-                            setOtpError("Wrong OTP entered. Please try again.");
-                          }
-                        } catch (e) {
-                          console.log("Error verifying OTP");
-                          setOtpError("Error verifying OTP. Please try again.");
-                        }
-                      }}
-                      className="w-full bg-brand-orange text-black font-black uppercase tracking-widest py-4 rounded-xl hover:scale-[1.02] active:scale-95 transition-all"
-                    >
-                      Verify OTP
-                    </button>
-                  </div>
-                )}
-
-                {isPhoneVerified && (
-                  <div className="mt-4 flex items-center gap-2 text-emerald-500 text-sm font-bold">
-                    <Check size={16} />
-                    <span>Phone number verified</span>
-                  </div>
-                )}
               </div>
 
               <div className="bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
@@ -2000,7 +1892,7 @@ export function BookingPageInner() {
           
           <button 
             onClick={currentStep === 5 ? (user ? handleSubmit : () => setShowAuthPopup(true)) : handleNext} 
-            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || carDetails.model.length < 4 || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms || !isPhoneVerified || carDetails.model.length < 4))} 
+            disabled={isSubmitting || (currentStep === 1 && (!carDetails.type || carDetails.model.length < 4 || !selectedGarageId)) || (currentStep === 2 && selectedServices.length === 0) || (currentStep === 4 && (!selectedDate || !selectedTime)) || (currentStep === 5 && (!formData.name || !formData.email || !formData.phone || !agreedToTerms || carDetails.model.length < 4))} 
 className="shrink-0 bg-brand-orange hover:bg-white text-black font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] text-[10px] sm:text-xs h-10 sm:h-12 px-4 sm:px-6 rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-20 shadow-xl shadow-brand-orange/20"
           >
             {isSubmitting

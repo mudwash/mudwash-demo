@@ -24,8 +24,12 @@ export default function SchedulePage() {
   const [newBlockedDate, setNewBlockedDate] = useState("");
   const [editingSlot, setEditingSlot] = useState<string | null>(null);
   const [editSlotValue, setEditSlotValue] = useState("");
+  const [selectedDayForSlots, setSelectedDayForSlots] = useState<string>("Global"); // "Global" or "0"-"6"
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [editDateValue, setEditDateValue] = useState("");
   const isMountedRef = useRef(true);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const editDateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -69,14 +73,19 @@ export default function SchedulePage() {
 
   const addSlot = () => {
     if (!schedule || !newSlot) return;
-    // Convert 24h to 12h format for display
     const [h, m] = newSlot.split(":");
     const hour = parseInt(h);
     const ampm = hour >= 12 ? "PM" : "AM";
     const h12 = hour % 12 === 0 ? 12 : hour % 12;
     const formatted = `${String(h12).padStart(2, "0")}:${m} ${ampm}`;
-    if (schedule.timeSlots.includes(formatted)) return;
-    const sorted = [...schedule.timeSlots, formatted].sort((a, b) => {
+
+    const currentSlots = selectedDayForSlots === "Global" 
+      ? schedule.timeSlots 
+      : (schedule.daySpecificSlots?.[selectedDayForSlots] || []);
+
+    if (currentSlots.includes(formatted)) return;
+    
+    const sorted = [...currentSlots, formatted].sort((a, b) => {
       const toMinutes = (s: string) => {
         const [time, period] = s.split(" ");
         const [hh, mm] = time.split(":").map(Number);
@@ -84,13 +93,35 @@ export default function SchedulePage() {
       };
       return toMinutes(a) - toMinutes(b);
     });
-    setSchedule({ ...schedule, timeSlots: sorted });
+
+    if (selectedDayForSlots === "Global") {
+      setSchedule({ ...schedule, timeSlots: sorted });
+    } else {
+      setSchedule({ 
+        ...schedule, 
+        daySpecificSlots: { 
+          ...(schedule.daySpecificSlots || {}), 
+          [selectedDayForSlots]: sorted 
+        } 
+      });
+    }
     setNewSlot("");
   };
 
   const removeSlot = (slot: string) => {
     if (!schedule) return;
-    setSchedule({ ...schedule, timeSlots: schedule.timeSlots.filter(s => s !== slot) });
+    if (selectedDayForSlots === "Global") {
+      setSchedule({ ...schedule, timeSlots: schedule.timeSlots.filter(s => s !== slot) });
+    } else {
+      const currentSlots = schedule.daySpecificSlots?.[selectedDayForSlots] || [];
+      setSchedule({ 
+        ...schedule, 
+        daySpecificSlots: { 
+          ...(schedule.daySpecificSlots || {}), 
+          [selectedDayForSlots]: currentSlots.filter(s => s !== slot) 
+        } 
+      });
+    }
   };
 
   const slotTo24h = (slot: string): string => {
@@ -115,8 +146,14 @@ export default function SchedulePage() {
     const h12 = hour % 12 === 0 ? 12 : hour % 12;
     const formatted = `${String(h12).padStart(2, "0")}:${m} ${ampm}`;
     if (formatted === editingSlot) { setEditingSlot(null); return; }
-    if (schedule.timeSlots.includes(formatted)) { setEditingSlot(null); return; }
-    const updated = schedule.timeSlots.map(s => s === editingSlot ? formatted : s).sort((a, b) => {
+    
+    const currentSlots = selectedDayForSlots === "Global" 
+      ? schedule.timeSlots 
+      : (schedule.daySpecificSlots?.[selectedDayForSlots] || []);
+
+    if (currentSlots.includes(formatted)) { setEditingSlot(null); return; }
+    
+    const updated = currentSlots.map(s => s === editingSlot ? formatted : s).sort((a, b) => {
       const toMin = (s: string) => {
         const [time, period] = s.split(" ");
         const [hh, mm] = time.split(":").map(Number);
@@ -124,7 +161,18 @@ export default function SchedulePage() {
       };
       return toMin(a) - toMin(b);
     });
-    setSchedule({ ...schedule, timeSlots: updated });
+
+    if (selectedDayForSlots === "Global") {
+      setSchedule({ ...schedule, timeSlots: updated });
+    } else {
+      setSchedule({ 
+        ...schedule, 
+        daySpecificSlots: { 
+          ...(schedule.daySpecificSlots || {}), 
+          [selectedDayForSlots]: updated 
+        } 
+      });
+    }
     setEditingSlot(null);
   };
 
@@ -138,6 +186,21 @@ export default function SchedulePage() {
   const removeBlockedDate = (date: string) => {
     if (!schedule) return;
     setSchedule({ ...schedule, blockedDates: schedule.blockedDates.filter(d => d !== date) });
+  };
+
+  const startEditDate = (date: string) => {
+    setEditingDate(date);
+    setEditDateValue(date);
+    setTimeout(() => editDateInputRef.current?.focus(), 50);
+  };
+
+  const saveEditDate = () => {
+    if (!schedule || !editingDate || !editDateValue) { setEditingDate(null); return; }
+    if (editDateValue === editingDate) { setEditingDate(null); return; }
+    if (schedule.blockedDates.includes(editDateValue)) { setEditingDate(null); return; }
+    const updated = [...schedule.blockedDates.filter(d => d !== editingDate), editDateValue].sort();
+    setSchedule({ ...schedule, blockedDates: updated });
+    setEditingDate(null);
   };
 
   if (loading) {
@@ -238,40 +301,67 @@ export default function SchedulePage() {
 
         {/* Time Slots */}
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-2">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
                 <Clock size={20} />
               </div>
               <div>
                 <h2 className="font-black text-white uppercase italic text-sm tracking-tight">Time Slots</h2>
-                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">{schedule.timeSlots.length} slots active</p>
+                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Configure daily operating hours</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                value={newSlot}
-                onChange={e => setNewSlot(e.target.value)}
-                className="bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-orange transition-all"
-              />
-              <button
-                onClick={addSlot}
-                disabled={!newSlot}
-                className="bg-brand-orange text-black px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-white transition-colors disabled:opacity-40"
-              >
-                <Plus size={14} /> Add
-              </button>
+
+            <div className="flex flex-col gap-4 flex-grow max-w-2xl">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+                {["Global", ...DAY_NAMES].map((day, i) => {
+                  const val = day === "Global" ? "Global" : (DAY_NAMES.indexOf(day)).toString();
+                  const isActive = selectedDayForSlots === val;
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDayForSlots(val)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                        isActive 
+                          ? "bg-brand-orange border-brand-orange text-black shadow-[0_10px_20px_rgba(246,150,33,0.2)]" 
+                          : "bg-white/5 border-white/5 text-white/40 hover:text-white"
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/[0.03] border border-white/10 rounded-2xl p-2 pl-4">
+                <div className="flex items-center gap-3">
+                  <Clock size={16} className="text-brand-orange/40" />
+                  <input
+                    type="time"
+                    value={newSlot}
+                    onChange={e => setNewSlot(e.target.value)}
+                    className="bg-transparent border-none outline-none text-sm font-bold text-white w-32 [color-scheme:dark]"
+                  />
+                </div>
+                <button
+                  onClick={addSlot}
+                  disabled={!newSlot}
+                  className="bg-brand-orange text-black px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-white transition-all disabled:opacity-40 disabled:grayscale shadow-lg shadow-brand-orange/10"
+                >
+                  <Plus size={14} strokeWidth={3} />
+                  <span>Add Slot {selectedDayForSlots !== "Global" ? `to ${DAY_NAMES[parseInt(selectedDayForSlots)]}` : ""}</span>
+                </button>
+              </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {schedule.timeSlots.map(slot => (
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
+            {(selectedDayForSlots === "Global" ? schedule.timeSlots : (schedule.daySpecificSlots?.[selectedDayForSlots] || [])).map(slot => (
               <div
                 key={slot}
                 className={`flex items-center gap-1.5 border rounded-full transition-all group ${
                   editingSlot === slot
                     ? "bg-brand-orange/10 border-brand-orange/40 px-3 py-1.5"
-                    : "bg-white/5 border-white/10 px-4 py-2 hover:border-brand-orange/40 hover:bg-brand-orange/5 cursor-pointer"
+                    : "bg-white/5 border-white/10 px-4 py-2 hover:border-brand-orange/40 hover:bg-brand-orange/5"
                 }`}
               >
                 {editingSlot === slot ? (
@@ -295,16 +385,26 @@ export default function SchedulePage() {
                   <>
                     <span
                       onClick={() => startEditSlot(slot)}
-                      className="text-xs font-bold text-white group-hover:text-brand-orange transition-colors"
+                      className="text-[10px] font-black text-white group-hover:text-brand-orange transition-colors cursor-pointer uppercase tracking-tight"
                     >
                       {slot}
                     </span>
-                    <button
-                      onClick={() => removeSlot(slot)}
-                      className="text-white/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ml-1"
-                    >
-                      <X size={12} />
-                    </button>
+                    <div className="flex items-center gap-1 ml-1">
+                      <button
+                        onClick={() => startEditSlot(slot)}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-white/20 hover:text-brand-orange hover:bg-brand-orange/10 transition-all"
+                        title="Edit Slot"
+                      >
+                        <Save size={10} />
+                      </button>
+                      <button
+                        onClick={() => removeSlot(slot)}
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-white/20 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                        title="Delete Slot"
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
@@ -324,19 +424,23 @@ export default function SchedulePage() {
                 <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Holidays, closures & maintenance</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={newBlockedDate}
-                onChange={e => setNewBlockedDate(e.target.value)}
-                className="bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-orange transition-all"
-              />
+            <div className="flex items-center gap-3 bg-white/[0.03] border border-white/10 rounded-2xl p-2 pl-4">
+              <div className="flex items-center gap-3">
+                <Calendar size={16} className="text-red-400/40" />
+                <input
+                  type="date"
+                  value={newBlockedDate}
+                  onChange={e => setNewBlockedDate(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm font-bold text-white w-36 [color-scheme:dark] uppercase"
+                />
+              </div>
               <button
                 onClick={addBlockedDate}
                 disabled={!newBlockedDate}
-                className="bg-red-500 text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-red-400 transition-colors disabled:opacity-40"
+                className="bg-red-500 text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-red-400 transition-all disabled:opacity-40 disabled:grayscale shadow-lg shadow-red-500/10"
               >
-                <Plus size={14} /> Block
+                <Plus size={14} strokeWidth={3} />
+                <span>Block Date</span>
               </button>
             </div>
           </div>
@@ -345,16 +449,54 @@ export default function SchedulePage() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {schedule.blockedDates.map(date => (
-                <div key={date} className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-2 group">
-                  <span className="text-xs font-bold text-red-400">
-                    {new Date(date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                  </span>
-                  <button
-                    onClick={() => removeBlockedDate(date)}
-                    className="text-red-400/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <X size={12} />
-                  </button>
+                <div key={date} className={`flex items-center gap-2 border rounded-full transition-all group ${
+                  editingDate === date
+                    ? "bg-red-500/10 border-red-500/40 px-3 py-1.5"
+                    : "bg-red-500/5 border-red-500/10 px-4 py-2 hover:border-red-500/40"
+                }`}>
+                  {editingDate === date ? (
+                    <>
+                      <input
+                        ref={editDateInputRef}
+                        type="date"
+                        value={editDateValue}
+                        onChange={e => setEditDateValue(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") saveEditDate(); if (e.key === "Escape") setEditingDate(null); }}
+                        className="bg-transparent border-none outline-none text-[10px] font-black uppercase text-red-400 w-32"
+                      />
+                      <button onClick={saveEditDate} className="text-red-400 hover:text-white transition-colors">
+                        <Check size={12} strokeWidth={3} />
+                      </button>
+                      <button onClick={() => setEditingDate(null)} className="text-white/30 hover:text-red-400 transition-colors">
+                        <X size={12} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span 
+                        onClick={() => startEditDate(date)}
+                        className="text-[10px] font-black text-red-400 cursor-pointer hover:text-white transition-colors uppercase tracking-tight"
+                      >
+                        {new Date(date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                      </span>
+                      <div className="flex items-center gap-1 ml-1">
+                        <button
+                          onClick={() => startEditDate(date)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400/30 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                          title="Edit Date"
+                        >
+                          <Plus size={10} className="rotate-45" />
+                        </button>
+                        <button
+                          onClick={() => removeBlockedDate(date)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400/30 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                          title="Delete Date"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

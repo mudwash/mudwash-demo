@@ -12,6 +12,7 @@ import { db } from "./firebase";
 export interface ScheduleSettings {
   id?: string;
   timeSlots: string[];
+  daySpecificSlots?: { [key: string]: string[] }; // Map day index (0-6 as string) to slots
   workingDays: number[]; // 0=Sunday, 1=Monday, ..., 6=Saturday
   blockedDates: string[]; // ISO date strings e.g. "2025-12-25"
   maxBookingsPerSlot: number;
