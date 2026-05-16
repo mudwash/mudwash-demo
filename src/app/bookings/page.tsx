@@ -829,14 +829,6 @@ export function BookingPageInner() {
     return Math.max(0, total - promoDiscount);
   };
 
-  useEffect(() => {
-    if (promoCode) {
-      applyPromoCode();
-    } else {
-      setPromoDiscount(0);
-      setPromoError("");
-    }
-  }, [promoCode]);
 
   const applyPromoCode = async () => {
     setPromoError("");
@@ -1875,25 +1867,48 @@ export function BookingPageInner() {
                     </div>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Promo Code</h3>
                   </div>
-                  <div>
-                    <select 
-                      className="w-full bg-black/40 border border-white/[0.05] rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange/50 outline-none transition-all text-white" 
-                      value={promoCode} 
-                      onChange={e => setPromoCode(e.target.value)} 
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        placeholder="Enter promo code"
+                        value={promoCode}
+                        onChange={e => {
+                          setPromoCode(e.target.value.toUpperCase());
+                          setPromoError("");
+                          if (!e.target.value) setPromoDiscount(0);
+                        }}
+                        onKeyDown={e => e.key === 'Enter' && applyPromoCode()}
+                        className={`w-full bg-black/40 border rounded-xl px-4 py-3 text-sm font-black uppercase italic tracking-wider focus:outline-none transition-all text-white placeholder:text-white/20 placeholder:normal-case placeholder:not-italic placeholder:tracking-normal ${
+                          promoDiscount > 0
+                            ? 'border-emerald-500/50 focus:border-emerald-500'
+                            : promoError
+                            ? 'border-red-500/50 focus:border-red-500/70'
+                            : 'border-white/[0.05] focus:border-brand-orange/50'
+                        }`}
+                      />
+                      {promoDiscount > 0 && (
+                        <button
+                          onClick={() => { setPromoCode(""); setPromoDiscount(0); setPromoError(""); }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={applyPromoCode}
+                      disabled={!promoCode.trim() || promoDiscount > 0}
+                      className="px-5 py-3 bg-brand-orange text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
                     >
-                      <option value="" className="bg-[#0A0A0A]">Select Promo Code</option>
-                      {availablePromoCodes.map(promo => (
-                        <option key={promo.id} value={promo.code} className="bg-[#0A0A0A]">
-                          {promo.code} ({promo.type === 'percentage' ? `${promo.value}%` : `AED ${promo.value}`})
-                        </option>
-                      ))}
-                    </select>
+                      Apply
+                    </button>
                   </div>
-                  {promoError && <p className="text-xs text-red-500 font-medium mt-1">{promoError}</p>}
+                  {promoError && <p className="text-xs text-red-500 font-medium">{promoError}</p>}
                   {promoDiscount > 0 && (
-                    <div className="flex justify-between text-sm text-green-500">
-                      <span>Discount Applied</span>
-                      <span>-AED {promoDiscount}</span>
+                    <div className="flex items-center justify-between text-sm text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 rounded-xl">
+                      <span className="font-black uppercase tracking-widest text-[10px]">✓ Discount Applied</span>
+                      <span className="font-black italic">-AED {promoDiscount}</span>
                     </div>
                   )}
                 </div>
