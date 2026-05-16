@@ -383,7 +383,7 @@ export function BookingPageInner() {
           const data = doc.data();
           if (data.createdAt) {
             const createdAtTime = new Date(data.createdAt).getTime();
-            if (now - createdAtTime <= 40000) {
+            if (now - createdAtTime <= 300000) {
               counts[data.time] = (counts[data.time] || 0) + 1;
             }
           } else {
@@ -911,7 +911,7 @@ export function BookingPageInner() {
     }
     
     setSelectedTime(slot);
-    setSlotTimer(40);
+    setSlotTimer(300);
     
     const selectionId = `${selectedDate}_${slot}_${user?.uid || 'guest_' + Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -1123,25 +1123,25 @@ export function BookingPageInner() {
               {currentStep === 5 && "Review"}
             </motion.h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex flex-col items-end mr-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            {slotTimer !== null && slotTimer > 0 && currentStep >= 4 && !isSuccess && (
+              <div className="flex items-center gap-1.5 bg-brand-orange/20 border border-brand-orange/40 text-brand-orange px-3 py-1.5 rounded-full font-black italic tracking-widest text-[10px] shadow-[0_0_15px_rgba(246,150,33,0.2)]">
+                <Timer size={12} className="animate-pulse" />
+                <span>{Math.floor(slotTimer / 60)}:{(slotTimer % 60).toString().padStart(2, '0')}</span>
+              </div>
+            )}
+            <div className="hidden md:flex flex-col items-end mr-2">
               <span className="text-[8px] font-black uppercase tracking-widest text-white/20 leading-none">Vehicle</span>
               <span className="text-[10px] font-bold text-white italic truncate max-w-[100px]">{carDetails.model || "Not Set"}</span>
             </div>
-            <Link href="/" className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
-              <Home size={18} />
+            <Link href="/" className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:bg-brand-orange hover:text-black transition-all active:scale-90">
+              <Home size={16} className="md:w-[18px] md:h-[18px]" />
             </Link>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 pt-20 pb-40 relative">
-        {slotTimer !== null && slotTimer > 0 && currentStep >= 4 && !isSuccess && (
-          <div className="fixed top-[6.5rem] left-1/2 -translate-x-1/2 bg-brand-orange/10 border border-brand-orange/30 text-brand-orange px-6 py-2 rounded-full z-[150] backdrop-blur-md font-black italic tracking-widest text-[10px] flex items-center gap-2 shadow-[0_5px_15px_rgba(246,150,33,0.25)]">
-            <Timer size={14} className="animate-pulse" />
-            <span>SLOT RESERVED FOR {slotTimer}S</span>
-          </div>
-        )}
         <AnimatePresence mode="wait">
           
           {/* STEP 1: LOCATION & VEHICLE SELECTION */}
