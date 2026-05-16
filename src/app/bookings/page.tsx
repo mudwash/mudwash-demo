@@ -292,6 +292,7 @@ export function BookingPageInner() {
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [otpAttempts, setOtpAttempts] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -515,8 +516,10 @@ export function BookingPageInner() {
       setFormData(prev => ({ ...prev, address: savedLocation }));
     }
     const savedPhone = localStorage.getItem("userPhone");
-    if (savedPhone) {
+    if (savedPhone && savedPhone.startsWith("+971")) {
       setFormData(prev => ({ ...prev, phone: savedPhone }));
+    } else {
+      setFormData(prev => ({ ...prev, phone: "+971 " }));
     }
   }, []);
 
@@ -530,7 +533,7 @@ export function BookingPageInner() {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState("");
 
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "+971 ", address: "" });
   const [carDetails, setCarDetails] = useState({ make: "", model: "", type: "" });
 
   useEffect(() => {
@@ -1575,19 +1578,28 @@ export function BookingPageInner() {
                       autoComplete="off"
                       className="w-full bg-black/40 border border-white/[0.05] rounded-2xl pl-20 pr-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" 
                       value={formData.phone} 
-                      onChange={e => setFormData({...formData, phone: e.target.value})} 
+                      onChange={e => {
+                        let val = e.target.value;
+                        if (!val.startsWith('+971')) {
+                          if (val.length < 4) val = '+971 ';
+                          else val = '+971 ' + val.replace(/^\+?971?\s?/, '').trim();
+                        }
+                        setFormData({...formData, phone: val});
+                      }} 
                     />
                   </div>
                 </div>
                 {!isPhoneVerified && (
                   <button 
                     type="button"
-                    disabled={resendTimer > 0}
+                    disabled={resendTimer > 0 || isSendingOtp}
                     onClick={async () => {
                       if (!formData.phone) {
                         alert("Please enter a phone number first!");
                         return;
                       }
+                      if (isSendingOtp) return;
+                      setIsSendingOtp(true);
                       try {
                         const res = await fetch('/api/send-otp', {
                           method: 'POST',
@@ -1598,10 +1610,16 @@ export function BookingPageInner() {
                         if (data.success) {
                           alert("OTP sent successfully!");
                         } else {
-                          alert("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
+                          if (data.error && data.error.includes("10 seconds")) {
+                            alert("Please wait a few seconds before requesting another OTP.");
+                          } else {
+                            alert("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
+                          }
                         }
                       } catch (e) {
                         alert("Error calling API. Showing OTP field for testing anyway.");
+                      } finally {
+                        setIsSendingOtp(false);
                       }
                       
                       setIsOtpSent(true); // Always show for testing
@@ -1617,14 +1635,16 @@ export function BookingPageInner() {
                       setOtpAttempts(prev => prev + 1);
                     }}
                     className={`w-full text-[10px] font-black uppercase tracking-widest py-4 rounded-xl border mt-2 transition-all flex items-center justify-center gap-2 ${
-                      resendTimer > 0 
+                      resendTimer > 0 || isSendingOtp
                         ? 'bg-white/5 border-white/5 text-white/20 cursor-not-allowed' 
                         : 'bg-brand-orange/5 hover:bg-brand-orange/10 text-brand-orange border-brand-orange/10 hover:border-brand-orange/20'
                     }`}
                   >
-                    {resendTimer > 0 
-                      ? `Resend in ${Math.floor(resendTimer / 60)}:${(resendTimer % 60).toString().padStart(2, '0')}` 
-                      : (otpAttempts > 0 ? 'RESEND OTP' : 'VERIFY')}
+                    {isSendingOtp 
+                      ? <><Loader2 className="animate-spin" size={14} /> SENDING...</>
+                      : (resendTimer > 0 
+                        ? `Resend in ${Math.floor(resendTimer / 60)}:${(resendTimer % 60).toString().padStart(2, '0')}` 
+                        : (otpAttempts > 0 ? 'RESEND OTP' : 'VERIFY'))}
                   </button>
                 )}
 
@@ -1633,7 +1653,7 @@ export function BookingPageInner() {
                     <input 
                       type="text" 
                       placeholder="Enter OTP" 
-                      className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all placeholder:text-white/10" 
+                      className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all text-white placeholder:text-white/40" 
                       value={otp} 
                       onChange={e => setOtp(e.target.value)} 
                     />

@@ -46,7 +46,7 @@ export default function BookingContactForm() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
+    phone: "+971 ",
     terms: false
   });
   const router = useRouter();
@@ -243,7 +243,14 @@ export default function BookingContactForm() {
                   type="tel"
                   placeholder="PHONE NUMBER"
                   value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (!val.startsWith('+971')) {
+                      if (val.length < 4) val = '+971 ';
+                      else val = '+971 ' + val.replace(/^\+?971?\s?/, '').trim();
+                    }
+                    setFormData({...formData, phone: val});
+                  }}
                   className="w-full bg-white/[0.03] text-white px-6 py-5 rounded-2xl border border-white/5 focus:border-brand-orange/50 focus:bg-white/[0.06] placeholder:text-white/10 text-[11px] font-black uppercase tracking-[0.2em] transition-all outline-none"
                 />
                 <input
