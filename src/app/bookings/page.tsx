@@ -1425,31 +1425,36 @@ export function BookingPageInner() {
             const recommended = addons.filter(a => {
               if (a.active === false) return false;
               
-              const selectedServiceIds = selectedServices.map(s => s.id);
-              const selectedServiceObjs = services.filter(s => selectedServiceIds.includes(s.id!));
-              const selectedCats = [...new Set(selectedServiceObjs.map(s => s.category))];
-
+              const selectedServiceId = selectedServices[0]?.id;
+              const selectedService = services.find(s => s.id === selectedServiceId);
+              if (!selectedService) return true; // Show general if no service selected? 
+              
+              const sCat = (selectedService.category || "").toLowerCase().trim();
               const hasSpecificServices = a.applicableServices && a.applicableServices.length > 0;
               const hasSpecificCategories = a.applicableCategories && a.applicableCategories.length > 0;
 
-              // If specific services are listed, priority goes to that
+              // 1. If add-on is tied to specific services, check if current service is one of them
               if (hasSpecificServices) {
-                return a.applicableServices!.some(id => selectedServiceIds.includes(id));
+                if (a.applicableServices!.some(id => id === selectedServiceId)) return true;
               }
 
-              // Otherwise check categories
+              // 2. If add-on is tied to specific categories, check if current category matches
               if (hasSpecificCategories) {
-                return a.applicableCategories!.some(cat => selectedCats.includes(cat));
+                if (a.applicableCategories!.some(cat => cat.toLowerCase().trim() === sCat)) return true;
               }
 
-              // Default: show for all
-              return true;
+              // 3. If it has neither, it's a general add-on, show it
+              if (!hasSpecificServices && !hasSpecificCategories) return true;
+
+              return false;
             });
             return (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                 <div className="space-y-2">
                   <span className="text-[11px] text-brand-orange font-black uppercase tracking-[0.4em]">Recommended</span>
-                  <h2 className="text-4xl font-black uppercase italic tracking-tighter">AI Recommended Items</h2>
+                  <h2 className="text-4xl font-black uppercase italic tracking-tighter">
+                    {services.find(s => s.id === selectedServices[0]?.id)?.category} Enhancements
+                  </h2>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {recommended.map((addon, idx) => {
@@ -1959,6 +1964,7 @@ className="shrink-0 bg-brand-orange hover:bg-white text-black font-black upperca
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-black italic uppercase tracking-tight text-white leading-none truncate">{s.name}</p>
+                              <p className="text-[10px] text-brand-orange font-black uppercase tracking-widest mt-1 italic">{s.category}</p>
                             </div>
                           </div>
                           {(() => {
