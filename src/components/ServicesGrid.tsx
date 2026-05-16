@@ -162,7 +162,7 @@ export default function ServicesGrid() {
                         }`}
                       >
                         <div className={`absolute inset-0 bg-gradient-to-br from-brand-orange/8 to-transparent transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}/>
-                        {index === 0 && (
+                        {catName.toUpperCase().includes("CERAMIC") && (
                           <div className="absolute top-1.5 left-1.5 bg-gradient-to-r from-[#FF416C] to-[#FF4B2B] text-white text-[7px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-0.5 shadow-[0_0_10px_rgba(255,75,43,0.5)] z-20">
                             <Flame size={7} fill="currentColor" className="animate-pulse" />
                             <span>30% OFF</span>
