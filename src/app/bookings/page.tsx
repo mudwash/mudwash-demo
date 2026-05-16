@@ -294,6 +294,7 @@ export function BookingPageInner() {
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [slotTimer, setSlotTimer] = useState<number | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -377,9 +378,17 @@ export function BookingPageInner() {
       const q = query(collection(db, "active_selections"), where("date", "==", selectedDate));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const counts: Record<string, number> = {};
+        const now = Date.now();
         snapshot.docs.forEach(doc => {
           const data = doc.data();
-          counts[data.time] = (counts[data.time] || 0) + 1;
+          if (data.createdAt) {
+            const createdAtTime = new Date(data.createdAt).getTime();
+            if (now - createdAtTime <= 40000) {
+              counts[data.time] = (counts[data.time] || 0) + 1;
+            }
+          } else {
+            counts[data.time] = (counts[data.time] || 0) + 1;
+          }
         });
         setActiveSelections(counts);
       }, (error) => {
@@ -624,6 +633,30 @@ export function BookingPageInner() {
   
   const KNOWN_SUVS = ["Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Lexus LX600", "Mercedes G63 AMG", "Range Rover", "Land Rover Defender", "Tesla Model Y", "Porsche Cayenne", "Rolls Royce Cullinan", "Lamborghini Urus", "Bentley Bentayga", "BMW X7", "Audi Q8", "Toyota RAV4", "Honda CR-V", "Jeep Wrangler", "Jeep Grand Cherokee", "Subaru Outback", "Mazda CX-5", "Hyundai Tucson", "Kia Sportage", "Nissan Rogue", "BMW X5", "BMW X6", "Audi Q5", "Audi Q7", "Lexus RX"];
   
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (slotTimer !== null && slotTimer > 0) {
+      interval = setInterval(() => {
+        setSlotTimer(prev => (prev !== null ? prev - 1 : null));
+      }, 1000);
+    } else if (slotTimer === 0) {
+      setSelectedTime(null);
+      setSlotTimer(null);
+      if (currentSelectionId) {
+        import("@/lib/firebase").then(({ db }) => {
+          import("firebase/firestore").then(({ deleteDoc, doc }) => {
+            deleteDoc(doc(db, "active_selections", currentSelectionId)).catch(console.error);
+          });
+        });
+        setCurrentSelectionId(null);
+      }
+      if (currentStep >= 4 && !isSuccess) {
+        setCurrentStep(4);
+      }
+    }
+    return () => clearInterval(interval);
+  }, [slotTimer, currentSelectionId, currentStep, isSuccess]);
+
   const POPULAR_CARS = [
     // Dubai Favorites (First)
     "Nissan Patrol", "Toyota Land Cruiser", "Toyota Prado", "Lexus LX600",
@@ -878,6 +911,7 @@ export function BookingPageInner() {
     }
     
     setSelectedTime(slot);
+    setSlotTimer(40);
     
     const selectionId = `${selectedDate}_${slot}_${user?.uid || 'guest_' + Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -1101,7 +1135,13 @@ export function BookingPageInner() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-20 pb-40">
+      <main className="max-w-7xl mx-auto px-6 pt-20 pb-40 relative">
+        {slotTimer !== null && slotTimer > 0 && currentStep >= 4 && !isSuccess && (
+          <div className="fixed top-[6.5rem] left-1/2 -translate-x-1/2 bg-brand-orange/10 border border-brand-orange/30 text-brand-orange px-6 py-2 rounded-full z-[150] backdrop-blur-md font-black italic tracking-widest text-[10px] flex items-center gap-2 shadow-[0_5px_15px_rgba(246,150,33,0.25)]">
+            <Timer size={14} className="animate-pulse" />
+            <span>SLOT RESERVED FOR {slotTimer}S</span>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           
           {/* STEP 1: LOCATION & VEHICLE SELECTION */}
