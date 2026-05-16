@@ -60,8 +60,7 @@ import {
   Truck,
   Bike,
   Loader2,
-  MapPin,
-  Layers
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { createBooking, getBookingsByDate } from '@/lib/bookings';
@@ -103,7 +102,7 @@ const ICON_MAP: any = {
   Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
   Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
   Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
-  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike, Layers
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
 };
 
 const VEHICLE_IMAGES: Record<string, string> = {
@@ -748,7 +747,7 @@ export function BookingPageInner() {
         if (vData.length > 0) {
           setCarDetails(prev => prev.type ? prev : { ...prev, type: vData[0].name });
         }
-        if (catData.length > 0) setSelectedCategory("All");
+        if (catData.length > 0) setSelectedCategory(catData[0].name);
 
         const preselectedId = searchParams.get('service');
         if (preselectedId && srvData.length > 0) {
@@ -774,12 +773,14 @@ export function BookingPageInner() {
   }, [profile]);
 
   const addService = (id: string) => {
-    // Only one service allowed at a time, quantity always 1
-    setSelectedServices([{ id, quantity: 1 }]);
+    setSelectedServices(prev => {
+      if (prev.find(s => s.id === id)) return prev;
+      return [...prev, { id, quantity: 1 }];
+    });
   };
 
   const removeService = (id: string) => {
-    setSelectedServices([]);
+    setSelectedServices(prev => prev.filter(s => s.id !== id));
   };
 
   const toggleAddOn = (id: string) => {
@@ -1021,7 +1022,6 @@ export function BookingPageInner() {
   };
 
   const filteredServices = services.filter(s => {
-    if (selectedCategory === "All") return true;
     const sCat = (s.category || "").toLowerCase().trim();
     const activeCat = (selectedCategory || "").toLowerCase().trim();
     return sCat === activeCat;
@@ -1285,18 +1285,6 @@ export function BookingPageInner() {
                 
                 <div className="bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-xl w-full overflow-hidden">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar w-full snap-x snap-mandatory" style={{ padding: '12px 16px' }}>
-                    {/* ALL Categories Option */}
-                    <button 
-                      onClick={() => setSelectedCategory("All")}
-                      className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${selectedCategory === "All" ? 'bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.3)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
-                    >
-                      <Layers size={24} strokeWidth={2} className={selectedCategory === "All" ? 'text-black' : 'text-brand-orange/60'} />
-                      <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${selectedCategory === "All" ? 'text-black' : 'text-white/60'}`}>All Treatments</span>
-                      <div className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black transition-colors ${selectedCategory === "All" ? 'bg-black text-brand-orange' : 'bg-white/10 text-white/50'}`}>
-                        {services.length}
-                      </div>
-                    </button>
-
                     {categories.slice(0, 8).map((catObj, catIdx, arr) => {
                       const catName = catObj.name;
                       const isActive = selectedCategory === catName;
@@ -1448,22 +1436,21 @@ export function BookingPageInner() {
             const recommended = addons.filter(a => {
               if (a.active === false) return false;
               
-              const selectedServiceId = selectedServices[0]?.id;
-              const selectedService = services.find(s => s.id === selectedServiceId);
-              if (!selectedService) return true; // Show general if no service selected? 
+              const selectedServiceIds = selectedServices.map(s => s.id);
+              const selectedServiceObjs = services.filter(s => selectedServiceIds.includes(s.id!));
+              const selectedCats = [...new Set(selectedServiceObjs.map(s => (s.category || "").toLowerCase().trim()))];
               
-              const sCat = (selectedService.category || "").toLowerCase().trim();
               const hasSpecificServices = a.applicableServices && a.applicableServices.length > 0;
               const hasSpecificCategories = a.applicableCategories && a.applicableCategories.length > 0;
 
               // 1. If add-on is tied to specific services, check if current service is one of them
               if (hasSpecificServices) {
-                if (a.applicableServices!.some(id => id === selectedServiceId)) return true;
+                if (a.applicableServices!.some(id => selectedServiceIds.includes(id))) return true;
               }
 
               // 2. If add-on is tied to specific categories, check if current category matches
               if (hasSpecificCategories) {
-                if (a.applicableCategories!.some(cat => cat.toLowerCase().trim() === sCat)) return true;
+                if (a.applicableCategories!.some(cat => selectedCats.includes(cat.toLowerCase().trim()))) return true;
               }
 
               // 3. If it has neither, it's a general add-on, show it
@@ -1476,7 +1463,7 @@ export function BookingPageInner() {
                 <div className="space-y-2">
                   <span className="text-[11px] text-brand-orange font-black uppercase tracking-[0.4em]">Recommended</span>
                   <h2 className="text-4xl font-black uppercase italic tracking-tighter">
-                    {services.find(s => s.id === selectedServices[0]?.id)?.category} Enhancements
+                    {[...new Set(selectedServices.map(sel => services.find(s => s.id === sel.id)?.category).filter(Boolean))].join(" & ")} Enhancements
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
