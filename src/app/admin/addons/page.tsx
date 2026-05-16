@@ -71,7 +71,7 @@ export default function AddonsPage() {
       setFormData(prev => ({ ...prev, image: downloadURL }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image.");
+      console.log("Failed to upload image.");
     } finally {
       setIsUploading(false);
     }

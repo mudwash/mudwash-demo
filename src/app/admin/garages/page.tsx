@@ -42,7 +42,7 @@ export default function ScheduleSettings() {
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error("Error saving settings:", error);
-      alert("Failed to save settings.");
+      console.log("Failed to save settings.");
     } finally {
       setIsSubmitting(false);
     }

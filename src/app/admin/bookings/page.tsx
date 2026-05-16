@@ -160,7 +160,7 @@ export default function BookingsPage() {
 
   const sendWhatsAppConfirmation = (booking: Booking) => {
     const phone = booking.phone?.replace(/[^\d]/g, "");
-    if (!phone) { alert("No phone number for this booking."); return; }
+    if (!phone) { console.log("No phone number for this booking."); return; }
     const msg = encodeURIComponent(
       `Hello ${booking.customerName}! 🚗✨\n\nYour Mudwash booking has been *CONFIRMED*!\n\n` +
       `📅 Date: ${booking.date}\n⏰ Time: ${booking.time}\n` +
@@ -186,7 +186,7 @@ export default function BookingsPage() {
   const sendPartialPaymentLink = () => {
     if (!partialBooking) return;
     const phone = partialBooking.phone?.replace(/[^\d]/g, "");
-    if (!phone) { alert("No phone number for this booking."); return; }
+    if (!phone) { console.log("No phone number for this booking."); return; }
     const msg = encodeURIComponent(
       `Hello ${partialBooking.customerName}! 🚗\n\n` +
       `To confirm your Mudwash booking on *${partialBooking.date}* at *${partialBooking.time}*, ` +

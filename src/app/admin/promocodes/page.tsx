@@ -73,7 +73,7 @@ export default function PromoCodesPage() {
     try {
       const codeUpper = formData.code.toUpperCase().replace(/\s+/g, '');
       if (!codeUpper) {
-        alert("Please enter a valid code.");
+        console.log("Please enter a valid code.");
         return;
       }
 
@@ -109,7 +109,7 @@ export default function PromoCodesPage() {
       fetchPromoCodes();
     } catch (error) {
       console.error("Error saving promo code:", error);
-      alert("Failed to save promo code.");
+      console.log("Failed to save promo code.");
     } finally {
       setIsSubmitting(false);
     }

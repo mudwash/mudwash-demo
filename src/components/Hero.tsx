@@ -122,11 +122,11 @@ export default function Hero() {
         },
         (error) => {
           console.error("Error getting location:", error);
-          alert("Could not get your location.");
+          console.log("Could not get your location.");
         }
       );
     } else {
-      alert("Geolocation is not supported by your browser.");
+      console.log("Geolocation is not supported by your browser.");
     }
   };
   const images = ['/carousel-1.png', '/carousel-2.png', '/carousel-3.png'];

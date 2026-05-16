@@ -105,7 +105,7 @@ export default function ProfilePage() {
       // Profile will refresh via AuthContext
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile.");
+      console.log("Failed to update profile.");
     } finally {
       setIsSaving(false);
     }

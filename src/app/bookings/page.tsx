@@ -293,6 +293,7 @@ export function BookingPageInner() {
   const [resendTimer, setResendTimer] = useState(0);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpError, setOtpError] = useState("");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -455,14 +456,14 @@ export function BookingPageInner() {
             window.history.replaceState({}, document.title, window.location.pathname);
           } catch (e) {
             console.error("Failed to create booking after payment:", e);
-            alert("Failed to save your booking. Please contact support with your payment confirmation.");
+            console.log("Failed to save your booking. Please contact support with your payment confirmation.");
           }
         };
         
         saveBooking();
       }
     } else if (failed === 'true') {
-      alert("Payment failed or was cancelled. Your slot has not been booked.");
+      console.log("Payment failed or was cancelled. Your slot has not been booked.");
       localStorage.removeItem("mudwash_pendingBooking");
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -980,14 +981,14 @@ export function BookingPageInner() {
         window.location.href = paymentUrl;
       } else {
         console.error("Nomod payment failed to return URL:", paymentData);
-        alert("Failed to create payment link. Please try again or contact support.");
+        console.log("Failed to create payment link. Please try again or contact support.");
         // Fallback: show success page anyway since booking is created
         setIsSuccess(true);
       }
 
     } catch (err: any) { 
       console.error("Booking Submission Error:", err);
-      alert("Booking failed: " + (err.message || "Please check your internet connection and try again.")); 
+      console.log("Booking failed: " + (err.message || "Please check your internet connection and try again.")); 
     } finally { 
       setIsSubmitting(false); 
     }
@@ -1595,7 +1596,7 @@ export function BookingPageInner() {
                     disabled={resendTimer > 0 || isSendingOtp}
                     onClick={async () => {
                       if (!formData.phone) {
-                        alert("Please enter a phone number first!");
+                        console.log("Please enter a phone number first!");
                         return;
                       }
                       if (isSendingOtp) return;
@@ -1608,16 +1609,16 @@ export function BookingPageInner() {
                         });
                         const data = await res.json();
                         if (data.success) {
-                          alert("OTP sent successfully!");
+                          console.log("OTP sent successfully!");
                         } else {
                           if (data.error && data.error.includes("10 seconds")) {
-                            alert("Please wait a few seconds before requesting another OTP.");
+                            console.log("Please wait a few seconds before requesting another OTP.");
                           } else {
-                            alert("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
+                            console.log("MSG91 API response: " + (data.error || "Unknown error") + ". Showing OTP field for testing.");
                           }
                         }
                       } catch (e) {
-                        alert("Error calling API. Showing OTP field for testing anyway.");
+                        console.log("Error calling API. Showing OTP field for testing anyway.");
                       } finally {
                         setIsSendingOtp(false);
                       }
@@ -1650,16 +1651,29 @@ export function BookingPageInner() {
 
                 {isOtpSent && !isPhoneVerified && (
                   <div className="space-y-4 mt-4">
-                    <input 
-                      type="text" 
-                      placeholder="Enter OTP" 
-                      className="w-full bg-black/40 border border-white/[0.05] rounded-2xl px-6 py-4 text-sm font-bold focus:border-brand-orange/50 focus:bg-black/60 outline-none transition-all text-white placeholder:text-white/40" 
-                      value={otp} 
-                      onChange={e => setOtp(e.target.value)} 
-                    />
+                    <div>
+                      <input 
+                        type="text" 
+                        placeholder="Enter OTP" 
+                        className={`w-full bg-black/40 border ${otpError ? 'border-red-500/50 focus:border-red-500/80' : 'border-white/[0.05] focus:border-brand-orange/50'} rounded-2xl px-6 py-4 text-sm font-bold focus:bg-black/60 outline-none transition-all text-white placeholder:text-white/40`}
+                        value={otp} 
+                        onChange={e => {
+                          setOtp(e.target.value);
+                          setOtpError("");
+                        }} 
+                      />
+                      {otpError && (
+                        <p className="text-red-500 text-[11px] font-bold mt-2 ml-2 tracking-wide uppercase">{otpError}</p>
+                      )}
+                    </div>
                     <button 
                       type="button"
                       onClick={async () => {
+                        setOtpError("");
+                        if (!otp.trim()) {
+                          setOtpError("Please enter the OTP.");
+                          return;
+                        }
                         try {
                           const res = await fetch('/api/verify-otp', {
                             method: 'POST',
@@ -1668,13 +1682,15 @@ export function BookingPageInner() {
                           });
                           const data = await res.json();
                           if (data.success) {
-                            alert("Phone verified successfully!");
+                            console.log("Phone verified successfully!");
                             setIsPhoneVerified(true);
                           } else {
-                            alert("Verification failed: " + (data.error || "Unknown error"));
+                            console.log("Verification failed: " + (data.error || "Unknown error"));
+                            setOtpError("Wrong OTP entered. Please try again.");
                           }
                         } catch (e) {
-                          alert("Error verifying OTP");
+                          console.log("Error verifying OTP");
+                          setOtpError("Error verifying OTP. Please try again.");
                         }
                       }}
                       className="w-full bg-brand-orange text-black font-black uppercase tracking-widest py-4 rounded-xl hover:scale-[1.02] active:scale-95 transition-all"

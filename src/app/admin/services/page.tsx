@@ -132,7 +132,7 @@ export default function ServicesPage() {
       }));
     } catch (error) {
       console.error("Error uploading image to ImgBB:", error);
-      alert("Failed to upload image.");
+      console.log("Failed to upload image.");
     } finally {
       setUploading(false);
     }

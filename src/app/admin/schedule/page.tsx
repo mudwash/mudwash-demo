@@ -53,7 +53,7 @@ export default function SchedulePage() {
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
       console.error(e);
-      alert("Failed to save schedule. Please try again.");
+      console.log("Failed to save schedule. Please try again.");
     } finally {
       setSaving(false);
     }

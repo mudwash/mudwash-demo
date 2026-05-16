@@ -97,7 +97,7 @@ export default function VehicleTypesAdmin() {
       setFormData(prev => ({ ...prev, image: downloadURL }));
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      console.log('Failed to upload image');
     } finally {
       setUploading(false);
     }
@@ -115,7 +115,7 @@ export default function VehicleTypesAdmin() {
       fetchData();
     } catch (error) {
       console.error('Error saving vehicle type:', error);
-      alert('Failed to save vehicle type');
+      console.log('Failed to save vehicle type');
     }
   };
 
@@ -126,7 +126,7 @@ export default function VehicleTypesAdmin() {
       fetchData();
     } catch (error) {
       console.error('Error deleting vehicle type:', error);
-      alert('Failed to delete vehicle type');
+      console.log('Failed to delete vehicle type');
     }
   };
 

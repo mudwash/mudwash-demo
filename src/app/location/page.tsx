@@ -332,12 +332,12 @@ export default function LocationPage() {
                               });
                           },
                           (error) => {
-                            alert("Error getting location: " + error.message);
+                            console.log("Error getting location: " + error.message);
                             setIsModalOpen(false);
                           }
                         );
                       } else {
-                        alert("Geolocation is not supported by this browser.");
+                        console.log("Geolocation is not supported by this browser.");
                         setIsModalOpen(false);
                       }
                     }}
