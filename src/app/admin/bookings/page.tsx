@@ -3,29 +3,31 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Search, 
-  Filter, 
-  Download, 
-  Plus, 
-  MoreVertical, 
-  Mail, 
-  Phone, 
-  MessageCircle,
-  MapPin,
-  Calendar,
-  Clock,
-  Loader2,
-  Trash2,
-  User as UserIcon,
   CheckCircle2,
   XCircle,
   Eye,
   X,
   CreditCard,
-  Car as CarIcon
+  Car as CarIcon,
+  Waves, Sparkles, ShieldCheck, Paintbrush, Zap, Wrench, Droplets, 
+  Snowflake, Settings, Disc, Package, SprayCan, Brush, Wind, Sun, 
+  Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
+  Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike,
+  Search, Filter, Download, Plus, MoreVertical, Mail, Phone, MessageCircle, MapPin, Calendar, Clock, Loader2, Trash2, User as UserIcon
 } from "lucide-react";
+
+const ICON_MAP: any = { 
+  Waves, Sparkles, Car: CarIcon, ShieldCheck, Paintbrush, Zap, Wrench, Droplets, 
+  Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
+  Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
+  Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
+};
 import { getBookings, updateBookingStatus, createBooking, deleteBooking, Booking, COLLECTION_NAME } from "@/lib/bookings";
 import { getServices, Service } from "@/lib/services";
+import { getCategories, Category } from "@/lib/categories";
+import { getSchedule, ScheduleSettings } from "@/lib/schedule";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
@@ -47,6 +49,9 @@ export default function BookingsPage() {
   const [detailTab, setDetailTab] = useState<'info' | 'customer'>('info');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings | null>(null);
+  const [modalServiceCategory, setModalServiceCategory] = useState<string>("All");
   
   const [formData, setFormData] = useState({
     customerName: "",
@@ -78,8 +83,28 @@ export default function BookingsPage() {
       setLoading(false);
     });
     fetchServices();
+    fetchCategories();
+    fetchScheduleSettings();
     return () => { isMountedRef.current = false; unsubscribe(); };
   }, []);
+
+  const fetchScheduleSettings = async () => {
+    try {
+      const data = await getSchedule();
+      if (isMountedRef.current) setScheduleSettings(data);
+    } catch (error) {
+      console.error("Error fetching schedule:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await getCategories();
+      if (isMountedRef.current) setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -623,40 +648,159 @@ export default function BookingsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-white/5 mt-4">
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Select Service</label>
-                    <select 
-                      required
-                      value={formData.service}
-                      onChange={(e) => handleServiceChange(e.target.value)}
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all font-black italic uppercase text-brand-orange"
-                    >
-                      <option value="" className="bg-[#0A0A0A] text-white">Choose a service...</option>
-                      {services.map(s => (
-                        <option key={s.id} value={s.name} className="bg-[#0A0A0A] text-white">{s.name} ({s.price})</option>
-                      ))}
-                    </select>
+                  <div className="space-y-4 md:col-span-2">
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Select Service</label>
+                      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {["All", ...categories.map(c => c.name)].map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setModalServiceCategory(cat)}
+                            className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                              modalServiceCategory === cat
+                                ? "bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.2)]"
+                                : "bg-white/5 text-white/40 hover:text-white/60"
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[280px] overflow-y-auto p-4 bg-white/[0.02] border border-white/10 rounded-3xl no-scrollbar">
+                      {services
+                        .filter(s => modalServiceCategory === "All" || s.category === modalServiceCategory)
+                        .map(service => {
+                          const isSelected = formData.service === service.name;
+                          return (
+                            <button
+                              key={service.id}
+                              type="button"
+                              onClick={() => handleServiceChange(service.name)}
+                              className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 text-left ${
+                                isSelected
+                                  ? "bg-brand-orange border-brand-orange shadow-[0_10px_20px_rgba(246,150,33,0.2)] scale-[1.02]"
+                                  : "bg-[#0D0D0D] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+                              }`}
+                            >
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                isSelected ? "bg-black/10 text-black" : "bg-white/5 text-brand-orange"
+                              }`}>
+                                {(() => {
+                                  const IC = ICON_MAP[service.icon as any] || Package;
+                                  return <IC size={18} strokeWidth={2.5} />;
+                                })()}
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className={`text-[11px] font-black uppercase italic tracking-tight truncate ${
+                                  isSelected ? "text-black" : "text-white"
+                                }`}>
+                                  {service.name}
+                                </p>
+                                <p className={`text-[9px] font-bold uppercase tracking-widest opacity-60 ${
+                                  isSelected ? "text-black" : "text-brand-orange"
+                                }`}>
+                                  {service.price}
+                                </p>
+                              </div>
+
+                              {isSelected && (
+                                <div className="ml-auto w-5 h-5 rounded-full bg-black text-brand-orange flex items-center justify-center">
+                                  <CheckCircle size={10} strokeWidth={3} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Booking Date</label>
-                    <input 
-                      required
-                      type="date" 
-                      value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all font-bold uppercase"
-                    />
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 p-1">
+                      {Array.from({ length: 14 }, (_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + i);
+                        const full = d.toISOString().split('T')[0];
+                        const dayOfWeek = d.getDay();
+                        const isBlocked = scheduleSettings?.blockedDates.includes(full);
+                        const isWorkingDay = scheduleSettings?.workingDays.includes(dayOfWeek);
+                        const isSelected = formData.date === full;
+                        const isDisabled = isBlocked || !isWorkingDay;
+
+                        return (
+                          <button
+                            key={full}
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => setFormData({...formData, date: full, time: ""})}
+                            className={`flex flex-col items-center justify-center min-w-[75px] h-20 rounded-2xl border transition-all ${
+                              isSelected 
+                                ? "bg-brand-orange border-brand-orange text-black shadow-[0_10px_20px_rgba(246,150,33,0.3)]" 
+                                : isDisabled
+                                  ? "bg-red-500/10 border-red-500/20 text-red-500/20 cursor-not-allowed opacity-50"
+                                  : "bg-white/[0.03] border-white/10 text-white/40 hover:border-white/20 hover:text-white"
+                            }`}
+                          >
+                            <span className="text-xl font-black italic">{d.getDate()}</span>
+                            <span className="text-[8px] font-bold uppercase tracking-widest">{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Preferred Time</label>
-                    <input 
-                      required
-                      type="time" 
-                      value={formData.time}
-                      onChange={(e) => setFormData({...formData, time: e.target.value})}
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-orange transition-all font-bold"
-                    />
+                    {!formData.date ? (
+                      <div className="w-full bg-white/[0.01] border border-white/5 rounded-xl px-4 py-3 text-xs text-white/20 italic flex items-center gap-2">
+                        <Clock size={14} /> Please select a date first
+                      </div>
+                    ) : (() => {
+                      const isBlocked = scheduleSettings?.blockedDates.includes(formData.date);
+                      const dayOfWeek = new Date(formData.date).getDay();
+                      const isWorkingDay = scheduleSettings?.workingDays.includes(dayOfWeek);
+
+                      if (isBlocked) return (
+                        <div className="w-full bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-[10px] text-red-500 font-black uppercase tracking-widest text-center">
+                          This date is blocked in schedule
+                        </div>
+                      );
+
+                      if (!isWorkingDay) return (
+                        <div className="w-full bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-[10px] text-red-500 font-black uppercase tracking-widest text-center">
+                          Non-working day (Holiday)
+                        </div>
+                      );
+
+                      return (
+                        <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto no-scrollbar p-1">
+                          {scheduleSettings?.timeSlots.map(slot => {
+                            const isBooked = bookings.filter(b => b.date === formData.date && b.time === slot).length >= (scheduleSettings?.maxBookingsPerSlot || 5);
+                            const isSelected = formData.time === slot;
+                            return (
+                              <button
+                                key={slot}
+                                type="button"
+                                disabled={isBooked}
+                                onClick={() => setFormData({...formData, time: slot})}
+                                className={`py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                  isSelected 
+                                    ? "bg-brand-orange border-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.3)]" 
+                                    : isBooked
+                                      ? "bg-red-500/10 border-red-500/20 text-red-500/40 cursor-not-allowed"
+                                      : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20"
+                                }`}
+                              >
+                                {slot}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
