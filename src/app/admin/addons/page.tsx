@@ -17,7 +17,7 @@ import {
   Snowflake, Settings, Disc, Clock, Package, SprayCan, Brush, Wind, Sun, 
   Shield, Crown, Diamond, Star, Flame, Award, BadgeCheck, CheckCircle, 
   Clock3, Timer, Fuel, Gauge, Navigation, Smartphone, Trophy, Activity, 
-  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike 
+  Heart, Palette, Droplet, GlassWater, CloudRain, Truck, Bike, Loader2 
 } from "lucide-react";
 
 const ICON_MAP: any = { 
@@ -425,49 +425,96 @@ export default function AddonsPage() {
                     </div>
                   </div>
 
-                  {/* Applicable Categories Selector */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Select Applicable Categories</label>
-                    <div className="flex flex-wrap gap-3 p-5 bg-white/[0.02] border border-white/10 rounded-3xl">
-                      {categories.map(category => {
-                        const isSelected = formData.applicableCategories.includes(category.name);
+                  {/* Applicable Categories */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Applicable Categories (Quick Select)</label>
+                    <input 
+                      type="text" 
+                      value={formData.applicableCategories.join(", ")}
+                      onChange={(e) => setFormData(prev => ({ ...prev, applicableCategories: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))}
+                      className="w-full bg-[#111111] border border-white/5 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-orange transition-all"
+                      placeholder="e.g. Ceramic Coating, Polish"
+                    />
+                  </div>
+
+                {/* Applicable Services Section (Tabs + Cards) */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Select Specific Main Services</label>
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                      {["All", ...categories.map(c => c.name)].map(cat => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setSelectedServiceCategory(cat)}
+                          className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                            selectedServiceCategory === cat
+                              ? "bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.2)]"
+                              : "bg-white/5 text-white/40 hover:text-white/60"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto p-4 bg-white/[0.02] border border-white/10 rounded-3xl no-scrollbar">
+                    {services
+                      .filter(s => selectedServiceCategory === "All" || s.category === selectedServiceCategory)
+                      .map(service => {
+                        const isSelected = formData.applicableServices.includes(service.id!);
                         return (
                           <button
-                            key={category.id}
+                            key={service.id}
                             type="button"
                             onClick={() => {
                               setFormData(prev => ({
                                 ...prev,
-                                applicableCategories: isSelected 
-                                  ? prev.applicableCategories.filter(name => name !== category.name)
-                                  : [...prev.applicableCategories, category.name]
+                                applicableServices: isSelected 
+                                  ? prev.applicableServices.filter(id => id !== service.id)
+                                  : [...prev.applicableServices, service.id!]
                               }));
                             }}
-                            className={`group relative flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all duration-500 min-w-[100px] flex-1 sm:flex-none ${
+                            className={`group relative flex flex-col items-center justify-center gap-3 p-5 rounded-3xl border transition-all duration-500 text-center min-h-[140px] ${
                               isSelected
-                                ? "bg-brand-orange border-brand-orange shadow-[0_10px_20px_rgba(246,150,33,0.2)] scale-[1.05]"
+                                ? "bg-brand-orange border-brand-orange shadow-[0_15px_30px_rgba(246,150,33,0.3)] scale-[1.02]"
                                 : "bg-[#0D0D0D] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
                             }`}
                           >
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
                               isSelected ? "bg-black/10 text-black" : "bg-white/5 text-brand-orange"
                             }`}>
                               {(() => {
-                                const IC = ICON_MAP[category.icon as any] || Sparkles;
-                                return <IC size={20} strokeWidth={2.5} />;
+                                const IC = ICON_MAP[service.icon as any] || Package;
+                                return <IC size={24} strokeWidth={2.5} />;
                               })()}
                             </div>
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${
-                              isSelected ? "text-black" : "text-white/60"
+
+                            <div className="space-y-1">
+                              <span className={`text-[10px] font-black uppercase tracking-[0.2em] italic block transition-colors ${
+                                isSelected ? "text-black" : "text-white"
+                              }`}>
+                                {service.name}
+                              </span>
+                              <span className={`text-[7px] font-black uppercase tracking-[0.3em] block opacity-40 ${
+                                isSelected ? "text-black" : "text-brand-orange"
+                              }`}>
+                                {service.category}
+                              </span>
+                            </div>
+
+                            <div className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-500 ${
+                              isSelected ? "bg-black text-brand-orange scale-100" : "bg-white/5 text-white/10 scale-0"
                             }`}>
-                              {category.name}
-                            </span>
+                              <CheckCircle size={12} strokeWidth={3} />
+                            </div>
                           </button>
                         );
                       })}
-                    </div>
-                    <p className="text-[9px] text-white/20 mt-1 uppercase font-black tracking-widest italic text-center">Add-on will only show for services in these categories. Leave empty for all.</p>
                   </div>
+                  <p className="text-[9px] text-white/20 mt-1 uppercase font-black tracking-widest italic text-center">Selecting specific services overrides category settings. Leave empty for all.</p>
+                </div>
 
                   {/* Image Upload */}
                   <div className="space-y-1">
@@ -541,11 +588,3 @@ export default function AddonsPage() {
     </div>
   );
 }
-
-// Add Loader2 to imports if not present
-const Loader2 = ({ size, className }: { size: number, className?: string }) => (
-  <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width={size} height={size}>
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-  </svg>
-);

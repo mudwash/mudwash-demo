@@ -38,7 +38,7 @@ const heroData = [
   {
     video: "/0426.mp4",
     subtitle: "ESTABLISHED 2024 — DUBAI, UAE",
-    title: "Mastering\nThe Art Of",
+    title: "5-Star Rated\nDoorstep",
     titleAccent: "Detailing",
     description: "Experience the pinnacle of automotive care with our bespoke mobile detailing services. Precision, passion, and unparalleled shine delivered to your doorstep.",
     cta: "SECURE BOOKING",
@@ -389,7 +389,7 @@ export default function Hero() {
         >
           <div className="text-center">
             <h1 className="text-[1.5rem] md:text-[4.5rem] font-black text-white uppercase italic leading-[1] tracking-tighter drop-shadow-lg">
-              Mastering The Art Of<br />
+              5-Star Rated Doorstep<br />
               <span className="text-brand-orange">Detailing</span>
             </h1>
             
