@@ -37,11 +37,19 @@ function RecenterMap({ coords }: { coords: { lat: number; lng: number } }) {
   return null;
 }
 
+// Simple local cache for geocoding to prevent redundant requests
+const geocodeCache: Record<string, string> = {};
+
 const reverseGeocode = async (lat: number, lng: number) => {
+  const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+  if (geocodeCache[key]) return geocodeCache[key];
+
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`);
     const data = await response.json();
-    return data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    const result = data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    geocodeCache[key] = result;
+    return result;
   } catch (err) {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   }
@@ -67,9 +75,9 @@ export default function InteractiveMapModal({ isOpen, onClose, onConfirm, initia
       const addr = await reverseGeocode(mapCoords.lat, mapCoords.lng);
       setCurrentAddress(addr);
       setIsGeocoding(false);
-    }, 500); // 500ms debounce
+    }, 300); // Reduced debounce for faster feedback
     return () => clearTimeout(timer);
-  }, [mapCoords]);
+  }, [mapCoords.lat, mapCoords.lng]); // More specific dependencies
 
   useEffect(() => {
     if (navigator.geolocation) {
