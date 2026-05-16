@@ -1295,9 +1295,9 @@ export function BookingPageInner() {
                   <h2 className="text-5xl font-black uppercase italic tracking-tighter text-white">Choose Treatment</h2>
                 </div>
                 
-                <div className="bg-white/[0.03] border border-white/10 p-0 rounded-3xl backdrop-blur-xl w-full">
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full px-4 py-3 snap-x snap-mandatory relative">
-                    {categories.slice(0, 8).map(catObj => {
+                <div className="bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-xl w-full overflow-hidden">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar w-full snap-x snap-mandatory" style={{ padding: '12px 16px' }}>
+                    {categories.slice(0, 8).map((catObj, catIdx, arr) => {
                       const catName = catObj.name;
                       const isActive = selectedCategory === catName;
                       const IC = ICON_MAP[catObj.icon] || Package;
@@ -1312,14 +1312,13 @@ export function BookingPageInner() {
                             setSelectedCategory(catName);
                             const container = e.currentTarget.parentElement;
                             if (container) {
-                              container.scrollTo({ left: e.currentTarget.offsetLeft - 16, behavior: 'smooth' });
+                              container.scrollTo({ left: e.currentTarget.offsetLeft - 28, behavior: 'smooth' });
                             }
                           }} 
                           className={`flex-shrink-0 min-w-[120px] h-20 text-[10px] font-black uppercase tracking-widest transition-all duration-500 relative flex flex-col items-center justify-center gap-1.5 snap-center ${isActive ? 'bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.3)] rounded-2xl' : 'bg-[#141414] text-white/40 hover:text-white/70 hover:bg-white/5 border border-white/5 rounded-2xl'}`}
                         >
                           <IC size={24} strokeWidth={2} className={isActive ? 'text-black' : 'text-brand-orange/60'} />
                           <span className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${isActive ? 'text-black' : 'text-white/60'}`}>{catName}</span>
-                          {/* Badge with service count */}
                           <div className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black transition-colors ${isActive ? 'bg-black text-brand-orange' : 'bg-white/10 text-white/50'}`}>
                             {serviceCount}
                           </div>
