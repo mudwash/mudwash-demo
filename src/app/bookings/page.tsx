@@ -1937,13 +1937,7 @@ className="shrink-0 bg-brand-orange hover:bg-white text-black font-black upperca
               ? <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin"/>
               : (
                 <div className="flex items-center gap-2">
-                  {currentStep === 2 && selectedServices.length > 0 && addons.some(a => 
-                    (a.applicableServices?.includes(selectedServices[0].id) || 
-                     a.applicableCategories?.some(cat => {
-                       const s = services.find(x => x.id === selectedServices[0].id);
-                       return cat.toLowerCase().trim() === (s?.category || "").toLowerCase().trim();
-                     }))
-                  ) ? "Enhancements" : currentStep === 5 ? "Confirm" : "Next"}
+                  {currentStep === 5 ? "Confirm" : "Next"}
                   <ChevronRight size={14} strokeWidth={3}/>
                 </div>
               )
