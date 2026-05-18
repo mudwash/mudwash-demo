@@ -465,6 +465,13 @@ export function BookingPageInner() {
             }
             
             setIsSuccess(true);
+            localStorage.removeItem("mudwash_slotTimerExpiresAt");
+            localStorage.removeItem("mudwash_selectedTime");
+            localStorage.removeItem("mudwash_selectedDate");
+            localStorage.removeItem("mudwash_currentSelectionId");
+            setSelectedTime(null);
+            setSlotTimer(null);
+            setCurrentSelectionId(null);
             localStorage.removeItem("mudwash_pendingBooking");
             
             // Clean up URL
@@ -536,6 +543,31 @@ export function BookingPageInner() {
       setFormData(prev => ({ ...prev, phone: savedPhone }));
     } else {
       setFormData(prev => ({ ...prev, phone: "+971 " }));
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedExpiresAt = localStorage.getItem("mudwash_slotTimerExpiresAt");
+    if (savedExpiresAt) {
+      const expiresAt = parseInt(savedExpiresAt);
+      const now = Date.now();
+      if (expiresAt > now) {
+        const remaining = Math.round((expiresAt - now) / 1000);
+        setSlotTimer(remaining);
+        
+        const savedTime = localStorage.getItem("mudwash_selectedTime");
+        const savedDate = localStorage.getItem("mudwash_selectedDate");
+        const savedSelectionId = localStorage.getItem("mudwash_currentSelectionId");
+        
+        if (savedTime) setSelectedTime(savedTime);
+        if (savedDate) setSelectedDate(savedDate);
+        if (savedSelectionId) setCurrentSelectionId(savedSelectionId);
+      } else {
+        localStorage.removeItem("mudwash_slotTimerExpiresAt");
+        localStorage.removeItem("mudwash_selectedTime");
+        localStorage.removeItem("mudwash_selectedDate");
+        localStorage.removeItem("mudwash_currentSelectionId");
+      }
     }
   }, []);
 
@@ -648,6 +680,10 @@ export function BookingPageInner() {
     } else if (slotTimer === 0) {
       setSelectedTime(null);
       setSlotTimer(null);
+      localStorage.removeItem("mudwash_slotTimerExpiresAt");
+      localStorage.removeItem("mudwash_selectedTime");
+      localStorage.removeItem("mudwash_selectedDate");
+      localStorage.removeItem("mudwash_currentSelectionId");
       if (currentSelectionId) {
         import("@/lib/firebase").then(({ db }) => {
           import("firebase/firestore").then(({ deleteDoc, doc }) => {
@@ -906,6 +942,11 @@ export function BookingPageInner() {
     setSelectedTime(slot);
     setSlotTimer(300);
     
+    const expiresAt = Date.now() + 300 * 1000;
+    localStorage.setItem("mudwash_slotTimerExpiresAt", expiresAt.toString());
+    localStorage.setItem("mudwash_selectedTime", slot);
+    localStorage.setItem("mudwash_selectedDate", selectedDate || "");
+    
     const selectionId = `${selectedDate}_${slot}_${user?.uid || 'guest_' + Math.random().toString(36).substr(2, 9)}`;
     try {
       await setDoc(doc(db, "active_selections", selectionId), {
@@ -914,6 +955,7 @@ export function BookingPageInner() {
         createdAt: new Date().toISOString()
       });
       setCurrentSelectionId(selectionId);
+      localStorage.setItem("mudwash_currentSelectionId", selectionId);
     } catch (e) {
       console.error("Failed to create selection:", e);
     }
