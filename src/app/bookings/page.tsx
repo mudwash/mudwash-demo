@@ -547,28 +547,46 @@ export function BookingPageInner() {
   }, []);
 
   useEffect(() => {
-    const savedExpiresAt = localStorage.getItem("mudwash_slotTimerExpiresAt");
-    if (savedExpiresAt) {
-      const expiresAt = parseInt(savedExpiresAt);
-      const now = Date.now();
-      if (expiresAt > now) {
-        const remaining = Math.round((expiresAt - now) / 1000);
-        setSlotTimer(remaining);
-        
-        const savedTime = localStorage.getItem("mudwash_selectedTime");
-        const savedDate = localStorage.getItem("mudwash_selectedDate");
-        const savedSelectionId = localStorage.getItem("mudwash_currentSelectionId");
-        
-        if (savedTime) setSelectedTime(savedTime);
-        if (savedDate) setSelectedDate(savedDate);
-        if (savedSelectionId) setCurrentSelectionId(savedSelectionId);
-      } else {
-        localStorage.removeItem("mudwash_slotTimerExpiresAt");
-        localStorage.removeItem("mudwash_selectedTime");
-        localStorage.removeItem("mudwash_selectedDate");
-        localStorage.removeItem("mudwash_currentSelectionId");
+    const checkTimer = () => {
+      const savedExpiresAt = localStorage.getItem("mudwash_slotTimerExpiresAt");
+      if (savedExpiresAt) {
+        const expiresAt = parseInt(savedExpiresAt);
+        const now = Date.now();
+        if (expiresAt > now) {
+          const remaining = Math.round((expiresAt - now) / 1000);
+          setSlotTimer(remaining);
+          
+          const savedTime = localStorage.getItem("mudwash_selectedTime");
+          const savedDate = localStorage.getItem("mudwash_selectedDate");
+          const savedSelectionId = localStorage.getItem("mudwash_currentSelectionId");
+          
+          if (savedTime) setSelectedTime(savedTime);
+          if (savedDate) setSelectedDate(savedDate);
+          if (savedSelectionId) setCurrentSelectionId(savedSelectionId);
+        } else {
+          localStorage.removeItem("mudwash_slotTimerExpiresAt");
+          localStorage.removeItem("mudwash_selectedTime");
+          localStorage.removeItem("mudwash_selectedDate");
+          localStorage.removeItem("mudwash_currentSelectionId");
+          setSlotTimer(null);
+          setSelectedTime(null);
+          setCurrentSelectionId(null);
+        }
       }
-    }
+    };
+
+    checkTimer();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkTimer();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -675,7 +693,19 @@ export function BookingPageInner() {
     let interval: NodeJS.Timeout;
     if (slotTimer !== null && slotTimer > 0) {
       interval = setInterval(() => {
-        setSlotTimer(prev => (prev !== null ? prev - 1 : null));
+        const savedExpiresAt = localStorage.getItem("mudwash_slotTimerExpiresAt");
+        if (savedExpiresAt) {
+          const expiresAt = parseInt(savedExpiresAt);
+          const now = Date.now();
+          if (expiresAt > now) {
+            const remaining = Math.round((expiresAt - now) / 1000);
+            setSlotTimer(remaining);
+          } else {
+            setSlotTimer(0);
+          }
+        } else {
+          setSlotTimer(prev => (prev !== null ? prev - 1 : null));
+        }
       }, 1000);
     } else if (slotTimer === 0) {
       setSelectedTime(null);
