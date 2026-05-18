@@ -46,6 +46,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Hide Next.js dev build indicator (the % LOADING pill) */}
+        <style>{`
+          nextjs-portal,
+          #__next-build-indicator,
+          [data-nextjs-dialog-overlay],
+          [data-nextjs-build-indicator],
+          next-route-announcer,
+          #__NEXT_DATA__ ~ nextjs-portal { display: none !important; }
+        `}</style>
         <Script 
           src="https://www.googletagmanager.com/gtag/js?id=G-Z69KZY7F3Y" 
           strategy="afterInteractive" 

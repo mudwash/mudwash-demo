@@ -56,3 +56,9 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Hide Next.js dev build indicator (the % LOADING pill animation) */
+nextjs-portal {
+  display: none !important;
+}
+

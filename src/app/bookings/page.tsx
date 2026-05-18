@@ -1872,7 +1872,7 @@ export function BookingPageInner() {
 
       <ServiceDetailDrawer service={detailService} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onAdd={addService} onRemove={removeService} quantity={selectedServices.find(s => s.id === detailService?.id)?.quantity || 0} />
 
-      <AuthPopup isOpen={showAuthPopup} onClose={() => setShowAuthPopup(false)} onSuccess={() => {}} />
+      <AuthPopup isOpen={showAuthPopup} onClose={() => setShowAuthPopup(false)} onSuccess={handleSubmit} />
 
       <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-4xl z-[9999] bg-black/60 backdrop-blur-2xl border border-white/10 h-20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
         <div className="h-full px-6 sm:px-10 flex items-center justify-between gap-4">
