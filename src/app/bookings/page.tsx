@@ -137,14 +137,16 @@ const ServiceDetailDrawer = ({
   onClose, 
   onAdd, 
   onRemove, 
-  quantity 
+  quantity,
+  selectedVehicleType
 }: { 
   service: Service | null, 
   isOpen: boolean, 
   onClose: () => void,
   onAdd: (id: string) => void,
   onRemove: (id: string) => void,
-  quantity: number
+  quantity: number,
+  selectedVehicleType?: string
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [localQty, setLocalQty] = useState(1);
@@ -170,6 +172,8 @@ const ServiceDetailDrawer = ({
   }, [service]);
 
   if (!service) return null;
+
+  const priceForVehicle = (selectedVehicleType && service.vehiclePricing?.[selectedVehicleType]) || service.price;
   
   const inclusions = service.includedItems || [
     "Premium hand wash exterior",
@@ -204,8 +208,8 @@ const ServiceDetailDrawer = ({
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">{service.name}</h2>
                   <div className="flex items-center gap-4">
-                    <span className="text-2xl font-black text-brand-orange">AED {service.price}</span>
-                    <span className="text-white/20 line-through text-base italic">AED {parseInt(service.price.replace(/[^\d]/g, '')) * 1.4}</span>
+                    <span className="text-2xl font-black text-brand-orange">AED {priceForVehicle}</span>
+                    <span className="text-white/20 line-through text-base italic">AED {parseInt(priceForVehicle.replace(/[^\d]/g, '')) * 1.4}</span>
                   </div>
                 </div>
                 <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-white/10 hover:text-white transition-all"><X size={20} /></button>
@@ -276,7 +280,7 @@ const ServiceDetailDrawer = ({
                   }
                   onClose();
                 }} className="flex-grow bg-brand-orange text-black font-black uppercase italic tracking-[0.2em] text-xs md:text-sm h-20 rounded-[2rem] shadow-[0_15px_40px_rgba(246,150,33,0.3)] hover:scale-[1.02] active:scale-95 transition-all px-8">
-                  {quantity > 0 ? `Package Selected` : `Select Package for AED ${parseInt(service.price.replace(/[^\d]/g, '') || '0')}`}
+                  {quantity > 0 ? `Package Selected` : `Select Package for AED ${parseInt(priceForVehicle.replace(/[^\d]/g, '') || '0')}`}
                 </button>
               </div>
             </div>
@@ -287,7 +291,7 @@ const ServiceDetailDrawer = ({
   );
 };
 
-export function BookingPageInner() {
+function BookingPageInner() {
   const { user, loading: authLoading, profile } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -1602,10 +1606,8 @@ export function BookingPageInner() {
                       className={`py-6 rounded-3xl text-xs font-black uppercase italic tracking-widest border transition-all ${isSelected ? 'bg-brand-orange border-brand-orange text-black' : isFull ? 'bg-white/5 border-white/5 text-white/10 cursor-not-allowed' : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'}`}
                     >
                       {slot}
-                      {isFull ? (
+                      {isFull && (
                         <span className="block text-[8px] mt-1 text-white/20 font-black">FULL</span>
-                      ) : (
-                        <span className="block text-[8px] mt-1 text-white/30 font-bold">{totalCount} / {maxBookings}</span>
                       )}
                     </button>
                   );
@@ -1942,7 +1944,7 @@ export function BookingPageInner() {
         </AnimatePresence>
       </main>
 
-      <ServiceDetailDrawer service={detailService} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onAdd={addService} onRemove={removeService} quantity={selectedServices.find(s => s.id === detailService?.id)?.quantity || 0} />
+      <ServiceDetailDrawer service={detailService} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} onAdd={addService} onRemove={removeService} quantity={selectedServices.find(s => s.id === detailService?.id)?.quantity || 0} selectedVehicleType={carDetails.type} />
 
       <AuthPopup isOpen={showAuthPopup} onClose={() => setShowAuthPopup(false)} onSuccess={handleSubmit} />
 

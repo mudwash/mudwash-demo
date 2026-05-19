@@ -481,9 +481,23 @@ export default function ServicesPage() {
                                     <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase leading-none ${service.active ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/20 border border-white/5'}`}>{service.active ? 'Live' : 'Draft'}</span>
                                   </div>
                                   {service.description && <p className="text-[11px] text-white/25 truncate leading-none">{service.description}</p>}
-                                  <div className="flex items-center flex-wrap gap-2 sm:gap-3 mt-1">
-                                    <span className="text-sm font-black text-white italic leading-none">{service.price}</span>
-                                    {service.duration && <span className="text-[10px] text-white/20 flex items-center gap-1 leading-none"><Clock size={9}/> {service.duration}</span>}
+                                  <div className="flex items-center flex-wrap gap-2 sm:gap-3 mt-1.5">
+                                    <div className="flex items-center gap-1 bg-white/5 border border-white/8 px-2 py-0.5 rounded leading-none">
+                                      <span className="text-[7px] font-black uppercase text-[#F59E0B] tracking-widest">Base:</span>
+                                      <span className="text-xs font-black text-white italic">AED {service.price}</span>
+                                    </div>
+                                    
+                                    {service.vehiclePricing && Object.entries(service.vehiclePricing).map(([vName, vPrice]) => {
+                                      if (!vPrice || vPrice === "0" || vPrice === service.price) return null;
+                                      return (
+                                        <div key={vName} className="flex items-center gap-1 bg-[#F59E0B]/5 border border-[#F59E0B]/10 px-2 py-0.5 rounded leading-none">
+                                          <span className="text-[7px] font-black uppercase text-white/30 tracking-widest">{vName}:</span>
+                                          <span className="text-[9px] font-black text-[#F59E0B] italic">AED {vPrice}</span>
+                                        </div>
+                                      );
+                                    })}
+
+                                    {service.duration && <span className="text-[10px] text-white/20 flex items-center gap-1 leading-none ml-1"><Clock size={9}/> {service.duration}</span>}
                                     <span className="text-[10px] text-white/15 leading-none">{facilities.length} {facilities.length === 1 ? 'facility' : 'facilities'}</span>
                                   </div>
                                 </div>

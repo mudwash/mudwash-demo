@@ -25,7 +25,6 @@ let db: Firestore;
 try {
   db = initializeFirestore(app, {
     experimentalForceLongPolling: true,
-    useFetchStreams: false,
   });
 } catch {
   // Already initialized — retrieve the existing instance

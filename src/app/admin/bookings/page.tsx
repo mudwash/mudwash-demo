@@ -28,6 +28,7 @@ import { getBookings, updateBookingStatus, createBooking, deleteBooking, Booking
 import { getServices, Service } from "@/lib/services";
 import { getCategories, Category } from "@/lib/categories";
 import { getSchedule, ScheduleSettings } from "@/lib/schedule";
+import { getVehicleTypes, VehicleType } from "@/lib/vehicleTypes";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
@@ -50,6 +51,8 @@ export default function BookingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const [selectedVehicleType, setSelectedVehicleType] = useState<string>("Sedan");
   const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings | null>(null);
   const [modalServiceCategory, setModalServiceCategory] = useState<string>("All");
   
@@ -85,8 +88,23 @@ export default function BookingsPage() {
     fetchServices();
     fetchCategories();
     fetchScheduleSettings();
+    fetchVehicleTypes();
     return () => { isMountedRef.current = false; unsubscribe(); };
   }, []);
+
+  const fetchVehicleTypes = async () => {
+    try {
+      const data = await getVehicleTypes();
+      if (isMountedRef.current) {
+        setVehicleTypes(data);
+        if (data.length > 0) {
+          setSelectedVehicleType(data[0].name);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle types:", error);
+    }
+  };
 
   const fetchScheduleSettings = async () => {
     try {
@@ -164,12 +182,49 @@ export default function BookingsPage() {
     }
   };
 
-  const handleServiceChange = (serviceName: string) => {
+  const updatePrice = (serviceName: string, vehicleTypeName: string) => {
     const selected = services.find(s => s.name === serviceName);
-    setFormData({
-      ...formData,
-      service: serviceName,
-      amount: selected ? selected.price : "AED 0"
+    if (!selected) {
+      setFormData(prev => ({ ...prev, amount: "AED 0" }));
+      return;
+    }
+    const matchedKey = Object.keys(selected.vehiclePricing || {}).find(
+      key => key.toLowerCase() === vehicleTypeName.toLowerCase()
+    );
+    const price = (matchedKey && selected.vehiclePricing?.[matchedKey]) ? selected.vehiclePricing[matchedKey] : selected.price;
+    setFormData(prev => ({
+      ...prev,
+      amount: `AED ${price}`
+    }));
+  };
+
+  const handleServiceChange = (serviceName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      service: serviceName
+    }));
+    updatePrice(serviceName, selectedVehicleType);
+  };
+
+  const handleVehicleTypeChange = (vName: string) => {
+    setSelectedVehicleType(vName);
+    updatePrice(formData.service, vName);
+    setFormData(prev => {
+      let currentVal = prev.carDetails || "";
+      const match = currentVal.match(/^([^ -]+) - (.*)$/);
+      if (match) {
+        const possibleCats = ["sedan", "suv", "van", "motorcycle", "adventure"];
+        if (possibleCats.includes(match[1].toLowerCase())) {
+          return {
+            ...prev,
+            carDetails: `${vName} - ${match[2]}`
+          };
+        }
+      }
+      return {
+        ...prev,
+        carDetails: `${vName} - ${currentVal.replace(/^(Sedan|SUV|Van|Adventure|Motorcycle) - /, "")}`
+      };
     });
   };
 
@@ -804,8 +859,30 @@ export default function BookingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Vehicle Info (Make, Model, Type)</label>
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-2 ml-1">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Vehicle Category</label>
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                      {vehicleTypes.map(v => {
+                        const isSelected = selectedVehicleType.toLowerCase() === v.name.toLowerCase();
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => handleVehicleTypeChange(v.name)}
+                            className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                              isSelected
+                                ? "bg-brand-orange text-black shadow-[0_5px_15px_rgba(246,150,33,0.2)]"
+                                : "bg-white/5 text-white/40 hover:text-white/60"
+                            }`}
+                          >
+                            {v.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="relative group">
                     <CarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-orange transition-colors" size={16} />
                     <input 

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
 import "./globals.css";
 import dynamic from 'next/dynamic';
 import Script from 'next/script';
@@ -7,11 +6,6 @@ import Script from 'next/script';
 import { AuthProvider } from "@/lib/AuthContext";
 import PWAWrapper from "@/components/PWAWrapper";
 import Navbar from "@/components/Navbar";
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "MUDWASH | Premium Auto Detailing",
@@ -42,10 +36,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${montserrat.variable} h-full antialiased`}
+      className="h-full antialiased"
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap" rel="stylesheet" />
         {/* Hide Next.js dev build indicator (the % LOADING pill) */}
         <style>{`
           nextjs-portal,
