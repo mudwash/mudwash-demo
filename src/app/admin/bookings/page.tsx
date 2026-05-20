@@ -283,11 +283,11 @@ export default function BookingsPage() {
     const phone = booking.phone?.replace(/[^\d]/g, "");
     if (!phone) { console.log("No phone number for this booking."); return; }
     const msg = encodeURIComponent(
-      `Hello ${booking.customerName}! 🚗✨\n\nYour Mudwash booking has been *CONFIRMED*!\n\n` +
-      `📅 Date: ${booking.date}\n⏰ Time: ${booking.time}\n` +
-      `🛠️ Service: ${booking.service}${booking.addons ? `\n➕ Add-ons: ${booking.addons}` : ""}\n` +
-      `📍 Location: ${booking.location}\n💰 Amount: ${booking.amount}\n\n` +
-      `Our team will be there on time. Thank you for choosing Mudwash! 🙌`
+      `Hello ${booking.customerName}! ðŸš—âœ¨\n\nYour Mudwash booking has been *CONFIRMED*!\n\n` +
+      `ðŸ“… Date: ${booking.date}\nâ° Time: ${booking.time}\n` +
+      `ðŸ› ï¸ Service: ${booking.service}${booking.addons ? `\nâž• Add-ons: ${booking.addons}` : ""}\n` +
+      `ðŸ“ Location: ${booking.location}\nðŸ’° Amount: ${booking.amount}\n\n` +
+      `Our team will be there on time. Thank you for choosing Mudwash! ðŸ™Œ`
     );
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
   };
@@ -309,11 +309,11 @@ export default function BookingsPage() {
     const phone = partialBooking.phone?.replace(/[^\d]/g, "");
     if (!phone) { console.log("No phone number for this booking."); return; }
     const msg = encodeURIComponent(
-      `Hello ${partialBooking.customerName}! 🚗\n\n` +
+      `Hello ${partialBooking.customerName}! ðŸš—\n\n` +
       `To confirm your Mudwash booking on *${partialBooking.date}* at *${partialBooking.time}*, ` +
       `please pay a partial amount of *AED ${partialAmount}* as a deposit.\n\n` +
       `Service: ${partialBooking.service}\nTotal: ${partialBooking.amount}\n\n` +
-      `Please reply to this message once you've made the payment. Thank you! 🙏`
+      `Please reply to this message once you've made the payment. Thank you! ðŸ™`
     );
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
     setIsPartialModalOpen(false);
@@ -386,305 +386,165 @@ export default function BookingsPage() {
           </div>
         ) : (
           <>
-            {/* Desktop View */}
-            <div className="hidden lg:block overflow-hidden">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
-                    <th className="px-6 py-5">Booking</th>
-                    <th className="px-6 py-5">Customer</th>
-                    <th className="px-6 py-5">Vehicle</th>
-                    <th className="px-6 py-5">Service</th>
-                    <th className="px-6 py-5">Location</th>
-                    <th className="px-6 py-5">Status</th>
-                    <th className="px-6 py-5">Amount</th>
-                    <th className="px-6 py-5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {filteredBookings.map((booking) => (
-                    <tr key={booking.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group overflow-visible">
-                      <td className="px-6 py-6">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="font-black text-[10px] text-brand-orange uppercase tracking-widest">#{booking.id?.slice(-6)}</span>
-                          <div className="flex items-center gap-3 text-white/40 text-[9px] font-black uppercase">
-                            <span className="flex items-center gap-1"><Calendar size={10} /> {booking.date}</span>
-                            <span className="flex items-center gap-1"><Clock size={10} /> {booking.time}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 min-w-[220px]">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="font-black text-white italic uppercase tracking-tight text-base leading-none">{booking.customerName}</span>
-                          <div className="flex flex-col gap-1 text-white/40 text-[10px] font-bold mt-1">
-                            <span className="flex items-center gap-2 hover:text-brand-orange transition-colors cursor-pointer">
-                              <Mail size={12} className="shrink-0" /> {booking.email}
-                            </span>
-                            <span className="flex items-center gap-2 hover:text-brand-orange transition-colors cursor-pointer">
-                              <Phone size={12} className="shrink-0" /> {booking.phone}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 min-w-[180px]">
-                        <div className="flex flex-col gap-1.5">
-                           <div className="flex items-center gap-2">
-                              <CarIcon size={14} className="text-brand-orange" />
-                              <span className="font-black text-white italic uppercase tracking-tight text-sm">{(booking as any).carDetails?.split(' - ')[1] || "N/A"}</span>
-                           </div>
-                           <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] bg-white/5 px-2 py-0.5 rounded-md w-fit">
-                              {(booking as any).carDetails?.split(' - ')[0] || "Standard"}
-                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6">
-                        <div className="flex flex-col gap-1.5 max-w-[200px]">
-                           <div className="flex flex-wrap gap-1.5">
-                             {booking.service.split(', ').map((s, i) => (
-                               <span key={i} className="px-3 py-1 bg-black border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest text-brand-orange italic shadow-xl whitespace-nowrap">
-                                 {s}
-                               </span>
-                             ))}
-                           </div>
-                           {booking.addons && (
-                             <div className="flex flex-wrap gap-1 mt-1">
-                               {booking.addons.split(', ').map((a, i) => (
-                                 <span key={i} className="px-2 py-0.5 bg-brand-orange/10 border border-brand-orange/20 rounded text-[8px] font-bold text-brand-orange uppercase tracking-wider whitespace-nowrap">
-                                   + {a}
-                                 </span>
-                               ))}
-                             </div>
-                           )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 min-w-[280px]">
-                        <div className="flex flex-col gap-2">
-                           <a 
-                             href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.location)}`}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="flex items-start gap-2 group/loc hover:bg-white/5 p-2 -m-2 rounded-xl transition-all"
-                           >
-                              <MapPin size={16} className="text-brand-orange shrink-0 mt-0.5" />
-                                 <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                       <span className="text-[11px] font-black text-white italic uppercase tracking-tighter line-clamp-2 leading-tight group-hover/loc:text-brand-orange transition-colors underline decoration-brand-orange/30 decoration-2 underline-offset-4">
-                                          {booking.location}
-                                       </span>
-                                       <div className="px-1.5 py-0.5 bg-brand-orange/10 border border-brand-orange/20 rounded text-[7px] font-black uppercase tracking-widest text-brand-orange shrink-0">
-                                          Pin
-                                       </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                       <div className="flex items-center gap-1.5">
-                                          <div className="w-1 h-1 rounded-full bg-brand-orange animate-pulse" />
-                                          <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] group-hover/loc:text-white/70 transition-colors">Navigation Active</span>
-                                       </div>
-                                       {booking.location.includes(',') && (
-                                          <span className="text-[7px] font-medium text-white/20 tracking-widest">
-                                             SECURE GPS HANDOFF
-                                          </span>
-                                       )}
-                                    </div>
-                                 </div>
-                           </a>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6">
-                        <div className="flex flex-col gap-2">
-                          <select 
-                            value={booking.status}
-                            onChange={(e) => booking.id && handleStatusUpdate(booking.id, e.target.value as any)}
-                            className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border bg-transparent focus:outline-none cursor-pointer transition-all ${statusStyles[booking.status]}`}
-                          >
-                            <option value="Pending" className="bg-[#0A0A0A] text-amber-500">Pending</option>
-                            <option value="Accepted" className="bg-[#0A0A0A] text-blue-500">Accepted</option>
-                            <option value="Completed" className="bg-[#0A0A0A] text-emerald-500">Completed</option>
-                            <option value="Cancelled" className="bg-[#0A0A0A] text-red-500">Cancelled</option>
-                          </select>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 min-w-[150px]">
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Total:</span>
-                            <input 
-                              type="text"
-                              value={booking.amount}
-                              onChange={(e) => booking.id && handleAmountUpdate(booking.id, e.target.value)}
-                              className="bg-transparent border-none p-0 focus:outline-none font-black text-brand-orange italic tracking-tighter text-base w-20 hover:bg-white/5 rounded px-1 text-right"
-                            />
-                          </div>
-                          {booking.paymentStatus === 'Partial' && (
+            {/* Unified Card Grid — all screens */}
+            <div className="p-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
+              {filteredBookings.map((booking, idx) => (
+                <motion.div
+                  key={booking.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.04, duration: 0.3 }}
+                  className="bg-[#111111] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-all group"
+                >
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-white/[0.02]">
+                    <div className="flex items-center gap-3">
+                      <span className="font-black text-[11px] text-brand-orange uppercase tracking-widest">#{booking.id?.slice(-6)}</span>
+                      <div className="h-3 w-px bg-white/10" />
+                      <span className="flex items-center gap-1.5 text-white/30 text-[10px] font-bold uppercase">
+                        <Calendar size={10} />{booking.date}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-white/30 text-[10px] font-bold uppercase">
+                        <Clock size={10} />{booking.time}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={booking.status}
+                        onChange={(e) => booking.id && handleStatusUpdate(booking.id, e.target.value as any)}
+                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border bg-transparent focus:outline-none cursor-pointer transition-all ${statusStyles[booking.status]}`}
+                      >
+                        <option value="Pending" className="bg-[#0A0A0A] text-amber-500">Pending</option>
+                        <option value="Accepted" className="bg-[#0A0A0A] text-blue-500">Accepted</option>
+                        <option value="Completed" className="bg-[#0A0A0A] text-emerald-500">Completed</option>
+                        <option value="Cancelled" className="bg-[#0A0A0A] text-red-500">Cancelled</option>
+                      </select>
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : (booking.id || null))}
+                          className="p-1.5 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-colors"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        <AnimatePresence>
+                          {activeDropdown === booking.id && (
                             <>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Paid:</span>
-                                <span className="font-black text-emerald-500 italic text-sm">AED {booking.paidAmount}</span>
-                              </div>
-                              <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-1 mt-0.5">
-                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Balance:</span>
-                                <span className="font-black text-red-500 italic text-sm">
-                                  AED {(parseFloat(booking.amount.replace(/[^0-9.]/g, '')) - parseFloat(booking.paidAmount?.toString() || "0")).toFixed(2)}
-                                </span>
-                              </div>
+                              <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 6 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 6 }}
+                                className="absolute right-0 mt-1 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
+                              >
+                                <div className="p-2 flex flex-col">
+                                  <button onClick={() => handleViewDetails(booking, 'info')} className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-lg text-xs font-bold text-white/60 hover:text-white transition-all">
+                                    <Eye size={14} /> View Details
+                                  </button>
+                                  <button onClick={() => handleViewDetails(booking, 'customer')} className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-lg text-xs font-bold text-white/60 hover:text-white transition-all">
+                                    <UserIcon size={14} /> Customer Info
+                                  </button>
+                                  <div className="h-px bg-white/5 my-1" />
+                                  <button onClick={() => booking.id && handleDelete(booking.id)} className="flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 rounded-lg text-xs font-bold text-red-500 transition-all">
+                                    <Trash2 size={14} /> Delete Booking
+                                  </button>
+                                </div>
+                              </motion.div>
                             </>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 text-right overflow-visible">
-                        <div className="relative">
-                          <button 
-                            onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : (booking.id || null))}
-                            className="p-2 hover:bg-white/5 rounded-xl text-white/20 hover:text-white transition-colors"
-                          >
-                            <MoreVertical size={18} />
-                          </button>
-                          
-                          <AnimatePresence>
-                            {activeDropdown === booking.id && (
-                              <>
-                                <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                  className="absolute right-0 mt-2 w-48 bg-[#111111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
-                                >
-                                  <div className="p-2 flex flex-col">
-                                    <button 
-                                      onClick={() => handleViewDetails(booking, 'info')}
-                                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-lg text-xs font-bold text-white/60 hover:text-white transition-all"
-                                    >
-                                      <Eye size={14} /> View Details
-                                    </button>
-                                    <button 
-                                      onClick={() => handleViewDetails(booking, 'customer')}
-                                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-lg text-xs font-bold text-white/60 hover:text-white transition-all"
-                                    >
-                                      <UserIcon size={14} /> Customer Info
-                                    </button>
-                                    <div className="h-px bg-white/5 my-1" />
-                                    <button 
-                                      onClick={() => booking.id && handleDelete(booking.id)}
-                                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-red-500/10 rounded-lg text-xs font-bold text-red-500 transition-all"
-                                    >
-                                      <Trash2 size={14} /> Delete Booking
-                                    </button>
-                                  </div>
-                                </motion.div>
-                              </>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile View */}
-            <div className="lg:hidden divide-y divide-white/5">
-              {filteredBookings.map((booking) => (
-                <div key={booking.id} className="p-5 space-y-4 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <span className="font-black text-[9px] text-brand-orange uppercase tracking-[0.2em]">#{booking.id?.slice(-6)}</span>
-                      <h3 className="font-black text-white italic uppercase tracking-tight text-lg leading-none">{booking.customerName}</h3>
-                      <div className="flex items-center gap-3 text-white/40 text-[9px] font-bold uppercase mt-1">
-                        <span className="flex items-center gap-1"><Calendar size={10} /> {booking.date}</span>
-                        <span className="flex items-center gap-1 border-l border-white/5 pl-3"><Clock size={10} /> {booking.time}</span>
+                        </AnimatePresence>
                       </div>
                     </div>
-                    <select 
-                      value={booking.status}
-                      onChange={(e) => booking.id && handleStatusUpdate(booking.id, e.target.value as any)}
-                      className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border bg-transparent focus:outline-none cursor-pointer transition-all ${statusStyles[booking.status]}`}
-                    >
-                      <option value="Pending" className="bg-[#0A0A0A] text-amber-500">Pending</option>
-                      <option value="Accepted" className="bg-[#0A0A0A] text-blue-500">Accepted</option>
-                      <option value="Completed" className="bg-[#0A0A0A] text-emerald-500">Completed</option>
-                      <option value="Cancelled" className="bg-[#0A0A0A] text-red-500">Cancelled</option>
-                    </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 py-3 border-y border-white/5">
-                    <div className="space-y-1">
-                      <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Service</p>
-                      <p className="text-[10px] font-black text-white italic uppercase">{booking.service}</p>
-                      {booking.addons && (
-                        <p className="text-[9px] font-bold text-brand-orange uppercase mt-1">
-                          + {booking.addons}
-                        </p>
-                      )}
+                  {/* Card Body */}
+                  <div className="p-5 space-y-4">
+                    {/* Customer */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center shrink-0">
+                        <span className="text-brand-orange font-black text-sm uppercase">{booking.customerName?.[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-black text-white italic uppercase tracking-tight text-base leading-none truncate">{booking.customerName}</h3>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5">
+                          <span className="flex items-center gap-1.5 text-white/40 text-[10px] font-bold hover:text-brand-orange transition-colors cursor-pointer">
+                            <Mail size={11} className="shrink-0" />{booking.email}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-white/40 text-[10px] font-bold hover:text-brand-orange transition-colors cursor-pointer">
+                            <Phone size={11} className="shrink-0" />{booking.phone}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Amount</p>
-                      <p className="text-sm font-black text-brand-orange italic">{booking.amount}</p>
-                      {booking.paymentStatus === 'Partial' && (
-                        <>
-                          <p className="text-[10px] text-emerald-500 font-bold">Paid: AED {booking.paidAmount}</p>
-                          <p className="text-[10px] text-red-500 font-bold">Bal: AED {(parseFloat(booking.amount.replace(/[^0-9.]/g, '')) - parseFloat(booking.paidAmount?.toString() || "0")).toFixed(2)}</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <a 
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.location)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-[10px] font-bold text-white/40 hover:text-brand-orange uppercase tracking-wide transition-colors"
-                    >
-                      <MapPin size={12} className="text-brand-orange shrink-0" />
-                      <span className="line-clamp-1 underline decoration-brand-orange/30 decoration-1 underline-offset-2">{booking.location}</span>
-                    </a>
-                    <div className="flex gap-2 relative">
-                      <button className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/30">
-                        <Phone size={14} />
-                      </button>
-                      <button className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/30">
-                        <Mail size={14} />
-                      </button>
-                      <button 
-                        onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : (booking.id || null))}
-                        className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/30"
-                      >
-                        <MoreVertical size={14} />
-                      </button>
-
-                      <AnimatePresence>
-                        {activeDropdown === booking.id && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, x: 20 }}
-                              animate={{ opacity: 1, scale: 1, x: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, x: 20 }}
-                              className="absolute right-0 bottom-10 w-40 bg-[#111111] border border-white/10 rounded-xl shadow-2xl z-20 overflow-hidden"
-                            >
-                              <div className="p-1 flex flex-col">
-                                <button 
-                                  onClick={() => handleViewDetails(booking, 'info')}
-                                  className="flex items-center gap-2 px-3 py-2 hover:bg-white/5 rounded-lg text-[10px] font-bold text-white/60"
-                                >
-                                  <Eye size={12} /> View
-                                </button>
-                                <button 
-                                  onClick={() => booking.id && handleDelete(booking.id)}
-                                  className="flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 rounded-lg text-[10px] font-bold text-red-500"
-                                >
-                                  <Trash2 size={12} /> Delete
-                                </button>
-                              </div>
-                            </motion.div>
-                          </>
+                    {/* Vehicle + Service + Add-ons */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-white/[0.03] rounded-xl p-3 space-y-1.5">
+                        <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Vehicle</p>
+                        <div className="flex items-center gap-1.5">
+                          <CarIcon size={12} className="text-brand-orange shrink-0" />
+                          <span className="font-black text-white italic uppercase text-[11px] leading-tight truncate">{(booking as any).carDetails?.split(' - ')[1] || 'N/A'}</span>
+                        </div>
+                        <span className="text-[8px] font-black text-white/30 uppercase bg-white/5 px-1.5 py-0.5 rounded w-fit block truncate">{(booking as any).carDetails?.split(' - ')[0] || 'Standard'}</span>
+                      </div>
+                      <div className="bg-white/[0.03] rounded-xl p-3 space-y-1.5">
+                        <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Service</p>
+                        <div className="flex flex-wrap gap-1">
+                          {booking.service.split(', ').map((s, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-black border border-white/10 rounded-full text-[8px] font-black uppercase tracking-wider text-brand-orange italic">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-white/[0.03] rounded-xl p-3 space-y-1.5">
+                        <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Add-ons</p>
+                        {booking.addons ? (
+                          <div className="flex flex-wrap gap-1">
+                            {booking.addons.split(', ').filter(Boolean).map((a, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-brand-orange/15 border border-brand-orange/30 rounded-md text-[8px] font-black text-brand-orange uppercase">+ {a}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-white/20">â€”</span>
                         )}
-                      </AnimatePresence>
+                      </div>
+                    </div>
+
+                    {/* Location + Amount */}
+                    <div className="flex items-start justify-between gap-4 pt-1 border-t border-white/5">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.location)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-start gap-2 group/loc hover:opacity-80 transition-opacity flex-1 min-w-0"
+                      >
+                        <MapPin size={14} className="text-brand-orange shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-black text-white italic uppercase tracking-tight hover:text-brand-orange transition-colors line-clamp-2 leading-tight underline decoration-brand-orange/30 underline-offset-2">
+                            {booking.location}
+                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse shrink-0" />
+                            <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest">Navigation Active</span>
+                          </div>
+                        </div>
+                      </a>
+                      <div className="text-right shrink-0">
+                        <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Total</p>
+                        <input
+                          type="text"
+                          value={booking.amount}
+                          onChange={(e) => booking.id && handleAmountUpdate(booking.id, e.target.value)}
+                          className="bg-transparent border-none p-0 focus:outline-none font-black text-brand-orange italic tracking-tighter text-lg w-28 hover:bg-white/5 rounded px-1 text-right"
+                        />
+                        {booking.paymentStatus === 'Partial' && (
+                          <div className="mt-1 space-y-0.5">
+                            <p className="text-[10px] font-bold text-emerald-500">Paid: AED {booking.paidAmount}</p>
+                            <p className="text-[10px] font-bold text-red-500">Bal: AED {(parseFloat(booking.amount.replace(/[^0-9.]/g, '')) - parseFloat(booking.paidAmount?.toString() || '0')).toFixed(2)}</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </>
