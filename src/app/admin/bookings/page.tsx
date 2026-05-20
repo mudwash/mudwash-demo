@@ -29,6 +29,7 @@ import { getServices, Service } from "@/lib/services";
 import { getCategories, Category } from "@/lib/categories";
 import { getSchedule, ScheduleSettings } from "@/lib/schedule";
 import { getVehicleTypes, VehicleType } from "@/lib/vehicleTypes";
+import { getAddons, Addon } from "@/lib/addons";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
@@ -55,6 +56,8 @@ export default function BookingsPage() {
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>("Sedan");
   const [scheduleSettings, setScheduleSettings] = useState<ScheduleSettings | null>(null);
   const [modalServiceCategory, setModalServiceCategory] = useState<string>("All");
+  const [addonsList, setAddonsList] = useState<Addon[]>([]);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     customerName: "",
@@ -89,6 +92,7 @@ export default function BookingsPage() {
     fetchCategories();
     fetchScheduleSettings();
     fetchVehicleTypes();
+    fetchAddons();
     return () => { isMountedRef.current = false; unsubscribe(); };
   }, []);
 
@@ -133,6 +137,15 @@ export default function BookingsPage() {
     }
   };
 
+  const fetchAddons = async () => {
+    try {
+      const data = await getAddons(true);
+      if (isMountedRef.current) setAddonsList(data);
+    } catch (error) {
+      console.error("Error fetching addons:", error);
+    }
+  };
+
   // kept for compatibility but no longer needed for bookings (onSnapshot handles it)
   const fetchBookings = () => {};
 
@@ -163,12 +176,31 @@ export default function BookingsPage() {
     }
   };
 
+  const closeCreateModal = () => {
+    setIsModalOpen(false);
+    setSelectedAddons([]);
+    setFormData({
+      customerName: "", email: "", phone: "", service: "",
+      date: "", time: "", location: "", amount: "AED 0", 
+      carDetails: "", status: "Pending"
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await createBooking(formData);
+      const addonSummary = selectedAddons
+        .map(id => addonsList.find(a => a.id === id)?.name)
+        .filter(Boolean)
+        .join(", ");
+
+      await createBooking({
+        ...formData,
+        addons: addonSummary || ""
+      });
       setIsModalOpen(false);
+      setSelectedAddons([]);
       setFormData({
         customerName: "", email: "", phone: "", service: "",
         date: "", time: "", location: "", amount: "AED 0", 
@@ -182,19 +214,28 @@ export default function BookingsPage() {
     }
   };
 
-  const updatePrice = (serviceName: string, vehicleTypeName: string) => {
+  const updatePrice = (serviceName: string, vehicleTypeName: string, addonIds: string[]) => {
     const selected = services.find(s => s.name === serviceName);
-    if (!selected) {
-      setFormData(prev => ({ ...prev, amount: "AED 0" }));
-      return;
+    let basePrice = 0;
+    if (selected) {
+      const matchedKey = Object.keys(selected.vehiclePricing || {}).find(
+        key => key.toLowerCase() === vehicleTypeName.toLowerCase()
+      );
+      const priceStr = (matchedKey && selected.vehiclePricing?.[matchedKey]) ? selected.vehiclePricing[matchedKey] : selected.price;
+      basePrice = parseInt(priceStr.replace(/[^\d]/g, "")) || 0;
     }
-    const matchedKey = Object.keys(selected.vehiclePricing || {}).find(
-      key => key.toLowerCase() === vehicleTypeName.toLowerCase()
-    );
-    const price = (matchedKey && selected.vehiclePricing?.[matchedKey]) ? selected.vehiclePricing[matchedKey] : selected.price;
+    
+    let addonsPrice = 0;
+    addonIds.forEach(id => {
+      const addon = addonsList.find(a => a.id === id);
+      if (addon) {
+        addonsPrice += parseInt(addon.price.replace(/[^\d]/g, "")) || 0;
+      }
+    });
+
     setFormData(prev => ({
       ...prev,
-      amount: `AED ${price}`
+      amount: `AED ${basePrice + addonsPrice}`
     }));
   };
 
@@ -203,12 +244,12 @@ export default function BookingsPage() {
       ...prev,
       service: serviceName
     }));
-    updatePrice(serviceName, selectedVehicleType);
+    updatePrice(serviceName, selectedVehicleType, selectedAddons);
   };
 
   const handleVehicleTypeChange = (vName: string) => {
     setSelectedVehicleType(vName);
-    updatePrice(formData.service, vName);
+    updatePrice(formData.service, vName, selectedAddons);
     setFormData(prev => {
       let currentVal = prev.carDetails || "";
       const match = currentVal.match(/^([^ -]+) - (.*)$/);
@@ -397,12 +438,23 @@ export default function BookingsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-6">
-                        <div className="flex flex-wrap gap-1.5 max-w-[200px]">
-                           {booking.service.split(', ').map((s, i) => (
-                             <span key={i} className="px-3 py-1 bg-black border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest text-brand-orange italic shadow-xl whitespace-nowrap">
-                               {s}
-                             </span>
-                           ))}
+                        <div className="flex flex-col gap-1.5 max-w-[200px]">
+                           <div className="flex flex-wrap gap-1.5">
+                             {booking.service.split(', ').map((s, i) => (
+                               <span key={i} className="px-3 py-1 bg-black border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest text-brand-orange italic shadow-xl whitespace-nowrap">
+                                 {s}
+                               </span>
+                             ))}
+                           </div>
+                           {booking.addons && (
+                             <div className="flex flex-wrap gap-1 mt-1">
+                               {booking.addons.split(', ').map((a, i) => (
+                                 <span key={i} className="px-2 py-0.5 bg-brand-orange/10 border border-brand-orange/20 rounded text-[8px] font-bold text-brand-orange uppercase tracking-wider whitespace-nowrap">
+                                   + {a}
+                                 </span>
+                               ))}
+                             </div>
+                           )}
                         </div>
                       </td>
                       <td className="px-6 py-6 min-w-[280px]">
@@ -560,6 +612,11 @@ export default function BookingsPage() {
                     <div className="space-y-1">
                       <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Service</p>
                       <p className="text-[10px] font-black text-white italic uppercase">{booking.service}</p>
+                      {booking.addons && (
+                        <p className="text-[9px] font-bold text-brand-orange uppercase mt-1">
+                          + {booking.addons}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Amount</p>
@@ -642,7 +699,7 @@ export default function BookingsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => !isSubmitting && setIsModalOpen(false)}
+              onClick={() => !isSubmitting && closeCreateModal()}
               className="absolute inset-0 bg-black/80 backdrop-blur-md"
             />
             <motion.div
@@ -657,7 +714,7 @@ export default function BookingsPage() {
                   <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">Manual administrative entry</p>
                 </div>
                 <button 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => closeCreateModal()}
                   className="p-2 hover:bg-white/5 rounded-full text-white/20 hover:text-white transition-colors"
                 >
                   <X size={20} />
@@ -911,6 +968,43 @@ export default function BookingsPage() {
                   </div>
                 </div>
 
+                <div className="space-y-3 pt-4 border-t border-white/5">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Select Add-ons</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {addonsList.map(addon => {
+                      const isSelected = selectedAddons.includes(addon.id!);
+                      return (
+                        <button
+                          key={addon.id}
+                          type="button"
+                          onClick={() => {
+                            const updated = selectedAddons.includes(addon.id!)
+                              ? selectedAddons.filter(id => id !== addon.id)
+                              : [...selectedAddons, addon.id!];
+                            setSelectedAddons(updated);
+                            updatePrice(formData.service, selectedVehicleType, updated);
+                          }}
+                          className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                            isSelected
+                              ? "bg-brand-orange/20 border-brand-orange text-white"
+                              : "bg-white/[0.02] border-white/5 hover:border-white/10"
+                          }`}
+                        >
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                            isSelected ? "bg-brand-orange text-black" : "bg-white/5 text-white/40"
+                          }`}>
+                            {isSelected ? <CheckCircle2 size={12} strokeWidth={3} /> : <Plus size={12} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-black uppercase italic truncate">{addon.name}</p>
+                            <p className="text-[9px] font-bold text-brand-orange uppercase">{addon.price}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="pt-6 border-t border-white/5 flex items-center justify-between">
                   <div>
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Total Amount</p>
@@ -919,7 +1013,7 @@ export default function BookingsPage() {
                   <div className="flex gap-4">
                     <button 
                       type="button"
-                      onClick={() => setIsModalOpen(false)}
+                      onClick={() => closeCreateModal()}
                       className="px-6 py-3 text-white/40 text-xs font-black uppercase tracking-widest hover:text-white transition-colors"
                     >
                       Cancel
@@ -991,6 +1085,19 @@ export default function BookingsPage() {
                         <p className="text-brand-orange font-black italic uppercase tracking-tight text-xl">{selectedBooking.amount}</p>
                       </div>
                     </div>
+
+                    {selectedBooking.addons && (
+                      <div className="space-y-2 pt-6 border-t border-white/5">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Add-ons Purchased</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedBooking.addons.split(', ').map((addon, index) => (
+                            <span key={index} className="px-3 py-1.5 bg-brand-orange/10 border border-brand-orange/20 rounded-xl text-xs font-bold text-brand-orange uppercase tracking-wider">
+                              + {addon}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-8 pt-6 border-t border-white/5">
                       <div className="space-y-1.5">

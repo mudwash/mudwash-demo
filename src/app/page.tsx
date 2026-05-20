@@ -9,7 +9,6 @@ const Testimonials = dynamic(() => import("@/components/Testimonials"));
 const Locations = dynamic(() => import("@/components/Locations"));
 const GoogleReviews = dynamic(() => import("@/components/GoogleReviews"));
 const PremiumDetailing = dynamic(() => import("@/components/PremiumDetailing"));
-const BookingContactForm = dynamic(() => import("@/components/BookingContactForm"));
 const Footer = dynamic(() => import("@/components/Footer"));
 
 export default function Home() {
@@ -19,11 +18,10 @@ export default function Home() {
       <Hero />
       <ServicesGrid />
       <BeforeAfterSlider />
+      <GoogleReviews />
       <Locations />
       <Testimonials />
       <PremiumDetailing />
-      <BookingContactForm />
-      <GoogleReviews />
       <Footer />
     </main>
   );

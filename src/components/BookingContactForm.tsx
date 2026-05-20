@@ -153,9 +153,6 @@ export default function BookingContactForm() {
           <h2 className="text-4xl md:text-6xl font-black text-white uppercase italic tracking-tighter mb-4">
             Finalize Your <span className="text-brand-orange">Booking</span>
           </h2>
-          <p className="text-white/30 text-xs font-bold uppercase tracking-[0.2em]">
-            No Service in RTA paid parking & unauthorized building areas
-          </p>
         </motion.div>
 
         <div className="flex flex-col lg:flex-row gap-8 items-stretch">
