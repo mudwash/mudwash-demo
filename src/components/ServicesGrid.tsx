@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getServices, Service } from "@/lib/services";
 import { getCategories, Category } from "@/lib/categories";
+import { useTracking } from "@/lib/TrackingContext";
 import {
   Loader2, ArrowRight, Check, X, ChevronRight,
   Waves, Sparkles, Car, ShieldCheck, Paintbrush, Wrench, Droplets,
@@ -64,6 +65,7 @@ export default function ServicesGrid() {
   const [selected, setSelected] = useState<Service | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { trackEvent } = useTracking();
 
   useEffect(() => {
     let isMounted = true;
@@ -101,6 +103,12 @@ export default function ServicesGrid() {
   }, [selected]);
 
   const handleCardClick = (service: Service) => {
+    trackEvent('service_card_clicked', {
+      serviceId: service.id,
+      serviceName: service.name,
+      category: service.category,
+      price: service.price,
+    });
     router.push(`/bookings?service=${service.id}`);
   };
 

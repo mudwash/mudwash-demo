@@ -9,6 +9,7 @@ import {
   where 
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { linkBookingToSession } from "./adTracking";
 
 export interface Booking {
   id?: string;
@@ -26,6 +27,10 @@ export interface Booking {
   status: "Pending" | "Completed" | "Cancelled" | "Accepted";
   carDetails: string;
   createdAt?: any;
+  // ── Google Ads Tracking Fields ──
+  gclid?: string | null;          // Google Click ID from the ad that brought the user
+  sessionId?: string;             // adTracking session document ID
+  trackingFunnelStep?: string;    // Last funnel step reached before booking
 }
 
 export const COLLECTION_NAME = "bookings";
@@ -60,10 +65,34 @@ export const getUserBookings = async (email: string) => {
 
 export const createBooking = async (booking: Omit<Booking, "id" | "createdAt">) => {
   const bookingsCol = collection(db, COLLECTION_NAME);
+
+  // Attach tracking metadata if available (client-side only)
+  let trackingFields: Pick<Booking, 'gclid' | 'sessionId'> = {};
+  if (typeof window !== 'undefined') {
+    const { captureGclid, getOrCreateSessionId } = await import('./adTracking');
+    const gclid = captureGclid();
+    const sessionId = getOrCreateSessionId();
+    trackingFields = {
+      gclid: gclid || undefined,
+      sessionId: sessionId || undefined,
+    };
+  }
+
   const docRef = await addDoc(bookingsCol, {
     ...booking,
+    ...trackingFields,
     createdAt: new Date()
   });
+
+  // Link this booking back to the adTracking session (non-blocking)
+  if (typeof window !== 'undefined' && trackingFields.sessionId) {
+    linkBookingToSession(docRef.id, {
+      service: booking.service,
+      amount: booking.amount,
+      status: booking.status,
+    }).catch(() => {}); // fire-and-forget
+  }
+
   return docRef.id;
 };
 

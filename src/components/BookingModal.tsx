@@ -19,6 +19,8 @@ import {
 import { createBooking } from "@/lib/bookings";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { useTracking } from "@/lib/TrackingContext";
+import { fireGadsConversion, markConversionSent } from "@/lib/adTracking";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -48,6 +50,14 @@ export default function BookingModal({ isOpen, onClose, serviceName }: BookingMo
   const [phone, setPhone] = useState("");
   
   const router = useRouter();
+  const { trackEvent } = useTracking();
+
+  // Track modal open
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent('book_modal_opened', { service: serviceName });
+    }
+  }, [isOpen, serviceName]);
 
   // Reset modal
   useEffect(() => {
@@ -93,7 +103,16 @@ export default function BookingModal({ isOpen, onClose, serviceName }: BookingMo
   const handleNext = () => {
     if (currentStep === 1 && !carQuery) return;
     if (currentStep === 2 && (!date || !time)) return;
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+    if (currentStep < 3) {
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      // Track step completions
+      if (currentStep === 1) {
+        trackEvent('step_1_vehicle_selected', { vehicle: carQuery, service: serviceName });
+      } else if (currentStep === 2) {
+        trackEvent('step_2_schedule_selected', { date, time, service: serviceName });
+      }
+    }
   };
 
   const handleBack = () => {
@@ -104,7 +123,8 @@ export default function BookingModal({ isOpen, onClose, serviceName }: BookingMo
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await createBooking({
+      const bookingAmount = 300; // Default conversion value per Google Ads setup
+      const bookingId = await createBooking({
         customerName: name || auth.currentUser?.displayName || "Guest",
         phone: phone,
         email: auth.currentUser?.email || "",
@@ -116,6 +136,20 @@ export default function BookingModal({ isOpen, onClose, serviceName }: BookingMo
         carDetails: carQuery || "Not specified",
         status: "Pending"
       });
+
+      // Track booking submission event
+      trackEvent('booking_submitted', {
+        service: serviceName,
+        vehicle: carQuery,
+        date,
+        time,
+        bookingId,
+      });
+
+      // Fire Google Ads conversion
+      fireGadsConversion(bookingAmount, bookingId);
+      markConversionSent(bookingAmount).catch(() => {});
+
       setIsSuccess(true);
     } catch (err) {
       console.error(err);

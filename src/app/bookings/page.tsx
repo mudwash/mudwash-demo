@@ -63,6 +63,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useTracking } from '@/lib/TrackingContext';
 import { createBooking, getBookingsByDate } from '@/lib/bookings';
 import { doc, getDoc, onSnapshot, query, collection, where, updateDoc, setDoc, deleteDoc, increment, arrayUnion, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -293,6 +294,7 @@ const ServiceDetailDrawer = ({
 
 function BookingPageInner() {
   const { user, loading: authLoading, profile } = useAuth();
+  const { trackEvent } = useTracking();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentOption, setPaymentOption] = useState<'full' | 'partial'>('full');
@@ -999,6 +1001,30 @@ function BookingPageInner() {
     if (currentStep === 1 && (!carDetails.type || !carDetails.model || !selectedGarageId)) return;
     if (currentStep === 2 && selectedServices.length === 0) return;
     if (currentStep === 4 && (!selectedDate || !selectedTime)) return;
+
+    // ── Funnel tracking ──────────────────────────────────────────────────────
+    if (currentStep === 1) {
+      trackEvent('step_1_vehicle_selected', {
+        vehicleType: carDetails.type,
+        vehicleModel: carDetails.model,
+      });
+    } else if (currentStep === 2) {
+      const serviceSummary = selectedServices.map(sel => {
+        const s = services.find(x => x.id === sel.id);
+        return s ? s.name : sel.id;
+      }).join(', ');
+      trackEvent('service_card_clicked', { services: serviceSummary });
+    } else if (currentStep === 4) {
+      trackEvent('step_2_schedule_selected', {
+        date: selectedDate,
+        time: selectedTime,
+      });
+    } else if (currentStep === 5) {
+      // User reached the Review step — equivalent to opening the booking modal
+      trackEvent('book_modal_opened', { action: 'reached_review_step' });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     setCurrentStep(prev => prev + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1080,6 +1106,16 @@ function BookingPageInner() {
       const paymentUrl = paymentData.url || paymentData.link || paymentData.checkoutUrl;
 
       if (paymentUrl) {
+        // Track booking submission BEFORE redirecting.
+        // Must be awaited — navigation kills in-flight Firestore writes.
+        await trackEvent('booking_submitted', {
+          service: serviceSummary,
+          vehicle: `${carDetails.type} ${carDetails.model}`,
+          date: selectedDate,
+          time: selectedTime,
+          amount: calculateTotal(),
+          bookingId: tempBookingId,
+        });
         // Redirect to payment link
         window.location.href = paymentUrl;
       } else {

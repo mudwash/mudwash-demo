@@ -21,13 +21,15 @@ import {
   Package,
   MapPin,
   Car,
-  Ticket
+  Ticket,
+  BarChart3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Bookings", href: "/admin/bookings", icon: CalendarCheck },
+  { name: "Traffic Map", href: "/admin/ads-tracking", icon: BarChart3 },
   { name: "Services", href: "/admin/services", icon: Wrench },
   { name: "Add-ons", href: "/admin/addons", icon: Zap },
   { name: "Schedule", href: "/admin/schedule", icon: CalendarClock },

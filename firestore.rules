@@ -1,9 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if the user is an admin
+    // Helper function to check if the user is an admin.
+    // Guard: request.auth != null MUST come first — the get() call throws a
+    // permissions error when auth is null, causing cascading "insufficient
+    // permissions" errors on every collection that uses isAdmin().
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Garages: Public read, Admin write
@@ -59,6 +63,15 @@ service cloud.firestore {
     match /active_selections/{selectionId} {
       allow read: if true;
       allow write: if true;
+    }
+
+    // Ad Tracking: Any visitor can create/update their own session (write = public),
+    // only admins can read/list sessions for the dashboard.
+    match /adTracking/{sessionId} {
+      allow create: if true;
+      allow update: if true;
+      allow read: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // Promocodes: Public read, Admin write

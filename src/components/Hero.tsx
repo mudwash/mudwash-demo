@@ -8,6 +8,7 @@ import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair, Plus, Check, M
 
 import BottomSheet from "@/components/BottomSheet";
 import dynamic from "next/dynamic";
+import { useTracking } from "@/lib/TrackingContext";
 
 const InteractiveMapModal = dynamic(() => import("@/components/InteractiveMapModal"), { ssr: false });
 
@@ -78,6 +79,8 @@ export default function Hero() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [mapCoords, setMapCoords] = useState({ lat: 25.2048, lng: 55.2708 });
+
+  const { trackEvent } = useTracking();
 
   // Address details
   const [locationType, setLocationType] = useState<"Home" | "Work" | "Other">("Home");
@@ -414,7 +417,8 @@ export default function Hero() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 + i * 0.08 }}
-                className="flex-shrink-0 bg-white/10 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5"
+                className="flex-shrink-0 bg-white/10 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 cursor-pointer"
+                onClick={() => trackEvent('hero_service_chip_clicked', { service })}
               >
                 <span className="text-white text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">{service}</span>
               </motion.div>

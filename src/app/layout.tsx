@@ -6,6 +6,7 @@ import Script from 'next/script';
 import { AuthProvider } from "@/lib/AuthContext";
 import PWAWrapper from "@/components/PWAWrapper";
 import Navbar from "@/components/Navbar";
+import { TrackingProvider } from "@/lib/TrackingContext";
 
 export const metadata: Metadata = {
   title: "MUDWASH | Premium Auto Detailing",
@@ -63,6 +64,16 @@ export default function RootLayout({
             gtag('js', new Date());
 
             gtag('config', 'G-Z69KZY7F3Y');
+            gtag('config', 'AW-17073511250');
+          `}
+        </Script>
+        <Script id="microsoft-clarity" strategy="afterInteractive">
+          {`
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "wvkwxeg6lh");
           `}
         </Script>
       </head>
@@ -79,9 +90,11 @@ export default function RootLayout({
           `}
         </Script>
         <AuthProvider>
-          <PWAWrapper />
-          <Navbar />
-          {children}
+          <TrackingProvider>
+            <PWAWrapper />
+            <Navbar />
+            {children}
+          </TrackingProvider>
         </AuthProvider>
       </body>
     </html>

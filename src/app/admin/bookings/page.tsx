@@ -32,6 +32,8 @@ import { getVehicleTypes, VehicleType } from "@/lib/vehicleTypes";
 import { getAddons, Addon } from "@/lib/addons";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { updateSessionBookingStatus, fireGadsConversion, AD_TRACKING_COLLECTION, markConversionSent } from "@/lib/adTracking";
+import { getDocs, where } from "firebase/firestore";
 
 const statusStyles = {
   Completed: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
@@ -323,9 +325,41 @@ export default function BookingsPage() {
     try {
       await updateBookingStatus(id, status);
       fetchBookings();
+
       // Auto-send WhatsApp on Accepted
       if (status === "Accepted" && booking) {
         setTimeout(() => sendWhatsAppConfirmation(booking), 400);
+      }
+
+      // When admin marks as Completed: sync to adTracking + fire offline conversion to Google Ads
+      if (status === "Completed" && booking) {
+        const bookingSessionId = (booking as any).sessionId;
+        const amountNum = parseFloat((booking.amount || '0').replace(/[^0-9.]/g, '')) || 300;
+
+        // If we have a sessionId directly on the booking, update it
+        if (bookingSessionId) {
+          try {
+            await updateSessionBookingStatus(bookingSessionId, 'Completed', amountNum);
+            // Fire Google Ads conversion for admin-confirmed completed bookings
+            fireGadsConversion(amountNum, booking.id);
+            await markConversionSent(amountNum);
+          } catch (err) {
+            console.warn('[AdTracking] Could not update adTracking on completion:', err);
+          }
+        } else if (booking.id) {
+          // Fall back: find adTracking session by bookingId
+          try {
+            const adCol = collection(db, AD_TRACKING_COLLECTION);
+            const q = query(adCol, where('bookingId', '==', booking.id));
+            const snap = await getDocs(q);
+            snap.forEach(async (d) => {
+              await updateSessionBookingStatus(d.id, 'Completed', amountNum);
+              fireGadsConversion(amountNum, booking.id);
+            });
+          } catch (err) {
+            console.warn('[AdTracking] Could not find adTracking session for booking:', err);
+          }
+        }
       }
     } catch (error) {
       console.error("Error updating status:", error);
