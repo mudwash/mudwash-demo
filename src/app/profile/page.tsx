@@ -156,7 +156,7 @@ export default function ProfilePage() {
                         </div>
                       )}
                       <a 
-                        href="https://wa.me/971502374199?text=hai%20mudwash"
+                        href="https://wa.me/971502374199?text=Hi%20Mudwash!%20I%27d%20like%20to%20book%20a%20services%20for%20my%20car.%20Can%20you%20share%20your%20packages%20and%20availability%3F"
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-white/60 text-xs font-medium hover:text-[#25D366] transition-colors mt-0.5"

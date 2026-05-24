@@ -62,3 +62,33 @@ nextjs-portal {
   display: none !important;
 }
 
+/* Seamless infinite horizontal marquee */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee 35s linear infinite;
+}
+
+/* Edge-fade mask for scrolling tickers */
+.mask-marquee {
+  mask-image: linear-gradient(to right, transparent, white 15%, white 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, white 15%, white 85%, transparent);
+}
+
+
+

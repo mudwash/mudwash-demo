@@ -6,6 +6,7 @@ import Script from 'next/script';
 import { AuthProvider } from "@/lib/AuthContext";
 import PWAWrapper from "@/components/PWAWrapper";
 import Navbar from "@/components/Navbar";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { TrackingProvider } from "@/lib/TrackingContext";
 
 export const metadata: Metadata = {
@@ -94,6 +95,7 @@ export default function RootLayout({
             <PWAWrapper />
             <Navbar />
             {children}
+            <WhatsAppButton />
           </TrackingProvider>
         </AuthProvider>
       </body>

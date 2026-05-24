@@ -291,23 +291,23 @@ export default function Navbar() {
           baseItemSize={baseItemSize}
           magnification={magnification}
           isAccent
-          className="hidden md:flex"
         />
 
         <DockDivider className="hidden md:block" />
 
-        {/* WhatsApp item */}
+        {/* Profile / Sign In item */}
         <DockItem
-          icon={<WhatsAppIcon />}
-          label="WhatsApp"
+          icon={isLoggedIn ? <User /> : <LogIn />}
+          label={isLoggedIn ? 'My Profile' : 'Sign In'}
           onClick={() => {
-            window.open('https://wa.me/971502374199?text=hai%20mudwash', '_blank');
+            router.push(isLoggedIn ? '/profile' : '/sign-up');
           }}
           mouseX={mouseX}
           spring={spring}
           distance={distance}
           baseItemSize={baseItemSize}
           magnification={magnification}
+          isActive={pathname === '/profile' || pathname === '/sign-up'}
         />
       </motion.div>
     </div>

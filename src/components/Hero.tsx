@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair, Plus, Check, MessageCircle, LogIn } from "lucide-react";
+import { ChevronRight, MapPin, ChevronDown, Car, User, Crosshair, Plus, Check, MessageCircle, LogIn, Home, Key, Zap, Wrench, Crown, Lock } from "lucide-react";
 import { auth } from "@/lib/firebase";
+import { getVehicleTypes, VehicleType } from "@/lib/vehicleTypes";
 
 import BottomSheet from "@/components/BottomSheet";
 import dynamic from "next/dynamic";
@@ -35,6 +36,66 @@ const UAE_LOCATIONS = [
   "Silicon Oasis",
   "Jumeirah",
   "Al Quoz"
+];
+
+const POPULAR_CARS = [
+  "Toyota Land Cruiser",
+  "Toyota Prado",
+  "Toyota Camry",
+  "Toyota Corolla",
+  "Toyota Yaris",
+  "Toyota RAV4",
+  "Toyota Fortuner",
+  "Toyota Hilux",
+  "Nissan Patrol",
+  "Nissan Sunny",
+  "Nissan Altima",
+  "Nissan X-Trail",
+  "Nissan Pathfinder",
+  "Nissan Kicks",
+  "Mitsubishi Pajero",
+  "Mitsubishi Lancer",
+  "Mitsubishi Outlander",
+  "Honda Civic",
+  "Honda Accord",
+  "Honda CR-V",
+  "Honda Pilot",
+  "Honda City",
+  "Hyundai Tucson",
+  "Hyundai Elantra",
+  "Hyundai Santa Fe",
+  "Hyundai Accent",
+  "Lexus LX570",
+  "Lexus RX",
+  "Lexus ES",
+  "Lexus GX",
+  "Ford Mustang",
+  "Ford Explorer",
+  "Ford F-150",
+  "Chevrolet Tahoe",
+  "Chevrolet Corvette",
+  "Chevrolet Silverado",
+  "Chevrolet Captiva",
+  "Jeep Wrangler",
+  "Jeep Grand Cherokee",
+  "Range Rover Sport",
+  "Range Rover Vogue",
+  "Land Rover Defender",
+  "BMW 3 Series",
+  "BMW 5 Series",
+  "BMW X5",
+  "Mercedes-Benz G-Class",
+  "Mercedes-Benz C-Class",
+  "Mercedes-Benz E-Class",
+  "Mercedes-Benz S-Class",
+  "Mercedes-Benz GLC",
+  "Audi A4",
+  "Audi A6",
+  "Audi Q7",
+  "Porsche Cayenne",
+  "Porsche Macan",
+  "Tesla Model 3",
+  "Tesla Model Y"
 ];
 
 const heroData = [
@@ -91,6 +152,74 @@ export default function Hero() {
   const [mapCoords, setMapCoords] = useState({ lat: 25.2048, lng: 55.2708 });
 
   const { trackEvent } = useTracking();
+
+  const [isAddingCar, setIsAddingCar] = useState(false);
+  const [newCarModel, setNewCarModel] = useState("");
+  const [newCarType, setNewCarType] = useState("Sedan");
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const [carSuggestions, setCarSuggestions] = useState<string[]>([]);
+
+  const getAutoVehicleType = (model: string): string => {
+    const lower = model.toLowerCase();
+    const suvKeywords = ["cruiser", "prado", "patrol", "pajero", "tahoe", "wrangler", "cherokee", "defender", "explorer", "fortuner", "x5", "x6", "q7", "q8", "cayenne", "macan", "rx", "gx", "lx", "gle", "glc", "y"];
+    const sedanKeywords = ["camry", "corolla", "yaris", "sunny", "altima", "lancer", "civic", "accord", "city", "elantra", "sonata", "accent", "optima", "cerato", "picanto", "es", "is", "3 series", "5 series", "7 series", "c-class", "e-class", "s-class", "a4", "a6", "model 3"];
+    
+    if (suvKeywords.some(keyword => lower.includes(keyword))) {
+      return "SUV";
+    }
+    if (sedanKeywords.some(keyword => lower.includes(keyword))) {
+      return "Sedan";
+    }
+    return "Sedan"; // default fallback
+  };
+
+  const handleCarModelChange = (value: string) => {
+    setNewCarModel(value);
+    if (!value.trim()) {
+      setCarSuggestions([]);
+      return;
+    }
+    const filtered = POPULAR_CARS.filter(car => 
+      car.toLowerCase().includes(value.toLowerCase())
+    ).slice(0, 5);
+    setCarSuggestions(filtered);
+
+    // Auto-detect type as they type!
+    const autoType = getAutoVehicleType(value);
+    const matchedType = vehicleTypes.find(t => t.name.toLowerCase() === autoType.toLowerCase());
+    if (matchedType) {
+      setNewCarType(matchedType.name);
+    }
+  };
+
+  const selectCarSuggestion = (carName: string) => {
+    setNewCarModel(carName);
+    setCarSuggestions([]);
+    
+    const autoType = getAutoVehicleType(carName);
+    const matchedType = vehicleTypes.find(t => t.name.toLowerCase() === autoType.toLowerCase());
+    if (matchedType) {
+      setNewCarType(matchedType.name);
+    }
+  };
+
+  useEffect(() => {
+    getVehicleTypes().then(types => {
+      if (types && types.length > 0) {
+        setVehicleTypes(types);
+        setNewCarType(types[0].name);
+      } else {
+        const fallback = [
+          { id: "sedan", name: "Sedan", surcharge: 0, order: 1 },
+          { id: "suv", name: "SUV", surcharge: 100, order: 2 },
+          { id: "van", name: "Van", surcharge: 150, order: 3 },
+          { id: "adventure", name: "Adventure", surcharge: -100, order: 4 },
+        ];
+        setVehicleTypes(fallback);
+        setNewCarType(fallback[0].name);
+      }
+    });
+  }, []);
 
   // Address details
   const [locationType, setLocationType] = useState<"Home" | "Work" | "Other">("Home");
@@ -261,6 +390,39 @@ export default function Hero() {
     };
   }, []);
 
+  const badges = [
+    {
+      icon: <Home size={16} className="text-[#22C55E]" />,
+      line1: "Home",
+      line2: "Service",
+    },
+    {
+      icon: <Key size={16} className="text-[#3B82F6]" />,
+      line1: "Pick n",
+      line2: "Drop",
+    },
+    {
+      icon: <Zap size={16} className="text-[#F69621]" />,
+      line1: "Instant",
+      line2: "Booking",
+    },
+    {
+      icon: <Wrench size={16} className="text-[#06B6D4]" />,
+      line1: "Expert",
+      line2: "Techs",
+    },
+    {
+      icon: <Crown size={16} className="text-[#FCD34D]" />,
+      line1: "Elite",
+      line2: "Quality",
+    },
+    {
+      icon: <Lock size={16} className="text-[#10B981]" />,
+      line1: "Secure",
+      line2: "Checkout",
+    },
+  ];
+
   return (
     <section className="relative w-full px-0">
       {/* ═══ MOBILE APP HERO ═══ */}
@@ -404,21 +566,46 @@ export default function Hero() {
           transition={{ delay: 0.5, duration: 0.7, type: 'spring', stiffness: 120 }}
           className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4"
         >
-          {/* Quick service chips */}
-          <div className="flex md:hidden items-center gap-2 overflow-x-auto no-scrollbar mb-3 pb-1">
-
-            {['Exterior Wash', 'Interior Clean', 'Ceramic Coat', 'Paint Correct', 'Full Detail'].map((service, i) => (
-              <motion.div
-                key={service}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + i * 0.08 }}
-                className="flex-shrink-0 bg-white/10 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 cursor-pointer"
-                onClick={() => trackEvent('hero_service_chip_clicked', { service })}
-              >
-                <span className="text-white text-[9px] font-bold uppercase tracking-wider whitespace-nowrap">{service}</span>
-              </motion.div>
-            ))}
+          {/* Quick service / feature badges - Infinite Auto-sliding Loop */}
+          <div className="w-full overflow-hidden relative mb-3 py-1 mask-marquee">
+            <div className="flex gap-2.5 animate-marquee">
+              {/* Loop 1 */}
+              {badges.map((badge, i) => (
+                <div
+                  key={`b1-${i}`}
+                  className="flex-shrink-0 bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-white/[0.15] rounded-xl px-3.5 py-2 flex items-center gap-2.5 transition-colors cursor-default"
+                  style={{
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <div className="shrink-0 flex items-center justify-center">
+                    {badge.icon}
+                  </div>
+                  <div className="flex flex-col text-left leading-[1.1]">
+                    <span className="text-white text-[9px] font-black uppercase tracking-wider">{badge.line1}</span>
+                    <span className="text-white text-[9px] font-black uppercase tracking-wider">{badge.line2}</span>
+                  </div>
+                </div>
+              ))}
+              {/* Loop 2 (seamless duplicate for infinite scrolling) */}
+              {badges.map((badge, i) => (
+                <div
+                  key={`b2-${i}`}
+                  className="flex-shrink-0 bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-white/[0.15] rounded-xl px-3.5 py-2 flex items-center gap-2.5 transition-colors cursor-default"
+                  style={{
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <div className="shrink-0 flex items-center justify-center">
+                    {badge.icon}
+                  </div>
+                  <div className="flex flex-col text-left leading-[1.1]">
+                    <span className="text-white text-[9px] font-black uppercase tracking-wider">{badge.line1}</span>
+                    <span className="text-white text-[9px] font-black uppercase tracking-wider">{badge.line2}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
 
@@ -580,45 +767,146 @@ export default function Hero() {
         onClose={() => {
           if (selectedCar !== "Select Vehicle") {
             setShowCarPopup(false);
+            setIsAddingCar(false);
           }
         }}
-        title="Select Vehicle"
+        title={isAddingCar ? "Add New Car" : "Select Vehicle"}
       >
         <div className="space-y-4 p-6">
-          {carHistory.length > 0 ? (
-            <div className="space-y-2">
-              {carHistory.map((car, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSelectCar(car)}
-                  className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-bold text-white text-sm">{car.model}</p>
-                    <p className="text-white/40 text-xs">{car.type}</p>
-                  </div>
-                  {selectedCar === car.model && (
-                    <div className="w-5 h-5 rounded-full bg-brand-orange flex items-center justify-center text-black">
-                      <Check size={12} strokeWidth={3} />
-                    </div>
+          {isAddingCar ? (
+            <div className="space-y-4">
+              <div className="relative">
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Car Make & Model</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Nissan Patrol or Toyota Camry"
+                  value={newCarModel}
+                  onChange={(e) => handleCarModelChange(e.target.value)}
+                  className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/20"
+                />
+
+                {/* Suggestions Dropdown Overlay */}
+                <AnimatePresence>
+                  {carSuggestions.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="absolute left-0 right-0 mt-1 bg-[#15191c] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-[100] max-h-[200px] overflow-y-auto"
+                    >
+                      {carSuggestions.map((suggestion) => (
+                        <div
+                          key={suggestion}
+                          onClick={() => selectCarSuggestion(suggestion)}
+                          className="px-4 py-3 text-xs font-bold text-white/80 hover:text-black hover:bg-brand-orange cursor-pointer transition-colors border-b border-white/[0.03] last:border-b-0 flex items-center justify-between"
+                        >
+                          <span>{suggestion}</span>
+                          <span className="text-[8px] opacity-60 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-md text-white group-hover:text-black shrink-0">
+                            {getAutoVehicleType(suggestion)}
+                          </span>
+                        </div>
+                      ))}
+                    </motion.div>
                   )}
+                </AnimatePresence>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block font-bold">Vehicle Class / Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {vehicleTypes.map((type) => (
+                    <button
+                      key={type.name}
+                      onClick={() => setNewCarType(type.name)}
+                      className={`py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
+                        newCarType === type.name
+                          ? 'bg-brand-orange border-brand-orange text-black'
+                          : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {type.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setIsAddingCar(false)}
+                  className="flex-1 py-3 bg-white/5 rounded-xl text-xs font-black text-white/40 hover:text-white uppercase tracking-widest transition-all"
+                >
+                  ← Back
                 </button>
-              ))}
+                <button
+                  onClick={() => {
+                    if (!newCarModel.trim()) return;
+                    const newCar = { model: newCarModel.trim(), type: newCarType };
+                    
+                    // Save to details
+                    localStorage.setItem("mudwash_carDetails", JSON.stringify(newCar));
+                    window.dispatchEvent(new Event("carChanged"));
+                    
+                    // Save to history
+                    const currentHistory = localStorage.getItem("mudwash_carHistory");
+                    let historyArr: any[] = [];
+                    if (currentHistory) {
+                      try {
+                        historyArr = JSON.parse(currentHistory);
+                      } catch (e) {}
+                    }
+                    const filtered = historyArr.filter(item => item.model !== newCar.model);
+                    const newHistory = [newCar, ...filtered].slice(0, 3);
+                    localStorage.setItem("mudwash_carHistory", JSON.stringify(newHistory));
+                    setCarHistory(newHistory);
+                    
+                    // Reset
+                    setNewCarModel("");
+                    setIsAddingCar(false);
+                    setShowCarPopup(false);
+                  }}
+                  className="flex-2 flex-grow py-3 bg-brand-orange text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white active:scale-95"
+                >
+                  Save Vehicle ✓
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="text-center py-6">
-              <p className="text-white/40 text-sm mb-4">No car history found</p>
-            </div>
+            <>
+              {carHistory.length > 0 ? (
+                <div className="space-y-2">
+                  {carHistory.map((car, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSelectCar(car)}
+                      className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-bold text-white text-sm">{car.model}</p>
+                        <p className="text-white/40 text-xs">{car.type}</p>
+                      </div>
+                      {selectedCar === car.model && (
+                        <div className="w-5 h-5 rounded-full bg-brand-orange flex items-center justify-center text-black">
+                          <Check size={12} strokeWidth={3} />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-white/40 text-sm mb-4">No car history found</p>
+                </div>
+              )}
+              
+              <button
+                onClick={() => setIsAddingCar(true)}
+                className="w-full bg-brand-orange/10 border border-brand-orange/20 text-brand-orange font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-brand-orange/20 active:scale-95"
+              >
+                <Plus size={16} />
+                Add New Car
+              </button>
+            </>
           )}
-          
-          <Link
-            href="/bookings?step=1"
-            className="w-full bg-brand-orange/10 border border-brand-orange/20 text-brand-orange font-bold uppercase tracking-widest text-xs py-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-brand-orange/20"
-            onClick={() => setShowCarPopup(false)}
-          >
-            <Plus size={16} />
-            Add New Car
-          </Link>
         </div>
       </BottomSheet>
 
