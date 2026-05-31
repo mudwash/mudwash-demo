@@ -329,10 +329,10 @@ export default function BookingsPage() {
       await updateBookingStatus(id, status);
       fetchBookings();
 
-      // Auto-send WhatsApp on Accepted
-      if (status === "Accepted" && booking) {
-        setTimeout(() => sendWhatsAppConfirmation(booking), 400);
-      }
+      // Auto-send WhatsApp on Accepted (Disabled as requested)
+      // if (status === "Accepted" && booking) {
+      //   setTimeout(() => sendWhatsAppConfirmation(booking), 400);
+      // }
 
       // When admin marks as Completed: sync to adTracking + fire offline conversion to Google Ads
       if (status === "Completed" && booking) {
