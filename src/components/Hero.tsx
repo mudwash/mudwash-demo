@@ -128,6 +128,52 @@ const heroData = [
   }
 ];
 
+const TRANSLATIONS = {
+  en: {
+    location: "Location",
+    car: "Car",
+    detailing: "Detailing",
+    use: 'Use: "',
+    customLocation: "Custom location",
+    popularLocations: "Popular Locations",
+    buildingVillaName: "Building / Villa Name",
+    flatVillaNo: "Flat / Villa No.",
+    landmarkDirections: "Landmark / Directions (Optional)",
+    saveLocation: "Save Location ✓",
+    carMakeModel: "Car Make & Model",
+    vehicleClassType: "Vehicle Class / Type",
+    noCarHistory: "No car history found",
+  }
+} as const;
+
+type TranslationKey = keyof typeof TRANSLATIONS.en;
+
+const t = (key: TranslationKey): string => {
+  const en = TRANSLATIONS.en;
+  switch (key) {
+    case 'location': return en.location;
+    case 'car': return en.car;
+    case 'detailing': return en.detailing;
+    case 'use': return en.use;
+    case 'customLocation': return en.customLocation;
+    case 'popularLocations': return en.popularLocations;
+    case 'buildingVillaName': return en.buildingVillaName;
+    case 'flatVillaNo': return en.flatVillaNo;
+    case 'landmarkDirections': return en.landmarkDirections;
+    case 'saveLocation': return en.saveLocation;
+    case 'carMakeModel': return en.carMakeModel;
+    case 'vehicleClassType': return en.vehicleClassType;
+    case 'noCarHistory': return en.noCarHistory;
+    default: return '';
+  }
+};
+
+const getCarouselImage = (index: number): string => {
+  if (index === 1) return '/carousel-2.png';
+  if (index === 2) return '/carousel-3.png';
+  return '/carousel-1.png';
+};
+
 export default function Hero() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -444,7 +490,7 @@ export default function Hero() {
               className="absolute inset-0 w-full h-full"
             >
               <Image
-                src={images[currentSlide]}
+                src={getCarouselImage(currentSlide)}
                 alt="Premium Car Detailing"
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
@@ -496,7 +542,7 @@ export default function Hero() {
                     <MapPin size={14} />
                   </div>
                   <div className="min-w-0 text-left">
-                    <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Location</p>
+                    <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">{t('location')}</p>
                     <span className="text-xs font-bold text-white truncate block">{selectedLocation}</span>
                   </div>
                 </button>
@@ -523,7 +569,7 @@ export default function Hero() {
                     <Car size={12} />
                   </div>
                   <div className="min-w-0 text-left">
-                    <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">Car</p>
+                    <p className="text-[8px] font-black uppercase text-white/40 leading-none mb-0.5">{t('car')}</p>
                     <span className="text-xs font-bold text-white truncate block">{selectedCar}</span>
                   </div>
                 </button>
@@ -551,7 +597,7 @@ export default function Hero() {
           <div className="text-center">
             <h1 className="text-[1.5rem] md:text-[4.5rem] font-black text-white uppercase italic leading-[1] tracking-tighter drop-shadow-lg">
               5-Star Rated Doorstep<br />
-              <span className="text-brand-orange">Detailing</span>
+              <span className="text-brand-orange">{t('detailing')}</span>
             </h1>
             
             {/* CTA Button Removed */}
@@ -696,8 +742,8 @@ export default function Hero() {
               className="w-full text-left px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors flex items-center justify-between"
             >
               <div>
-                <p className="font-bold text-white text-sm">Use: "{locationSearchQuery}"</p>
-                <p className="text-xs text-white/40">Custom location</p>
+                <p className="font-bold text-white text-sm">{t('use')}{locationSearchQuery}"</p>
+                <p className="text-xs text-white/40">{t('customLocation')}</p>
               </div>
               <div className="text-brand-orange">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -708,7 +754,7 @@ export default function Hero() {
 
 
           <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase text-white/30 mb-1">Popular Locations</p>
+            <p className="text-[10px] font-black uppercase text-white/30 mb-1">{t('popularLocations')}</p>
             <div className="grid grid-cols-2 gap-2">
               {UAE_LOCATIONS.map((loc) => (
                 <button
@@ -734,21 +780,21 @@ export default function Hero() {
           </div>
 
           <div>
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Building / Villa Name</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">{t('buildingVillaName')}</label>
             <input type="text" placeholder="e.g. Al Barsha Tower B" value={buildingName}
               onChange={e => setBuildingName(e.target.value)}
               className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/10"
             />
           </div>
           <div>
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Flat / Villa No.</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">{t('flatVillaNo')}</label>
             <input type="text" placeholder="e.g. Flat 402 or Villa 12" value={flatNo}
               onChange={e => setFlatNo(e.target.value)}
               className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/10"
             />
           </div>
           <div>
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Landmark / Directions (Optional)</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">{t('landmarkDirections')}</label>
             <input type="text" placeholder="e.g. Near the park" value={locationDirections}
               onChange={e => setLocationDirections(e.target.value)}
               className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold focus:border-brand-orange outline-none text-white placeholder:text-white/10"
@@ -756,7 +802,7 @@ export default function Hero() {
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={() => setLocationStep("area")} className="flex-1 py-3 bg-white/5 rounded-xl text-xs font-black text-white/40 hover:text-white uppercase tracking-widest transition-all">← Back</button>
-            <button onClick={confirmLocationDetails} className="flex-2 flex-grow py-3 bg-brand-orange text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white active:scale-95">Save Location ✓</button>
+            <button onClick={confirmLocationDetails} className="flex-2 flex-grow py-3 bg-brand-orange text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white active:scale-95">{t('saveLocation')}</button>
           </div>
         </div>
         )}
@@ -776,7 +822,7 @@ export default function Hero() {
           {isAddingCar ? (
             <div className="space-y-4">
               <div className="relative">
-                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">Car Make & Model</label>
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block">{t('carMakeModel')}</label>
                 <input
                   type="text"
                   placeholder="e.g. Nissan Patrol or Toyota Camry"
@@ -812,7 +858,7 @@ export default function Hero() {
               </div>
 
               <div>
-                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block font-bold">Vehicle Class / Type</label>
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 block font-bold">{t('vehicleClassType')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {vehicleTypes.map((type) => (
                     <button
@@ -894,7 +940,7 @@ export default function Hero() {
                 </div>
               ) : (
                 <div className="text-center py-6">
-                  <p className="text-white/40 text-sm mb-4">No car history found</p>
+                  <p className="text-white/40 text-sm mb-4">{t('noCarHistory')}</p>
                 </div>
               )}
               

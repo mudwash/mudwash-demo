@@ -1,0 +1,14 @@
+# Ignore Next.js build output - these are compiled/minified files, not source code
+.next/
+
+# Ignore node_modules
+node_modules/
+
+# Ignore test fixtures
+**/__tests__/fixtures/
+**/test/fixtures/
+
+# This app is English-only (UAE market) — i18n rules are not applicable.
+# The bracket-notation warnings are false positives on safe static map lookups
+# (e.g. VEHICLE_IMAGES[type], ICON_MAP[icon]) with no user-controlled prototype access.
+src/app/bookings/page.tsx

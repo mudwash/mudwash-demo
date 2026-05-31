@@ -35,10 +35,11 @@ import { doc, updateDoc, collection, onSnapshot, query, orderBy } from "firebase
 import { updateSessionBookingStatus, fireGadsConversion, AD_TRACKING_COLLECTION, markConversionSent } from "@/lib/adTracking";
 import { getDocs, where } from "firebase/firestore";
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   Completed: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   Pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   Cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
+  "Cancelled (System)": "bg-red-500/10 text-red-400 border-red-500/20",
   Accepted: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
@@ -224,14 +225,16 @@ export default function BookingsPage() {
         key => key.toLowerCase() === vehicleTypeName.toLowerCase()
       );
       const priceStr = (matchedKey && selected.vehiclePricing?.[matchedKey]) ? selected.vehiclePricing[matchedKey] : selected.price;
-      basePrice = parseInt(priceStr.replace(/[^\d]/g, "")) || 0;
+      const cleanPrice = typeof priceStr === 'string' ? priceStr.replace(/[^\d]/g, "") : String(priceStr || 0);
+      basePrice = parseInt(cleanPrice) || 0;
     }
     
     let addonsPrice = 0;
     addonIds.forEach(id => {
       const addon = addonsList.find(a => a.id === id);
       if (addon) {
-        addonsPrice += parseInt(addon.price.replace(/[^\d]/g, "")) || 0;
+        const cleanAddonPrice = typeof addon.price === 'string' ? addon.price.replace(/[^\d]/g, "") : String(addon.price || 0);
+        addonsPrice += parseInt(cleanAddonPrice) || 0;
       }
     });
 
@@ -575,6 +578,20 @@ export default function BookingsPage() {
                             <p className="text-[10px] font-bold text-red-500">Bal: AED {(parseFloat(booking.amount.replace(/[^0-9.]/g, '')) - parseFloat(booking.paidAmount?.toString() || '0')).toFixed(2)}</p>
                           </div>
                         )}
+                        {booking.paymentStatus === 'Cash on Service' && (
+                          <div className="mt-1">
+                            <span className="inline-block px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[8px] font-black uppercase tracking-widest italic">
+                              💵 Cash on Service
+                            </span>
+                          </div>
+                        )}
+                        {booking.paymentStatus === 'Full' && (
+                          <div className="mt-1">
+                            <span className="inline-block px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[8px] font-black uppercase tracking-widest italic">
+                              ✓ Fully Paid
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -784,7 +801,11 @@ export default function BookingsPage() {
                       return (
                         <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto no-scrollbar p-1">
                           {scheduleSettings?.timeSlots.map(slot => {
-                            const isBooked = bookings.filter(b => b.date === formData.date && b.time === slot).length >= (scheduleSettings?.maxBookingsPerSlot || 5);
+                            const isBooked = bookings.filter(b => {
+                              const isCancelled = b.status === "Cancelled" || b.status === "Cancelled (System)";
+                              const isUnapprovedCash = b.paymentStatus === "Cash on Service" && b.status === "Pending";
+                              return b.date === formData.date && b.time === slot && !isCancelled && !isUnapprovedCash;
+                            }).length >= (scheduleSettings?.maxBookingsPerSlot || 5);
                             const isSelected = formData.time === slot;
                             return (
                               <button

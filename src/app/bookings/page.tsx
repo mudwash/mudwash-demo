@@ -297,7 +297,7 @@ function BookingPageInner() {
   const { trackEvent } = useTracking();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [paymentOption, setPaymentOption] = useState<'full' | 'partial'>('full');
+  const [paymentOption, setPaymentOption] = useState<'full' | 'partial' | 'cash'>('full');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
@@ -373,7 +373,9 @@ function BookingPageInner() {
         const counts: Record<string, number> = {};
         snapshot.docs.forEach(doc => {
           const b = doc.data();
-          if (b.status !== "Cancelled" && b.status !== "Cancelled (System)") {
+          const isCancelled = b.status === "Cancelled" || b.status === "Cancelled (System)";
+          const isUnapprovedCash = b.paymentStatus === "Cash on Service" && b.status === "Pending";
+          if (!isCancelled && !isUnapprovedCash) {
             counts[b.time] = (counts[b.time] || 0) + 1;
           }
         });
@@ -877,13 +879,17 @@ function BookingPageInner() {
       const service = services.find(s => s.id === sel.id);
       if (service) {
         const priceForVehicle = service.vehiclePricing?.[carDetails.type] || service.price;
-        total += parseInt(priceForVehicle.replace(/[^\d]/g, '')) * sel.quantity;
+        const cleanPrice = typeof priceForVehicle === 'string' ? priceForVehicle.replace(/[^\d]/g, '') : String(priceForVehicle || 0);
+        total += parseInt(cleanPrice) * sel.quantity;
       }
     });
 
     selectedAddOns.forEach(id => {
       const addon = addons.find(a => a.id === id);
-      if (addon) total += parseInt(addon.price.replace(/[^\d]/g, ''));
+      if (addon) {
+        const cleanAddonPrice = typeof addon.price === 'string' ? addon.price.replace(/[^\d]/g, '') : String(addon.price || 0);
+        total += parseInt(cleanAddonPrice);
+      }
     });
     return Math.max(0, total - promoDiscount);
   };
@@ -940,13 +946,17 @@ function BookingPageInner() {
         const service = services.find(s => s.id === sel.id);
         if (service) {
           const priceForVehicle = service.vehiclePricing?.[carDetails.type] || service.price;
-          baseTotal += parseInt(priceForVehicle.replace(/[^\d]/g, '')) * sel.quantity;
+          const cleanPrice = typeof priceForVehicle === 'string' ? priceForVehicle.replace(/[^\d]/g, '') : String(priceForVehicle || 0);
+          baseTotal += parseInt(cleanPrice) * sel.quantity;
         }
       });
 
       selectedAddOns.forEach(id => {
         const addon = addons.find(a => a.id === id);
-        if (addon) baseTotal += parseInt(addon.price.replace(/[^\d]/g, ''));
+        if (addon) {
+          const cleanAddonPrice = typeof addon.price === 'string' ? addon.price.replace(/[^\d]/g, '') : String(addon.price || 0);
+          baseTotal += parseInt(cleanAddonPrice);
+        }
       });
 
       if (data.type === "percentage") {
@@ -1068,9 +1078,9 @@ function BookingPageInner() {
         location: locationParts || "Location not specified",
         addressType: addressDetails.type,
         amount: `AED ${calculateTotal()}`, 
-        paidAmount: paymentOption === 'partial' ? calculateTotal() / 2 : calculateTotal(),
-        paymentStatus: paymentOption === 'partial' ? 'Partial' : 'Full',
-        status: "Pending",
+        paidAmount: paymentOption === 'partial' ? calculateTotal() / 2 : (paymentOption === 'cash' ? 0 : calculateTotal()),
+        paymentStatus: paymentOption === 'partial' ? 'Partial' : (paymentOption === 'cash' ? 'Cash on Service' : 'Full'),
+        status: "Pending" as const,
         carDetails: `${carDetails.type || 'Standard'} - ${carDetails.model || 'Unknown'}`
       };
 
@@ -1083,46 +1093,93 @@ function BookingPageInner() {
       
       const tempBookingId = `PENDING-${Date.now()}`;
 
-      // Trigger Nomod Payment
-      const paymentResponse = await fetch('/api/nomod', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          amount: paymentOption === 'partial' ? calculateTotal() / 2 : calculateTotal(),
-          currency: "AED",
-          name: serviceSummary || "Mudwash Service",
-          description: `${paymentOption === 'partial' ? 'Partial Payment ' : ''}Booking #${tempBookingId}${promoDiscount > 0 ? ` (Discount applied: AED ${promoDiscount})` : ''}`,
+      if (paymentOption === 'cash') {
+        // Direct Booking (Cash on Service)
+        const bookingId = await createBooking(pendingBooking);
+        console.log("Cash on Service booking created successfully:", bookingId);
+        
+        // Save address to profile if logged in
+        if (user && pendingBooking.location) {
+          const userRef = doc(db, "users", user.uid);
+          await updateDoc(userRef, {
+            savedAddress: pendingBooking.location
+          });
+        }
+        
+        // Update promo code usage
+        if (promoCode) {
+          try {
+            const promoRef = doc(db, "promocodes", promoCode.toUpperCase());
+            await updateDoc(promoRef, {
+              usedCount: increment(1),
+              usedBy: arrayUnion(user?.uid || "guest")
+            });
+          } catch (err) {
+            console.error("Failed to update promo usage:", err);
+          }
+        }
 
-          email: formData.email || "guest@mudwash.com",
-          phone: formData.phone || "",
-          success_url: `${window.location.origin}/bookings?success=true`,
-          failure_url: `${window.location.origin}/bookings?failed=true`
-        })
-      });
+        setIsSuccess(true);
+        localStorage.removeItem("mudwash_slotTimerExpiresAt");
+        localStorage.removeItem("mudwash_selectedTime");
+        localStorage.removeItem("mudwash_selectedDate");
+        localStorage.removeItem("mudwash_currentSelectionId");
+        setSelectedTime(null);
+        setSlotTimer(null);
+        setCurrentSelectionId(null);
+        localStorage.removeItem("mudwash_pendingBooking");
+        
+        window.history.replaceState({}, document.title, window.location.pathname);
 
-      const paymentData = await paymentResponse.json();
-      const paymentUrl = paymentData.url || paymentData.link || paymentData.checkoutUrl;
-
-      if (paymentUrl) {
-        // Track booking submission BEFORE redirecting.
-        // Must be awaited — navigation kills in-flight Firestore writes.
         await trackEvent('booking_submitted', {
           service: serviceSummary,
           vehicle: `${carDetails.type} ${carDetails.model}`,
           date: selectedDate,
           time: selectedTime,
           amount: calculateTotal(),
-          bookingId: tempBookingId,
+          bookingId: bookingId,
+          paymentType: 'Cash on Service'
         });
-        // Redirect to payment link
-        window.location.href = paymentUrl;
       } else {
-        console.error("Nomod payment failed to return URL:", paymentData);
-        console.log("Failed to create payment link. Please try again or contact support.");
-        // Fallback: show success page anyway since booking is created
-        setIsSuccess(true);
+        // Online Payment via Nomod
+        const paymentResponse = await fetch('/api/nomod', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            amount: paymentOption === 'partial' ? calculateTotal() / 2 : calculateTotal(),
+            currency: "AED",
+            name: serviceSummary || "Mudwash Service",
+            description: `${paymentOption === 'partial' ? 'Partial Payment ' : ''}Booking #${tempBookingId}${promoDiscount > 0 ? ` (Discount applied: AED ${promoDiscount})` : ''}`,
+            email: formData.email || "guest@mudwash.com",
+            phone: formData.phone || "",
+            success_url: `${window.location.origin}/bookings?success=true`,
+            failure_url: `${window.location.origin}/bookings?failed=true`
+          })
+        });
+
+        const paymentData = await paymentResponse.json();
+        const paymentUrl = paymentData.url || paymentData.link || paymentData.checkoutUrl;
+
+        if (paymentUrl) {
+          // Track booking submission BEFORE redirecting.
+          await trackEvent('booking_submitted', {
+            service: serviceSummary,
+            vehicle: `${carDetails.type} ${carDetails.model}`,
+            date: selectedDate,
+            time: selectedTime,
+            amount: calculateTotal(),
+            bookingId: tempBookingId,
+          });
+          // Redirect to payment link
+          window.location.href = paymentUrl;
+        } else {
+          console.error("Nomod payment failed to return URL:", paymentData);
+          console.log("Failed to create payment link. Please try again or contact support.");
+          // Fallback: show success page anyway
+          setIsSuccess(true);
+        }
       }
 
     } catch (err: any) { 
@@ -1955,6 +2012,17 @@ function BookingPageInner() {
                         <span className="text-[10px] opacity-60">Pay 50% now, rest later</span>
                       </div>
                       <span className="text-sm font-black">AED {(calculateTotal() / 2).toFixed(2)}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentOption('cash')}
+                      className={`p-4 rounded-xl border transition-all flex items-center justify-between ${paymentOption === 'cash' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20 border-transparent' : 'bg-white/[0.02] border-white/[0.05] text-white/70 hover:bg-white/[0.05]'}`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-black uppercase tracking-widest">Cash on Service</span>
+                        <span className="text-[10px] opacity-60">Pay by cash after detailing is completed</span>
+                      </div>
+                      <span className="text-sm font-black">AED {calculateTotal()}</span>
                     </button>
                   </div>
                 </div>

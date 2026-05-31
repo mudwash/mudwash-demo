@@ -24,7 +24,7 @@ export interface Booking {
   amount: string;
   paidAmount?: string | number;
   paymentStatus?: string;
-  status: "Pending" | "Completed" | "Cancelled" | "Accepted";
+  status: "Pending" | "Completed" | "Cancelled" | "Cancelled (System)" | "Accepted";
   carDetails: string;
   createdAt?: any;
   // ── Google Ads Tracking Fields ──
@@ -73,7 +73,7 @@ export const createBooking = async (booking: Omit<Booking, "id" | "createdAt">) 
     const gclid = captureGclid();
     const sessionId = getOrCreateSessionId();
     trackingFields = {
-      gclid: gclid || undefined,
+      gclid: gclid || null,
       sessionId: sessionId || undefined,
     };
   }
