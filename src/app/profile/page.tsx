@@ -428,17 +428,19 @@ export default function ProfilePage() {
                       ) : (
                         <div className="space-y-4">
                           {bookings.slice(0, 3).map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-brand-orange/30 transition-all">
+                            <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-brand-orange/30 transition-all gap-3">
                               <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-black transition-all shrink-0">
                                   <Zap size={18} />
                                 </div>
                                 <div>
-                                  <h4 className="text-sm font-black uppercase tracking-tight text-white">{booking.service}</h4>
-                                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{booking.date} @ {booking.time}</p>
+                                  <h4 className="text-sm font-black uppercase tracking-tight text-white leading-tight">{booking.service}</h4>
+                                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5">{booking.date} @ {booking.time}</p>
                                 </div>
                               </div>
-                              {renderStatusBadge(booking)}
+                              <div className="self-start sm:self-auto">
+                                {renderStatusBadge(booking)}
+                              </div>
                             </div>
                           ))}
                         </div>
