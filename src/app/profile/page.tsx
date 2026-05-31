@@ -118,23 +118,23 @@ export default function ProfilePage() {
     if (isCash) {
       if (booking.status === 'Pending') {
         return (
-          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-amber-500/10 text-amber-500 border-amber-500/20 flex items-center gap-1`}>
-            <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-amber-500/10 text-amber-500 border-amber-500/20 flex items-center gap-1.5 whitespace-nowrap shrink-0`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
             Awaiting Admin Approval
           </span>
         );
       }
       if (booking.status === 'Accepted') {
         return (
-          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1.5 whitespace-nowrap shrink-0`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             Slot Confirmed
           </span>
         );
       }
       if (booking.status === 'Cancelled' || booking.status === 'Cancelled (System)') {
         return (
-          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-red-500/10 text-red-500 border-red-500/20`}>
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-red-500/10 text-red-500 border-red-500/20 whitespace-nowrap shrink-0`}>
             Slot Not Approved
           </span>
         );
@@ -143,8 +143,8 @@ export default function ProfilePage() {
       // Normal online bookings
       if (booking.status === 'Accepted') {
         return (
-          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1.5 whitespace-nowrap shrink-0`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             Confirmed
           </span>
         );
@@ -160,7 +160,7 @@ export default function ProfilePage() {
     }
     
     return (
-      <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border ${style}`}>
+      <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border ${style} whitespace-nowrap shrink-0`}>
         {booking.status}
       </span>
     );
@@ -494,8 +494,8 @@ export default function ProfilePage() {
                                   <Zap size={24} />
                                 </div>
                                 <div className="space-y-1.5">
-                                  <div className="flex items-center gap-3">
-                                    <h4 className="font-black uppercase tracking-tight text-lg text-white">{booking.service}</h4>
+                                  <div className="flex flex-wrap items-center gap-3">
+                                    <h4 className="font-black uppercase tracking-tight text-lg text-white leading-tight">{booking.service}</h4>
                                     {renderStatusBadge(booking, true)}
                                   </div>
                                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-white/40 text-[10px] font-bold uppercase tracking-widest">
