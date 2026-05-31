@@ -430,7 +430,7 @@ export default function ProfilePage() {
                           {bookings.slice(0, 3).map((booking) => (
                             <div key={booking.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-brand-orange/30 transition-all">
                               <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-black transition-all">
+                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-black transition-all shrink-0">
                                   <Zap size={18} />
                                 </div>
                                 <div>
@@ -490,7 +490,7 @@ export default function ProfilePage() {
                               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/5 blur-3xl -mr-16 -mt-16 group-hover:bg-brand-orange/10 transition-colors" />
                               
                               <div className="flex items-center gap-6 relative z-10">
-                                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-black transition-all duration-500">
+                                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-black transition-all duration-500 shrink-0">
                                   <Zap size={24} />
                                 </div>
                                 <div className="space-y-1.5">
