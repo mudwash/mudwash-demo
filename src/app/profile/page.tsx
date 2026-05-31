@@ -111,6 +111,61 @@ export default function ProfilePage() {
     }
   };
 
+  const renderStatusBadge = (booking: Booking, isHistoryTab: boolean = false) => {
+    const isCash = booking.paymentStatus === 'Cash on Service';
+    const padding = isHistoryTab ? 'px-3 py-1' : 'px-2 py-0.5';
+    
+    if (isCash) {
+      if (booking.status === 'Pending') {
+        return (
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-amber-500/10 text-amber-500 border-amber-500/20 flex items-center gap-1`}>
+            <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+            Awaiting Admin Approval
+          </span>
+        );
+      }
+      if (booking.status === 'Accepted') {
+        return (
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Slot Confirmed
+          </span>
+        );
+      }
+      if (booking.status === 'Cancelled' || booking.status === 'Cancelled (System)') {
+        return (
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-red-500/10 text-red-500 border-red-500/20`}>
+            Slot Not Approved
+          </span>
+        );
+      }
+    } else {
+      // Normal online bookings
+      if (booking.status === 'Accepted') {
+        return (
+          <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border bg-emerald-500/10 text-emerald-500 border-emerald-500/20 flex items-center gap-1`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Confirmed
+          </span>
+        );
+      }
+    }
+    
+    // Default fallback styles
+    let style = 'bg-red-500/10 text-red-500 border-red-500/20';
+    if (booking.status === 'Completed') {
+      style = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+    } else if (booking.status === 'Pending') {
+      style = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+    }
+    
+    return (
+      <span className={`text-[8px] font-black uppercase tracking-widest ${padding} rounded-full border ${style}`}>
+        {booking.status}
+      </span>
+    );
+  };
+
   if (authLoading) {
     return (
       <div className="h-screen bg-[#050505] flex items-center justify-center">
@@ -383,13 +438,7 @@ export default function ProfilePage() {
                                   <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{booking.date} @ {booking.time}</p>
                                 </div>
                               </div>
-                              <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                                booking.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                booking.status === 'Pending' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
-                                'bg-red-500/10 text-red-500 border-red-500/20'
-                              }`}>
-                                {booking.status}
-                              </span>
+                              {renderStatusBadge(booking)}
                             </div>
                           ))}
                         </div>
@@ -447,13 +496,7 @@ export default function ProfilePage() {
                                 <div className="space-y-1.5">
                                   <div className="flex items-center gap-3">
                                     <h4 className="font-black uppercase tracking-tight text-lg text-white">{booking.service}</h4>
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
-                                      booking.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                      booking.status === 'Pending' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
-                                      'bg-red-500/10 text-red-500 border-red-500/20'
-                                    }`}>
-                                      {booking.status}
-                                    </span>
+                                    {renderStatusBadge(booking, true)}
                                   </div>
                                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-white/40 text-[10px] font-bold uppercase tracking-widest">
                                     <span className="flex items-center gap-2"><Calendar size={12} className="text-brand-orange" /> {booking.date}</span>

@@ -446,9 +446,29 @@ export default function BookingsPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
+                      {booking.paymentStatus === 'Cash on Service' && booking.status === 'Pending' && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => booking.id && handleStatusUpdate(booking.id, 'Accepted', booking)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-md shadow-emerald-500/5"
+                            title="Confirm Booking Slot"
+                          >
+                            <CheckCircle2 size={11} className="text-emerald-400" />
+                            Confirm Slot
+                          </button>
+                          <button
+                            onClick={() => booking.id && handleStatusUpdate(booking.id, 'Cancelled', booking)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-md shadow-red-500/5"
+                            title="Not Confirm Booking Slot"
+                          >
+                            <XCircle size={11} className="text-red-400" />
+                            Not Confirm
+                          </button>
+                        </div>
+                      )}
                       <select
                         value={booking.status}
-                        onChange={(e) => booking.id && handleStatusUpdate(booking.id, e.target.value as any)}
+                        onChange={(e) => booking.id && handleStatusUpdate(booking.id, e.target.value as any, booking)}
                         className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border bg-transparent focus:outline-none cursor-pointer transition-all ${statusStyles[booking.status]}`}
                       >
                         <option value="Pending" className="bg-[#0A0A0A] text-amber-500">Pending</option>

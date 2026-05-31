@@ -1245,12 +1245,25 @@ function BookingPageInner() {
   // Removed restriction to allow guest view
 
   if (isSuccess) {
+    const isCash = paymentOption === 'cash';
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center p-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#111111] border border-white/10 rounded-[3rem] p-16 text-center max-w-md w-full shadow-2xl">
-          <div className="w-24 h-24 bg-brand-orange/10 rounded-full flex items-center justify-center mx-auto mb-10 text-brand-orange border border-brand-orange/20"><Check size={48} strokeWidth={3} /></div>
-          <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-4">Confirmed!</h2>
-          <p className="text-white/40 font-medium mb-10 leading-relaxed">Your detailing session is booked. We'll see you at the center.</p>
+          <div className="w-24 h-24 bg-brand-orange/10 rounded-full flex items-center justify-center mx-auto mb-10 text-brand-orange border border-brand-orange/20">
+            {isCash ? (
+              <Clock size={48} strokeWidth={3} className="animate-pulse" />
+            ) : (
+              <Check size={48} strokeWidth={3} />
+            )}
+          </div>
+          <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-4">
+            {isCash ? "Request Sent!" : "Confirmed!"}
+          </h2>
+          <p className="text-white/40 font-medium mb-10 leading-relaxed">
+            {isCash 
+              ? "Your Cash on Service slot is booked and awaiting admin approval. We will notify you once confirmed." 
+              : "Your detailing session is booked. We'll see you at the center."}
+          </p>
           <Link href="/profile" className="block w-full bg-brand-orange text-black font-black uppercase italic tracking-widest py-5 rounded-full transition-all active:scale-95 shadow-lg">Manage Booking</Link>
         </motion.div>
       </div>
@@ -2018,10 +2031,7 @@ function BookingPageInner() {
                       onClick={() => setPaymentOption('cash')}
                       className={`p-4 rounded-xl border transition-all flex items-center justify-between ${paymentOption === 'cash' ? 'bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-black font-black shadow-lg shadow-[#F59E0B]/20 border-transparent' : 'bg-white/[0.02] border-white/[0.05] text-white/70 hover:bg-white/[0.05]'}`}
                     >
-                      <div className="flex flex-col items-start">
-                        <span className="text-xs font-black uppercase tracking-widest">Cash on Service</span>
-                        <span className="text-[10px] opacity-60">Pay by cash after detailing is completed</span>
-                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest">Cash on Service</span>
                       <span className="text-sm font-black">AED {calculateTotal()}</span>
                     </button>
                   </div>
