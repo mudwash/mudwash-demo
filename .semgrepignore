@@ -5,7 +5,7 @@
 node_modules/
 
 # Ignore test fixtures
-**/__tests__/fixtures/
+**/__tests__/fixtures/s
 **/test/fixtures/
 
 # This app is English-only (UAE market) — i18n rules are not applicable.
