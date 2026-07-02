@@ -4,11 +4,16 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { amount, currency, name, description, email, phone, success_url, failure_url } = body;
+    const apiKey = process.env.NOMOD_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Nomod API key not configured' }, { status: 500 });
+    }
 
     const response = await fetch('https://api.nomod.com/v1/links', {
       method: 'POST',
       headers: {
-        'X-API-KEY': 'sk_live_uvyqA2oL.aQTXb5NpadW8ffg4DKgWN5gCqcxH1KXd',
+        'X-API-KEY': apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
