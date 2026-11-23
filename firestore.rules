@@ -80,6 +80,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Google Reviews library: Public read (homepage), Admin write
+    match /googleReviews/{reviewId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Users: Users can read/write their own profiles, Admin can read all
     match /users/{userId} {
       allow read: if (request.auth != null && request.auth.uid == userId) || isAdmin();

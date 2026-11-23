@@ -22,7 +22,8 @@ import {
   MapPin,
   Car,
   Ticket,
-  BarChart3
+  BarChart3,
+  MessageSquareQuote
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -36,6 +37,7 @@ const sidebarLinks = [
   { name: "Vehicles", href: "/admin/vehicles", icon: Car },
   { name: "Parts", href: "/admin/parts", icon: Package },
   { name: "Promo Codes", href: "/admin/promocodes", icon: Ticket },
+  { name: "Google Reviews", href: "/admin/reviews", icon: MessageSquareQuote },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
