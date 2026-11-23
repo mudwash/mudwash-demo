@@ -31,13 +31,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isMounted) return;
       
       if (firebaseUser) {
-        setUser(firebaseUser);
+        // Keep loading until the profile is fetched so guards don't see
+        // "user without admin role" during sign-in and bounce away.
+        setLoading(true);
         try {
           const userProfile = await getUserProfile(firebaseUser.uid);
           if (isMounted) setProfile(userProfile);
         } catch (error) {
           console.error("Error fetching user profile:", error);
         }
+        if (isMounted) setUser(firebaseUser);
       } else {
         setUser(null);
         setProfile(null);

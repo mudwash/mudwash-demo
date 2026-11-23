@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithCustomToken } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function SignInPage() {
   return (
@@ -32,12 +33,17 @@ function SignInContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
+  // Redirect only when Firebase confirms a real admin session. A stale
+  // localStorage "admin_token" must not bounce us back to /admin, because
+  // AdminGuard would send us straight back here (redirect loop).
+  const { isAdmin, loading: authLoading } = useAuth();
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (token) {
+    if (!authLoading && isAdmin) {
       router.push("/admin");
+    } else if (!authLoading) {
+      try { localStorage.removeItem("admin_token"); } catch {}
     }
-  }, [router]);
+  }, [authLoading, isAdmin, router]);
 
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
