@@ -1,41 +1,40 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, ExternalLink } from 'lucide-react';
+import {
+  GoogleReview,
+  getGoogleReviews,
+  getReviewInitial,
+  SEED_REVIEWS,
+} from '@/lib/googleReviews';
 
-const reviews = [
-  {
-    name: "Jad Salman",
-    time: "4 weeks ago",
-    text: "Great services, Mohammed Kashif and Seth owusu did a great job",
-    rating: 5,
-    initial: "J"
-  },
-  {
-    name: "Артур Кешишян",
-    time: "4 weeks ago",
-    text: "Clear and fast seth owusu and muhammad kashif",
-    rating: 5,
-    initial: "A"
-  },
-  {
-    name: "Dina Badran",
-    time: "4 weeks ago",
-    text: "Had an excellent experience with Mudwash. My SUV had a strong humidity smell after being parked for over a month and...",
-    rating: 5,
-    initial: "D"
-  },
-  {
-    name: "Mohamad Mourad",
-    time: "4 weeks ago",
-    text: "Amazing work and service. The people here are absolute pros. Big thanks to Seth and Muhammad Kashif for the professionalism and attention to detail!!!",
-    rating: 5,
-    initial: "M"
-  }
-];
+const FALLBACK_REVIEWS: GoogleReview[] = SEED_REVIEWS.map((r, i) => ({
+  ...r,
+  id: `fallback-${i}`,
+}));
 
 export default function GoogleReviews() {
+  const [reviews, setReviews] = useState<GoogleReview[]>(FALLBACK_REVIEWS);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getGoogleReviews({ onlyWebsite: true, onlyActive: true });
+        if (!cancelled && data.length > 0) {
+          setReviews(data);
+        }
+      } catch (error) {
+        console.error('Error loading Google reviews:', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section className="pt-20 pb-0 px-4 bg-[#050505]">
       <div className="max-w-6xl mx-auto space-y-12">
@@ -77,7 +76,7 @@ export default function GoogleReviews() {
         <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-6 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
           {reviews.map((r, i) => (
             <motion.div 
-              key={i}
+              key={r.id || i}
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -87,21 +86,21 @@ export default function GoogleReviews() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-brand-orange/20 flex items-center justify-center text-brand-orange font-bold text-sm">
-                    {r.initial}
+                    {getReviewInitial(r.name)}
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-sm">{r.name}</h4>
-                    <p className="text-white/30 text-[10px] font-bold">{r.time}</p>
+                    <p className="text-white/30 text-[10px] font-bold">{r.timeLabel || ''}</p>
                   </div>
                 </div>
                 <div className="bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded">Verified</div>
               </div>
               <div className="flex gap-0.5">
-                {[...Array(r.rating)].map((_, i) => (
-                  <Star key={i} size={12} fill="#F69621" className="text-brand-orange" />
+                {[...Array(r.rating || 5)].map((_, starIdx) => (
+                  <Star key={starIdx} size={12} fill="#F69621" className="text-brand-orange" />
                 ))}
               </div>
-              <p className="text-white/70 text-sm font-medium leading-relaxed">"{r.text}"</p>
+              <p className="text-white/70 text-sm font-medium leading-relaxed">&ldquo;{r.text}&rdquo;</p>
             </motion.div>
           ))}
         </div>
